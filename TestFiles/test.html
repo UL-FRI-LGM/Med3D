@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="../Loaders/Cache.js" type="text/javascript"></script>
+    <script src="../Loaders/LoadingManager.js" type="text/javascript"></script>
+    <script src="../Loaders/XHRLoader.js" type="text/javascript"></script>
+    <script src="../Loaders/OBJLoader.js" type="text/javascript"></script>
+
+    <script>
+        function kaboomMachine() {
+            console.log("BOOOM");
+
+            var manager = new LoadingManager();
+            var loader = new OBJLoader(manager);
+
+            loader.load("Rock1.obj", function ( object ) {
+                        var obj = object;
+
+                        console.log("Success");
+                    });
+        }
+    </script>
+</head>
+<body >
+<button type="button" onclick="kaboomMachine()">KABOOM</button>
+</body>
+</html>
