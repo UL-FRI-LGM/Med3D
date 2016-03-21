@@ -14,5 +14,8 @@
     "default": {
       "outputSourceFiles": true
     }
+  },
+  "opts": {
+    "destination": "./docs/"
   }
 }

@@ -4,8 +4,8 @@
  */
 
 /**
- * This is a global object that can be used for caching the loaded data. Caching is disabled by default, but it is
- * advised to enable it when loading the same file multiple times in a single session.
+ * This is a global object that can be used for caching the loaded files. Caching is disabled by default, but it is
+ * advised to enable it when loading the same file multiple times during a single session.
  */
 Cache = {
 
