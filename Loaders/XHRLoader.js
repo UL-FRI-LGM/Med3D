@@ -9,13 +9,10 @@
  * @name XHRLoader
  */
 XHRLoader = function ( manager ) {
-
     this.manager = ( manager !== undefined ) ? manager : new LoadingManager();
-
 };
 
 XHRLoader.prototype = {
-
     constructor: XHRLoader,
 
     /**
@@ -27,7 +24,6 @@ XHRLoader.prototype = {
      * @returns {XMLHttpRequest}
      */
     load: function ( url, onLoad, onProgress, onError ) {
-
         if ( this.path !== undefined ) url = this.path + url;
 
         // Store scope for nested functions
@@ -39,19 +35,12 @@ XHRLoader.prototype = {
         // If the requested files is cached the result is immediately returned as onLoad parameter or load function
         // result if onLoad is not defined.
         if ( cached !== undefined ) {
-
             if ( onLoad ) {
-
                 setTimeout( function () {
-
                     onLoad( cached );
-
                 }, 0 );
-
             }
-
             return cached;
-
         }
 
         // Form the GET request
@@ -60,7 +49,6 @@ XHRLoader.prototype = {
         request.open( 'GET', url, true );
 
         request.addEventListener( 'load', function ( event ) {
-
             // Fetch the request response
             var response = event.target.response;
 
@@ -69,39 +57,27 @@ XHRLoader.prototype = {
 
             // Determine if the request was successfully executed and notify the observers
             if ( this.status === 200 || this.status === 0 ) {
-
                 if ( onLoad ) onLoad( response );
-
                 scope.manager.itemEnd( url );
-
-            } else {
-
+            }
+            else {
                 if ( onError ) onError( event );
-
                 scope.manager.itemError( url );
-
             }
 
         }, false );
 
         // Pass through XMLHttpRequest onProgress listener
         if ( onProgress !== undefined ) {
-
             request.addEventListener( 'progress', function ( event ) {
-
                 onProgress( event );
-
             }, false );
-
         }
 
         // Pass through XMLHttpRequest onError listener
         request.addEventListener( 'error', function ( event ) {
-
             if ( onError ) onError( event );
-
             scope.manager.itemError( url );
-
         }, false );
 
         // Check if any extra arguments were set
@@ -122,9 +98,7 @@ XHRLoader.prototype = {
      * @param path  Request path
      */
     setPath: function ( path ) {
-
         this.path = path;
-
     },
 
     /**
@@ -132,9 +106,7 @@ XHRLoader.prototype = {
      * @param responseType  Type of the response
      */
     setResponseType: function ( responseType ) {
-
         this.responseType = responseType;
-
     },
 
     /**
@@ -142,9 +114,6 @@ XHRLoader.prototype = {
      * @param withCredentials   Should credentials be used
      */
     setWithCredentials: function ( withCredentials ) {
-
         this.withCredentials = withCredentials;
-
     }
-
 };

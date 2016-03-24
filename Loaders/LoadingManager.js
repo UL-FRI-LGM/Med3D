@@ -13,8 +13,7 @@
  *
  */
 
-LoadingManager = function ( onLoad, onProgress, onError ) {
-
+LoadingManager = function (onLoad, onProgress, onError) {
     // Store scope for nested functions
     var scope = this;
 
@@ -29,58 +28,39 @@ LoadingManager = function ( onLoad, onProgress, onError ) {
 
     // Loaders should call this function to notify the observer that item started loading
     // This function may be called multiple times by same or different loader
-    this.itemStart = function ( url ) {
+    this.itemStart = function (url) {
 
-        itemsTotal ++;
+        itemsTotal++;
 
-        if ( isLoading === false ) {
-
-            if ( scope.onStart !== undefined ) {
-
-                scope.onStart( url, itemsLoaded, itemsTotal );
-
-            }
-
+        if (isLoading === false && scope.onStart !== undefined) {
+            scope.onStart(url, itemsLoaded, itemsTotal);
         }
 
         isLoading = true;
-
     };
 
     // Loaders should call this function to notify the observer that item finished loading
     // This function should be called by the same loader that started the loading
-    this.itemEnd = function ( url ) {
+    this.itemEnd = function (url) {
+        itemsLoaded++;
 
-        itemsLoaded ++;
-
-        if ( scope.onProgress !== undefined ) {
-
-            scope.onProgress( url, itemsLoaded, itemsTotal );
-
+        if (scope.onProgress !== undefined) {
+            scope.onProgress(url, itemsLoaded, itemsTotal);
         }
 
-        if ( itemsLoaded === itemsTotal ) {
-
+        if (itemsLoaded === itemsTotal) {
             isLoading = false;
 
-            if ( scope.onLoad !== undefined ) {
-
+            if (scope.onLoad !== undefined) {
                 scope.onLoad();
-
             }
-
         }
-
     };
 
     // Loaders should call this function to notify the observer that an error occurred during the loading
-    this.itemError = function ( url ) {
-
-        if ( scope.onError !== undefined ) {
-
-            scope.onError( url );
-
+    this.itemError = function (url) {
+        if (scope.onError !== undefined) {
+            scope.onError(url);
         }
-
     };
 };
