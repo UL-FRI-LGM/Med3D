@@ -1,0 +1,126 @@
+@font-face {
+   font-family: Alegreya-Sans; 
+   src: url('AlegreyaSans-Light.otf');
+} 
+
+body {
+	color: #424142;
+	background-color: #fefefe;
+	margin: 0px;
+	padding: 0px;
+	/* font-family: 'Droid Sans', sans-serif; */
+	font-family: sans-serif;
+}
+
+header {
+	background-color: #fefefe;
+	height:110px;
+	left:0;
+	position:fixed;
+	width:100%;
+	top:0;
+	text-align: center;
+}
+
+header h1 {
+	text-align: center;
+	font-family: Alegreya-Sans;
+	font-size: 40px;
+	padding: 0px;
+	margin: 10px 0px;
+}
+
+a {
+	text-decoration: none;
+	color: #424142;
+}
+
+header img {
+	width: 52px;
+	height: 52px;
+}
+
+hr {
+	width: 720px;
+    border-width: 1px;
+	color: #424142;
+}
+
+nav {
+	padding: 0px;
+	margin: 0px;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    padding: 0px 20px;
+}
+
+nav a {
+	color: #424142;
+	text-decoration: none;
+}
+
+nav a:hover {
+	font-weight: bold;
+}
+
+#main {
+	padding:120px 0px 0px 0px;
+}
+
+#licence {
+	padding:0px 0px 75px 0px;
+}
+
+.main {
+	margin:0 auto;
+	overflow:auto;
+	padding:10px 0px 10px 0px;
+	width:720px;
+}
+
+.main a {
+	text-decoration: underline;
+}
+
+footer {
+	background-color: #fefefe;
+	bottom:0;
+	height:75px;
+	left:0;
+	position:fixed;
+	width:100%;
+	text-align: center;
+	font-size: 11px;
+}
+
+footer a {
+	color: #424142;
+	text-decoration: underline;
+}
+
+.strong {
+	font-weight: bold;
+}
+
+h2 {
+	font-size: 18px;
+}
+
+li {
+	margin-top: 15px;
+}
+
+.content-image {
+	width: 320px;
+	float: left;
+	border: 1px solid #424142;
+	margin: 10px;
+}

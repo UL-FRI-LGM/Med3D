@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+
+		<link href='http://fonts.googleapis.com/css?family=Droid+Sans' rel='stylesheet' type='text/css'>
+		<link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+		<link rel="stylesheet" href="./css/style.css">
+	<title>Med 3D</title>
+</head>
+
+<body>
+	<header>
+		<a href="#main"><h1><img src="./images/logo.png" align="top" />  Med 3D</h1></a>
+		<nav>
+			<ul>
+				<li><a href="#about">About</a></li>
+				<li><a href="#screenshots">Screenshots</a></li>
+				<li><a href="#downloads">Downloads</a></li>
+				<li><a href="#licence">Licence</a></li>
+			</ul>
+		</nav>
+		<hr />
+	</header>
+
+	<div id="main" class="main">
+		<p>Med 3D is a free open-source 3D medical data visualisation application with support for displaying 3D mesh models (in form of OBJ files) as well as 3D volumetric data - such as CT and MRI scans (in form of MHR files).</p>
+
+		<p>Application also offers 3D stereoscopic display of data suitable for displays with option of interlaced stereo view.</p>
+
+		<p>User can interact with application with use of 3D mouse (<a href="http://www.3dconnexion.eu/">3D Connexion</a>) or with <a href="https://www.leapmotion.com/">Leap Motion</a> controller.</p>
+	</div>
+	<hr />
+
+	<div id="about" class="main">
+		<h1>About</h1>
+		<p>The project is being developed at Laboratory for Computer Graphics and Multimedia, Faculty of Computer and Information Science, University of Ljubljana. Project is developed mostly as work of students as part of their seminar work, thesis work and summer internship work.</p>
+
+		<p>The project is lead and coordinated by <span class="strong"><a href="http://www.fri.uni-lj.si/ciril">Ciril Bohak</a></span>.</p>
+
+		<h2>Development history:</h2>
+		<p>The original application was developed by <span class="strong">Simon Žagar</span> (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=25723&lang=eng">Thesis</a> - in Slovenian) in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science. He developed 3D visualisation environment and navigation, loading OBJ files and interlaced stereoscopic display.</p>
+
+		<p>Afterwards the application was extended and adapted by several authors as stated below:</p>
+		<ul>
+			<li><span class="strong">Matevž Ropret</span> - contributed integration of several separately developed methods into the application. He also implemented new design into the application.</li>
+
+			<li><span class="strong">Matjaž Krmelj, Pia Jerkič, Ciril Bohak</span> - put together design of the application and website.</li>
+
+			<li><span class="strong">Žiga Lesar</span> - contributed implementation of raycasting method for direct visualisation of volumetric data. (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29459&lang=eng">Thesis</a> - in Slovenian)</li>
+
+			<li><span class="strong">Boštjan Čotar</span> - contributed implementation of subdivision of volumetric data approximation for better conversion to 3D mesh model. (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29535&lang=eng">Thesis</a> - in Slovenian)</li>
+
+			<li><span class="strong">Miloš Lukić</span> - contributed implementation of Multiple Partitions of Unity Implicits (MPUI) algorithm - an alternative to MC - for transforming volumetric data into 3D mesh model. (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29488&lang=eng">Thesis</a> - in Slovenian)</li>
+
+			<li><span class="strong">Peter Škrlj</span> - contributed integration of 3D mouse support (<a href="http://www.3dconnexion.eu/">3D Connexion</a>) for navigation, integration of <a href="https://www.leapmotion.com/">Leap Motion</a> controller. He also conducted an usability study on using different input devices for interaction. (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=68822&lang=eng">Thesis</a> - in Slovenian)</li>
+
+			<li><span class="strong">Anže Sodja</span> - contributed code refactoring, implementation of MHD reader for reading raw volumetric data, implementation of Marching Cube (MC) algorithm in Java and integration of MC algorithm in OpenCL for transformation of volumetric data into 3D mesh model. (<a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=26240&lang=eng">Thesis</a> - in Slovenian)</li>
+		</ul>
+
+		<h2>Publications related to the project:</h2>
+		<p>Ciril Bohak, Simon Žagar, Anže Sodja, Peter Škrlj, Uroš Mitrović, Franjo Pernuš, Matija Marolt, "Neck veins : an interactive 3D visualization of head veins", In: Proceedings of the 4th International Conference World Usability Day Slovenia 2013, Ljubljana, Slovenia, 25th November 2013, (International series on information systems and management in creative media), Tampere, IugYmedia, 2013, p. 64-66.</p>
+
+		<p>Ciril Bohak, Anže Sodja, Matija Marolt, Uroš Mitrović, Franjo Pernuš, "Fast segmentation, conversion and rendering of volumetric data using GPU", In: IWSSIP 2014 : proceedings, (International Conference on Systems, Signals, and Image Processing (Print)), Zagreb, Faculty of Electrical Engineering and Computing, Department of Wireless Communications, cop. 2014, p. 239-242.</p>
+
+		<p>Peter Škrlj, Jože Guna, Ciril Bohak, Matija Marolt, "Usability evaluation of input devices for navigation and interaction in 3D visualisation", In: Proceedings of the 7th International Workshop on Semantic Ambient Media Experience (SAME 2014) - Ambient Media Usability, Interaction, and Smart Media Technologies : Helsinki, Finland, 26th October 2014, (International series on information systems and management in creative emedia, no. 2014/1), et al, Tampere, iAMEA, 2014, p. 19-23,</p>
+
+		<p>Žiga Lesar, "Real-time ray casting of volumetric data", In: Proceedings of ERK 2014, Portorož, Slovenija, IEEE Region 8, Slovenska sekcija IEEE, 2014, p. 199-200,</p>
+
+		<p>Žiga Lesar, Ciril Bohak, Matija Marolt, "Evaluation of angiogram visualization methods for fast and reliable aneurysm diagnosis", V: Medical imaging 2015 : image perception, observer performance, and technology assessment : 25-26 February 2015, Orlando, Florida, United States, (Progress in biomedical optics and imaging, vol. 16, no. 44), (Proceedings of SPIE, the International Society for Optical Engineering, vol. 9416), Claudia R. Mello-Thoms, ur., Matthew A. Kupinski, ur., Bellingham (Washington), SPIE, cop. 2015, str. [1-8].</p>
+	</div>
+	<hr />
+
+	<div id="screenshots" class="main">
+		<h1>Screenshots</h1>
+		<p>To be comming ...</p>
+	</div>
+	<hr />
+
+	<div id="downloads" class="main">
+		<h1>Downloads</h1>
+		<p>To be comming ...</p>
+	</div>
+	<hr />
+
+	<div id="licence" class="main">
+		<h1>Licence</h1>
+		<p>The original application was developed by <span class="strong">Simon Žagar</span> in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science.</p>
+
+		<p>The application was later adapted and extended by <span class="strong">Anže Sodja</span>, <span class="strong">Peter Škrlj</span>, <span class="strong">Miloš Lukić</span>, <span class="strong">Boštjan Čotar</span>, <span class="strong">Žiga Lesar</span>, <span class="strong">Matevž Ropret</span> and <span class="strong">Ciril Bohak</span></p>
+
+		<p>This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a copy of this license, visit <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/">http://creativecommons.org/licenses/by-nc-sa/3.0/</a> or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.</p>
+
+		<p>Licences of used Libraries can be foun in code and on above mentioned web sites.</p>
+	</div>
+	<hr />
+
+	<footer>
+		<hr />
+		<br />
+		<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/80x15.png" /></a>
+		<br />
+		This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>.
+	</footer>
+</body>
+
+</html>
