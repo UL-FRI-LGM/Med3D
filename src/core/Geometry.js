@@ -2,15 +2,11 @@
  * Created by Ziga on 1.4.2016.
  */
 
-M3D.Geometry = function() {
-	this.type = 'Geometry';
+M3D.Geometry = class {
 
-	this.vertices = [];
-	this.indices = [];
-}
-
-M3D.Geometry.prototype = {
-
-	constructor: M3D.Geometry
+	constructor() {
+		this.vertices = [];
+		this.indices = [];
+	}
 
 }

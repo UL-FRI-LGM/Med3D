@@ -6,13 +6,16 @@
 /**
  * @class MeshRenderer
  */
-M3D.MeshRenderer = function () {
-	M3D.Renderer.call(this);
-}
+M3D.MeshRenderer = class extends M3D.Renderer {
 
-M3D.MeshRenderer.prototype = Object.create(M3D.MeshRenderer.prototype);
-M3D.MeshRenderer.prototype.constructor = M3D.MeshRenderer;
+	constructor(gl) {
+		super();
 
-M3D.MeshRenderer.prototype.render = function(scene, camera) {
-	
+		this.gl = gl;
+	}
+
+	render(scene, camera) {
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+	}
+
 }

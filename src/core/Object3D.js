@@ -2,50 +2,46 @@
  * Created by Ziga on 25.3.2016.
  */
 
-M3D.Object3D = function () {
-	this.type = 'Object3D';
+M3D.Object3D = class {
 
-	this.parent = null;
-	this.children = [];
+	constructor() {
+		this.parent = null;
+		this.children = [];
 
-	this.position = new THREE.Vector3();
-	this.rotation = new THREE.Euler();
-	this.quaternion = new THREE.Quaternion();
-	this.scale = new THREE.Vector3(1, 1, 1);
+		this.position = new THREE.Vector3();
+		this.rotation = new THREE.Euler();
+		this.quaternion = new THREE.Quaternion();
+		this.scale = new THREE.Vector3(1, 1, 1);
 
-	function onRotationChange() {
-		this.quaternion.setFromEuler(rotation, false);
+		function onRotationChange() {
+			this.quaternion.setFromEuler(rotation, false);
+		}
+
+		function onQuaternionChange() {
+			this.rotation.setFromQuaternion(quaternion, undefined, false);
+		}
+
+		this.rotation.onChange(onRotationChange);
+		this.quaternion.onChange(onQuaternionChange);
+
+		this.matrix = new THREE.Matrix4();
+		this.matrixWorld = new THREE.Matrix4();
+		this.matrixWorldNeedsUpdate = false;
+
+		this.visible = true;
 	}
 
-	function onQuaternionChange() {
-		this.rotation.setFromQuaternion(quaternion, undefined, false);
-	}
-
-	this.rotation.onChange(onRotationChange);
-	this.quaternion.onChange(onQuaternionChange);
-
-	this.matrix = new THREE.Matrix4();
-	this.matrixWorld = new THREE.Matrix4();
-	this.matrixWorldNeedsUpdate = false;
-
-	this.visible = true;
-}
-
-M3D.Object3D.prototype = {
-
-	constructor: M3D.Object3D,
-
-	applyMatrix: function(matrix) {
+	applyMatrix(matrix) {
 		this.matrix.multiplyMatrices(matrix, this.matrix);
 		this.matrix.decompose(this.position, this.quaternion, this.scale);
-	},
+	}
 
-	updateMatrix: function() {
+	updateMatrix() {
 		this.matrix.compose(this.position, this.quaternion, this.scale);
 		this.matrixWorldNeedsUpdate = true;
-	},
+	}
 
-	updateMatrixWorld: function(force) {
+	updateMatrixWorld(force) {
 		if (this.matrixWorldNeedsUpdate === true) {
 			if (this.parent === null) {
 				this.matrixWorld.copy(this.matrix);
@@ -58,15 +54,15 @@ M3D.Object3D.prototype = {
 		for (var i = 0; i < this.children.length; i++) {
 			this.children[i].updateMatrixWorld(force);
 		}
-	},
+	}
 
-	lookAt: function(vector, up) {
+	lookAt(vector, up) {
 		var m = new THREE.Matrix4();
 		m.lookAt(vector, this.position, up);
 		this.quaternion.setFromRotationMatrix(m);
-	},
+	}
 
-	add: function(object) {
+	add(object) {
 		if (object === this) {
 			return;
 		}
@@ -75,17 +71,17 @@ M3D.Object3D.prototype = {
 			object.parent = this;
 			this.children.push(object);
 		}
-	},
+	}
 
-	remove: function(object) {
+	remove(object) {
 		var index = this.children.indexOf(object);
 		if (index !== -1) {
 			object.parent = null;
 			this.children.splice(index, 1);
 		}
-	},
+	}
 
-	traverse: function(callback) {
+	traverse(callback) {
 		callback(this);
 		for (var i = 0, l = this.children.length; i < l; i++) {
 			this.children[i].traverse(callback);
@@ -93,5 +89,5 @@ M3D.Object3D.prototype = {
 	}
 
 	// TODO: functions: transformations
-
+	
 }

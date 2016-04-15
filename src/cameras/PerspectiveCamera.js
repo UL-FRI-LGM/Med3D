@@ -2,21 +2,21 @@
  * Created by Ziga on 1.4.2016.
  */
 
-M3D.PerspectiveCamera = function(fov, aspect, near, far) {
-	M3D.Camera.call(this);
-	this.type = 'PerspectiveCamera';
+M3D.PerspectiveCamera = class extends M3D.Camera {
 
-	this.fov = fov;
-	this.aspect = aspect;
-	this.near = near;
-	this.far = far;
+	constructor(fov, aspect, near, far) {
+		super();
 
-	this.updateProjectionMatrix();
-}
+		this.fov = fov || 1;
+		this.aspect = aspect || 1;
+		this.near = near || 0.1;
+		this.far = far || 1000;
 
-M3D.PerspectiveCamera.prototype = Object.create(M3D.Camera.prototype);
-M3D.PerspectiveCamera.prototype.constructor = M3D.PerspectiveCamera;
+		this.updateProjectionMatrix();
+	}
 
-M3D.PerspectiveCamera.prototype.updateProjectionMatrix = function() {
-	this.projectionMatrix.makePerspective(this.fov, this.aspect, this.near, this.far);
+	updateProjectionMatrix() {
+		this.projectionMatrix.makePerspective(this.fov, this.aspect, this.near, this.far);
+	}
+
 }

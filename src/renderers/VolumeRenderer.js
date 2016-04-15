@@ -6,9 +6,16 @@
 /**
  * @class VolumeRenderer
  */
-M3D.VolumeRenderer = function () {
-	M3D.Renderer.call(this);
-}
+M3D.VolumeRenderer = class extends M3D.Renderer {
 
-M3D.VolumeRenderer.prototype = Object.create(M3D.VolumeRenderer.prototype);
-M3D.VolumeRenderer.prototype.constructor = M3D.VolumeRenderer;
+	constructor(gl) {
+		super();
+
+		this.gl = gl;
+	}
+
+	render(scene, camera) {
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+	}
+
+}
