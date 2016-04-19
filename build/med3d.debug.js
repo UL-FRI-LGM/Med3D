@@ -413,10 +413,17 @@ M3D.shaderTypeFromString = function(gl, string) {
 
 M3D.Program = class {
 	
-	constructor(gl, shaders) {
+	constructor(gl, sources) {
 		this.gl = gl;
 		this.uniforms = {};
 		this.attributes = {};
+		var shaders = [];
+		for (var shader of sources) {
+			shaders.push(M3D.createShader(
+				gl,
+				shader.source,
+				M3D.shaderTypeFromString(gl, shader.type)));
+		}
 		this.program = M3D.createProgram(gl, shaders);
 		this.getUniforms();
 		this.getAttributes();

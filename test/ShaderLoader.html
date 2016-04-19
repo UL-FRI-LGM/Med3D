@@ -11,11 +11,7 @@ window.onload = function() {
 
 	var sl = new M3D.ShaderLoader();
 	sl.load("shaders/gl2_quad.shader", function(obj) {
-		shaders = [];
-		for (var shader of obj) {
-			shaders.push(M3D.createShader(gl, shader.source, M3D.shaderTypeFromString(gl, shader.type)));
-		}
-		var program = new M3D.Program(gl, shaders);
+		var program = new M3D.Program(gl, obj);
 		console.log("Attributes: ", program.attributes);
 		console.log("Uniforms: ", program.uniforms);
 	});
