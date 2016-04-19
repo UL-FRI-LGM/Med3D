@@ -58,3 +58,13 @@ M3D.createProgram = function(gl, shaders) {
 	}
 	return program;
 }
+
+M3D.shaderTypeFromString = function(gl, string) {
+	switch(string) {
+		case "vertex": return gl.VERTEX_SHADER;
+		case "fragment": return gl.FRAGMENT_SHADER;
+		default:
+			console.error("Unknown shader type: " + string);
+			return null;
+	}
+}

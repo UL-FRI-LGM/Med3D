@@ -2,52 +2,41 @@
  * Created by Ziga on 17.3.2016.
  */
 
- // TODO: complete redesign
-
 M3D.ShaderLoader = class {
 
-    constructor(manager) {
-        this.manager = manager || new M3D.LoadingManager();
-        this.loaded = [];
-        this.requests = [];
-    }
+	constructor(manager) {
+		this.manager = manager || new M3D.LoadingManager();
+	}
 
-    load(url, onLoad, onProgress, onError) {
-        var scope = this;
-        this.loaded = [];
-        this.requests = [];
-        var loader = new M3D.XHRLoader(scope.manager);
-        loader.setPath(this.path);
-        var path = loader.extractUrlBase(url);
-        loader.load(url, function(text) {
-            onLoad(scope.parse(path, text));
-        }, onProgress, onError);
-    }
+	load(url, onLoad, onProgress, onError) {
+		var scope = this;
+		var loader = new M3D.XHRLoader(scope.manager);
+		loader.setPath(this.path);
+		var path = loader.extractUrlBase(url);
+		loader.load(url, function(text) {
+			var json = JSON.parse(text);
+			var n = json.shaders.length;
+			loader.setPath(path);
 
-    setPath(path) {
-        this.path = path;
-    }
+			var shaders = [];
+			// this function returns a custom handler,
+			// which knows the shader type
+			var handlerCreator = function(type) {
+				return function(text) {
+					shaders.push({source: text, type: type});
+					if (--n === 0) {
+						onLoad(shaders);
+					}
+				}
+			}
+			for (var shader of json.shaders) {
+				loader.load(shader.file, handlerCreator(shader.type));
+			}
+		}, onProgress, onError);
+	}
 
-    parse(path, text) {
-        var scope = this;
-        var loader = new M3D.XHRLoader(scope.manager);
-        loader.setPath(path);
-
-        var shaders = [];
-        var json = JSON.parse(text);
-        var n = json.shaders.length;
-
-        for (var i = 0; i < n; i++) {
-            var shader = json.shaders[i];
-            loader.load(shader.file, function(text) {
-                shaders.push({
-                    type: shader.type,
-                    source: text
-                });
-            });
-        }
-
-        return shaders;
-    }
+	setPath(path) {
+		this.path = path;
+	}
 
 }

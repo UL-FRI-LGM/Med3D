@@ -9,6 +9,8 @@ M3D.Program = class {
 		this.uniforms = {};
 		this.attributes = {};
 		this.program = M3D.createProgram(gl, shaders);
+		this.getUniforms();
+		this.getAttributes();
 	}
 
 	getUniformLocation(name) {
@@ -17,20 +19,21 @@ M3D.Program = class {
 
 	getUniforms() {
 		this.uniforms = {};
-		var n = gl.getProgramParameter(this.program, gl.ACTIVE_UNIFORMS);
+		var n = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_UNIFORMS);
 		for (var i = 0; i < n; i++) {
-			var info = gl.getActiveUniform(this.program, i);
-			var location = gl.getUniformLocation(this.program, info.name);
+			var info = this.gl.getActiveUniform(this.program, i);
+			var location = this.gl.getUniformLocation(this.program, info.name);
+			console.log(location);
 			this.uniforms[info.name] = location;
 		}
 	}
 
 	getAttributes() {
 		this.attributes = {};
-		var n = gl.getProgramParameter(this.program, gl.ACTIVE_ATTRIBUTES);
+		var n = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_ATTRIBUTES);
 		for (var i = 0; i < n; i++) {
-			var info = gl.getActiveAttrib(this.program, i);
-			this.attributes[info.name] = gl.getAttribLocation(this.program, info.name);
+			var info = this.gl.getActiveAttrib(this.program, i);
+			this.attributes[info.name] = this.gl.getAttribLocation(this.program, info.name);
 		}
 	}
 

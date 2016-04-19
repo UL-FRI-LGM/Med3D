@@ -5,6 +5,7 @@ src/core/BufferGeometry.js
 src/core/Geometry.js
 src/core/Object3D.js
 src/core/WebGLUtils.js
+src/core/Program.js
 src/cameras/Camera.js
 src/cameras/PerspectiveCamera.js
 src/textures/Texture.js
