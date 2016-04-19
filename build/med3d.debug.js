@@ -378,7 +378,7 @@ M3D.createShader = function(gl, source, type) {
 	gl.compileShader(shader);
 	var status = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!status) {
-		console.log(gl.getShaderInfoLog(shader));
+		console.error(gl.getShaderInfoLog(shader));
 	}
 	return shader;
 }
@@ -391,7 +391,7 @@ M3D.createProgram = function(gl, shaders) {
 	gl.linkProgram(program);
 	var status = gl.getProgramParameter(program, gl.LINK_STATUS);
 	if (!status) {
-		console.log(gl.getProgramInfoLog(program));
+		console.error(gl.getProgramInfoLog(program));
 	}
 	for (var i = 0; i < shaders.length; i++) {
 		gl.deleteShader(shaders[i]);
@@ -571,7 +571,7 @@ M3D.XHRLoader.prototype = {
         var scope = this;
 
         // Try to fetch cached file
-        var cached = Cache.get( url );
+        var cached = M3D.Cache.get( url );
 
         // If the requested files is cached the result is immediately returned as onLoad parameter or load function
         // result if onLoad is not defined.
@@ -656,7 +656,18 @@ M3D.XHRLoader.prototype = {
      */
     setWithCredentials: function ( withCredentials ) {
         this.withCredentials = withCredentials;
+    },
+
+    extractUrlBase: function ( url ) {
+        var parts = url.split( '/' );
+
+        if ( parts.length === 1 ) return './';
+
+        parts.pop();
+
+        return parts.join( '/' ) + '/';
     }
+
 };/**
  * Created by Primoz on 17.3.2016.
  * Source: Three.js
@@ -956,6 +967,118 @@ M3D.OBJLoader.prototype = {
         return objects;
     }
 };/**
+ * Created by Ziga on 18.4.2016
+ * Source: three.js
+ */
+
+M3D.ImageLoader = class {
+
+	constructor(manager) {
+		this.manager = manager || new M3D.LoadingManager();
+	}
+
+	load(url, onLoad, onProgress, onError) {
+		if ( this.path !== undefined ) url = this.path + url;
+		var scope = this;
+		var cached = M3D.Cache.get(url);
+		if (cached !== undefined) {
+			scope.manager.itemStart(url);
+			if (onLoad) {
+				setTimeout(function() {
+					onLoad(cached);
+					scope.manager.itemEnd(url);
+				}, 0);
+			} else {
+				scope.manager.itemEnd(url);
+			}
+			return cached;
+		}
+
+		var image = new Image();
+		image.addEventListener('load', function(event) {
+			M3D.Cache.add(url, this);
+			if (onLoad) onLoad(this);
+			scope.manager.itemEnd(url);
+		}, false);
+
+		if (onProgress !== undefined) {
+			image.addEventListener('progress', function(event) {
+				onProgress(event);
+			}, false);
+		}
+
+		image.addEventListener('error', function(event) {
+			if (onError) onError(event);
+			scope.manager.itemError(url);
+		}, false);
+
+		if (this.crossOrigin !== undefined) image.crossOrigin = this.crossOrigin;
+		scope.manager.itemStart(url);
+		image.src = url;
+		return image;
+	}
+
+	setCrossOrigin(value) {
+		this.crossOrigin = value;
+	}
+
+	setPath(value) {
+		this.path = value;
+	}
+
+}/**
+ * Created by Ziga on 17.3.2016.
+ */
+
+ // TODO: complete redesign
+
+M3D.ShaderLoader = class {
+
+    constructor(manager) {
+        this.manager = manager || new M3D.LoadingManager();
+        this.loaded = [];
+        this.requests = [];
+    }
+
+    load(url, onLoad, onProgress, onError) {
+        var scope = this;
+        this.loaded = [];
+        this.requests = [];
+        var loader = new M3D.XHRLoader(scope.manager);
+        loader.setPath(this.path);
+        var path = loader.extractUrlBase(url);
+        loader.load(url, function(text) {
+            onLoad(scope.parse(path, text));
+        }, onProgress, onError);
+    }
+
+    setPath(path) {
+        this.path = path;
+    }
+
+    parse(path, text) {
+        var scope = this;
+        var loader = new M3D.XHRLoader(scope.manager);
+        loader.setPath(path);
+
+        var shaders = [];
+        var json = JSON.parse(text);
+        var n = json.shaders.length;
+
+        for (var i = 0; i < n; i++) {
+            var shader = json.shaders[i];
+            loader.load(shader.file, function(text) {
+                shaders.push({
+                    type: shader.type,
+                    source: text
+                });
+            });
+        }
+
+        return shaders;
+    }
+
+}/**
  * Created by Ziga on 25.3.2016.
  */
 

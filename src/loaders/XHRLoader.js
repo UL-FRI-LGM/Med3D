@@ -30,7 +30,7 @@ M3D.XHRLoader.prototype = {
         var scope = this;
 
         // Try to fetch cached file
-        var cached = Cache.get( url );
+        var cached = M3D.Cache.get( url );
 
         // If the requested files is cached the result is immediately returned as onLoad parameter or load function
         // result if onLoad is not defined.
@@ -115,5 +115,16 @@ M3D.XHRLoader.prototype = {
      */
     setWithCredentials: function ( withCredentials ) {
         this.withCredentials = withCredentials;
+    },
+
+    extractUrlBase: function ( url ) {
+        var parts = url.split( '/' );
+
+        if ( parts.length === 1 ) return './';
+
+        parts.pop();
+
+        return parts.join( '/' ) + '/';
     }
+
 };

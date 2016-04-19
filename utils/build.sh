@@ -14,3 +14,5 @@ for f in $sources; do
 	cat ../$f >> $outputdebug
 done
 java -jar compiler/compiler.jar --language_in ECMASCRIPT6_STRICT --js $outputdebug --language_out ES5_STRICT --js_output_file $outputmin
+
+#java -jar compiler/compiler.jar --language_in ES6 --language_out ES5 --js ../src/**.js --js ../lib/**.js --js_output_file ../build/med3d.min.js

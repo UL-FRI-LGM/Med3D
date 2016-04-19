@@ -38,7 +38,7 @@ M3D.createShader = function(gl, source, type) {
 	gl.compileShader(shader);
 	var status = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!status) {
-		console.log(gl.getShaderInfoLog(shader));
+		console.error(gl.getShaderInfoLog(shader));
 	}
 	return shader;
 }
@@ -51,7 +51,7 @@ M3D.createProgram = function(gl, shaders) {
 	gl.linkProgram(program);
 	var status = gl.getProgramParameter(program, gl.LINK_STATUS);
 	if (!status) {
-		console.log(gl.getProgramInfoLog(program));
+		console.error(gl.getProgramInfoLog(program));
 	}
 	for (var i = 0; i < shaders.length; i++) {
 		gl.deleteShader(shaders[i]);
