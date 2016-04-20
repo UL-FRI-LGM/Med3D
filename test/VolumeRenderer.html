@@ -10,7 +10,7 @@ window.onload = function() {
 	var gl = M3D.createWebGL2Context(canvas);
 
 	var sl = new M3D.ShaderLoader();
-	sl.load("shaders/gl2_quad.shader", function(obj) {
+	sl.load("shaders/gl2_mip.shader", function(obj) {
 		var program = new M3D.Program(gl, obj);
 		console.log("Attributes: ", program.attributes);
 		console.log("Uniforms: ", program.uniforms);
