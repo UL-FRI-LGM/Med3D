@@ -4,17 +4,108 @@
 <meta charset="UTF-8">
 <title>VolumeRenderer</title>
 <script src="../build/med3d.min.js" type="text/javascript"></script>
+<script src="lib/perlin.js" type="text/javascript"></script>
 <script type="text/javascript">
 window.onload = function() {
 	var canvas = document.getElementById("canvas");
 	var gl = M3D.createWebGL2Context(canvas);
 
 	var sl = new M3D.ShaderLoader();
+	var program;
 	sl.load("shaders/gl2_mip.shader", function(obj) {
-		var program = new M3D.Program(gl, obj);
+		program = new M3D.Program(gl, obj);
 		console.log("Attributes: ", program.attributes);
 		console.log("Uniforms: ", program.uniforms);
 	});
+
+	// TODO: MHD loader
+	var quad = createQuad(gl);
+	var volume = createTestVolume(gl,64);
+	var camera = new M3D.PerspectiveCamera(90, 1, 0.1, 100);
+
+	render();
+
+	function render() {
+		if (program !== undefined) {
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+			camera.updateMatrixWorld();
+			camera.matrixWorldInverse.getInverse(camera.matrixWorld);
+			var VP = camera.projectionMatrix.clone();
+			VP.multiply(camera.matrixWorldInverse);
+			var iVP = new THREE.Matrix4();
+			iVP.getInverse(VP);
+
+			program.use();
+			gl.bindBuffer(gl.ARRAY_BUFFER, quad.vbo);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quad.ibo);
+			gl.enableVertexAttribArray(program.attributes["vPosition"]);
+			gl.vertexAttribPointer(program.attributes["vPosition"], 2, gl.FLOAT, false, 0, 0);
+
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_3D, volume);
+			gl.uniform1i(program.uniforms["uVolume"], 0);
+			gl.uniformMatrix4fv(program.uniforms["uMVP"], false, iVP.elements);
+
+			gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		}
+		requestAnimationFrame(render);
+	}
+}
+
+function createTestVolume(gl, size) {
+	var data = [];
+	/*for (var i = 0; i < size * size * size; i++) {
+		data[i] = Math.floor(Math.random() * (1 << 16));
+	}*/
+	console.log("Generating volume");
+	for (var i = 0; i < size; i++) {
+		for (var j = 0; j < size; j++) {
+			for (var k = 0; k < size; k++) {
+				var x = (i * 2) / size - 1;
+				var y = (j * 2) / size - 1;
+				var z = (k * 2) / size - 1;
+				var d = Math.sqrt(x * x + y * y + z * z);
+				data[i + j * size + k * size * size] =
+					((noise.perlin3(x * 5, y * 5, z * 5) * 0.5 + 0.5) * 0.5 + 0.5) * Math.exp(-20 * (0.7 - d) * (0.7 - d));
+			}
+		}
+	}
+	console.log("Done generating volume");
+	var rawData = new Float32Array(data);
+	var texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_3D, texture);
+	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+	// TODO texture-filterable f32 support, now using Float32Array with GL_R16F, fingers crossed
+	gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16F, size, size, size, 0, gl.RED, gl.FLOAT, rawData);
+	gl.bindTexture(gl.TEXTURE_3D, null);
+	return texture;
+}
+
+function createQuad(gl) {
+	var vertices = [
+		-1.0, -1.0,
+		 1.0, -1.0,
+		-1.0,  1.0,
+		 1.0,  1.0
+	];
+	var indices = [
+		0, 1, 2,
+		1, 2, 3
+	];
+	var vbo = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	var ibo = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+	return { vbo: vbo, ibo: ibo };
 }
 </script>
 </head>
