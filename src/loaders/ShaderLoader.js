@@ -2,6 +2,7 @@
  * Created by Ziga on 17.3.2016.
  */
 
+// TODO - Primoz: zmergej z ShaderLoaderPrimoz.js
 M3D.ShaderLoader = class {
 
 	constructor(manager) {

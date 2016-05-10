@@ -2,6 +2,8 @@
  * Created by Ziga on 25.3.2016.
  */
 
+ // TODO - Primoz: zmergej z GLManager.js
+
 M3D.createWebGLContext = function(canvas) {
 	var context = null;
 	var names = ["webgl", "experimental-webgl"];

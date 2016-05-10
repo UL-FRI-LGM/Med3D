@@ -1,3 +1,5 @@
+// TODO - Ziga: FIX!!
+
 lib/three-math.min.js
 src/Med3D.js
 src/core/BufferAttribute.js

@@ -3,6 +3,8 @@
  * Source: Three.js
  */
 
+ // TODO - Primoz: v ES6
+
 /**
  * Used for loading the .obj files.
  * @param manager   LoadingManager that will act as the loader observer
@@ -13,6 +15,7 @@ M3D.OBJLoader = function (manager) {
 
     this.manager = ( manager !== undefined ) ? manager : new M3D.LoadingManager();
 
+    this.materials = null;
 };
 
 M3D.OBJLoader.prototype = {
@@ -44,6 +47,15 @@ M3D.OBJLoader.prototype = {
      */
     setPath: function (path) {
         this.path = path;
+    },
+
+
+    /**
+     * Material can be set in advance (All of the object loaded with this loader will have given materials)
+     * @param materials Object material
+     */
+    setMaterials: function ( materials ) {
+        this.materials = materials;
     },
 
     /**
@@ -294,6 +306,42 @@ M3D.OBJLoader.prototype = {
                 throw new Error("Unexpected line: " + line);
             }
         }
-        return objects;
+
+        var meshes = [];
+
+        for (var i = 0; i < objects.length; i++) {
+
+            var geometry = objects[i].geometry;
+
+            // Create new buffer geometry
+            var bufferGeometry = new M3D.BufferGeometry();
+
+            // Add position of vertices
+            bufferGeometry.addAttribute('position', new M3D.BufferAttribute(new Float32Array(geometry.vertices), 3));
+
+            // Check if normals are specified. Otherwise calculate them
+            if ( geometry.normals.length > 0 ) {
+                bufferGeometry.addAttribute('normal', new M3D.BufferAttribute(new Float32Array(geometry.normals), 3));
+            } else {
+                bufferGeometry.computeVertexNormals();
+            }
+
+            // If specified add texture uv-s
+            if ( geometry.uvs.length > 0 ) {
+                bufferGeometry.addAttribute('uv', new M3D.BufferAttribute(new Float32Array(geometry.uvs), 2));
+            }
+
+            var material = new M3D.MeshBasicMaterial();
+
+            material.shading = objects[i].material.smooth ? M3D.SmoothShading : M3D.FlatShading;
+
+            // Create new mesh
+            var mesh = new M3D.Mesh(bufferGeometry, material);
+            mesh.name = objects[i].name;
+
+            meshes.push(mesh);
+        }
+
+        return meshes;
     }
 };

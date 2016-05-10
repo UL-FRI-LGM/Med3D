@@ -1,14 +1,27 @@
 /**
- * Created by Ziga on 1.4.2016.
+ * Created by Ziga & Primoz on 1.4.2016.
  */
 
 M3D.BufferAttribute = class {
 
 	constructor(array, itemSize) {
+
+		// TODO - Primoz: za id uporabljaj kar referenco
+		// Unique identifier used for WebGLProperties addressing
+		this.uuid = THREE.Math.generateUUID();
+
 		this.array = array;
 		this.itemSize = itemSize;
+
+	    // TODO - Primoz: spremeni v flag
+		// Tells if local copies are up to date
+		this.version = 0;
 	}
 
+	/**
+	 * Returns the number of items in data array (numValues / itemSize)
+	 * @returns {number} Item count
+	 */
 	count() {
 		return this.array.length / this.itemSize;
 	}

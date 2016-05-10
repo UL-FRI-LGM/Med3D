@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<canvas id="canvas" style="cursor: none" width="1600" height="900"></canvas>
+
+<script src="../lib/three-math.min.js"></script>
+
+
+<script src="../src/Med3D.js"></script>
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/OBJLoader.js"></script>
+
+<!-- SHADERS -->
+<script src="../src/renderers/shaders/ShaderTemplates.js"></script>
+<script src="../src/renderers/shaders/ShaderLoader.js"></script>
+<script src="../src/renderers/GLPrograms.js"></script>
+
+<!-- CONTEXT MANAGER -->
+<script src="../src/renderers/GLManager.js"></script>
+
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/BufferGeometry.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+
+<!-- MATERIAL -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+
+<!-- MESH TYPES -->
+<script src="../src/objects/Mesh.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+
+<!-- RENDERER HELPERS -->
+<script src="../src/renderers/GLProperties.js"></script>
+<script src="../src/renderers/GLAttributeManager.js"></script>
+
+<!-- RENDERER -->
+<script src="../src/renderers/MeshRenderer.js"></script>
+
+
+<script>
+    var camera = new M3D.PerspectiveCamera();
+
+    var scene = new M3D.Scene();
+
+    var renderer = new M3D.MeshRenderer2(document.getElementById("canvas"), M3D.WEBGL2);
+    renderer.setShaderLoaderUrl = "../src/renderers/shaders/source/";
+
+    var manager = new M3D.LoadingManager();
+    var loader = new M3D.OBJLoader(manager);
+
+
+    // Load objects
+    loader.load("models/part18.obj", function ( obj ) {
+
+        for (var i = 0; i < obj.length; i++) {
+            obj[i].position.z = 0;
+            obj[i].setMaterial(new M3D.MeshPhongMaterial());
+            scene.add(obj[i]);
+        }
+        animate();
+    });
+
+    function animate() {
+        requestAnimationFrame( animate );
+        renderer.render(scene, camera);
+    }
+
+
+    camera.rotation.set( 0, 0, 0 );
+
+    var pitchObject = new M3D.Object3D();
+    pitchObject.add( camera );
+
+    var yawObject = new M3D.Object3D();
+    yawObject.add( pitchObject );
+    yawObject.position.x = 130;
+    yawObject.position.y = 100;
+    yawObject.position.z = 300;
+
+    var PI_2 = Math.PI / 2;
+
+    var onMouseMove = function ( event ) {
+
+        var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+        var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+        yawObject.rotation.y -= movementX * 0.002;
+        pitchObject.rotation.x -= movementY * 0.002;
+
+        pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+
+    };
+
+
+    document.addEventListener( 'mousemove', onMouseMove, false );
+
+    scene.add(yawObject);
+
+
+
+    document.addEventListener('keydown', function(event) {
+        if(event.keyCode == 87) {
+            yawObject.position.x += 5;
+        }
+        else if(event.keyCode == 83) {
+            yawObject.position.x -= 5;
+        }
+        else if(event.keyCode == 32) {
+            yawObject.position.y += 5;
+        }
+        else if(event.keyCode == 16) {
+            yawObject.position.y -= 5;
+        }
+        else if(event.keyCode == 65) {
+            yawObject.position.z -= 5;
+        }
+        else if(event.keyCode == 68) {
+            yawObject.position.z += 5;
+        }
+    });
+
+</script>
+
+</body>
+</html>
