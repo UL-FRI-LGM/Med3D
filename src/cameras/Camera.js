@@ -11,4 +11,4 @@ M3D.Camera = class extends M3D.Object3D {
 		this.projectionMatrix = new THREE.Matrix4();
 	}
 
-}
+};

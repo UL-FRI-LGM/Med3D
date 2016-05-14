@@ -34,6 +34,17 @@ M3D.Object3D = class {
 		this.matrixWorldNeedsUpdate = false;
 
 		this.visible = true;
+
+		// References to static functions
+		this.rotateOnAxis = rotateOnAxis;
+		this.rotateX = rotateX;
+		this.rotateY = rotateY;
+		this.rotateZ = rotateZ;
+
+		this.translateOnAxis = translateOnAxis;
+		this.translateX = translateX;
+		this.translateY = translateY;
+		this.translateZ = translateZ;
 	}
 
 	applyMatrix(matrix) {
@@ -93,124 +104,125 @@ M3D.Object3D = class {
 			this.children[i].traverse(callback);
 		}
 	}
-
-	// TODO - Ziga: functions: transformations
-		/**
-	 * Incrementally rotates the object via quaternion in the given axis for the rotation angle.
-	 * @param {THREE.Vector3} axis A normalized 3D vector in space
-	 * @param angle The angle in radians.
-	 */
-	rotateOnAxis: function () {
-		// Private quaternion
-		var q1 = new THREE.Quaternion();
-
-		return function (axis, angle) {
-			q1.setFromAxisAngle(axis, angle);
-			this.quaternion.multiply( q1 );
-
-			return this;
-		};
-	}(),
-
-	/**
-	 * Incrementally rotates the object in X axis for the given angle.
-	 * @param angle The angle in radians
-	 */
-	rotateX: function () {
-		// Private axis vector
-		var v1 = new THREE.Vector3(1, 0, 0);
-
-		return function (angle) {
-			return this.rotateOnAxis(v1, angle);
-		};
-	}(),
-
-	/**
-	 * Incrementally rotates the object in Y axis for the given angle.
-	 * @param angle The angle in radians
-	 */
-	rotateY: function () {
-		// Private axis vector
-		var v1 = new THREE.Vector3(0, 1, 0);
-
-		return function (angle) {
-			return this.rotateOnAxis(v1, angle);
-		};
-	}(),
-
-	/**
-	 * Incrementally rotates the object in Z axis for the given angle.
-	 * @param angle The angle in radians
-	 */
-	rotateZ: function () {
-		// Private axis vector
-		var v1 = new THREE.Vector3(0, 0, 1);
-
-		return function (angle) {
-			return this.rotateOnAxis(v1, angle);
-		};
-	}(),
+};
 
 
-    /**
-     * Translates an object by distance along an axis in object space.
-     * @param {THREE.Vector3} axis A normalized 3D vector in space
-     * @param distance The distance to translate.
-     */
-	translateOnAxis: function () {
+/**
+ * Incrementally rotates the object via quaternion in the given axis for the rotation angle.
+ * @param {THREE.Vector3} axis A normalized 3D vector in space
+ * @param angle The angle in radians.
+ */
+var rotateOnAxis = (function() {
+	// Private quaternion
+	var q1 = new THREE.Quaternion();
 
-		// translate object by distance along axis in object space
-		// axis is assumed to be normalized
+	return function (axis, angle) {
+		q1.setFromAxisAngle(axis, angle);
+		this.quaternion.multiply( q1 );
 
-		var v1 = new THREE.Vector3();
+		return this;
+	};
+})();
 
-		return function ( axis, distance ) {
+/**
+ * Incrementally rotates the object in X axis for the given angle.
+ * @param angle The angle in radians
+ */
+var rotateX = (function() {
+	// Private axis vector
+	var v1 = new THREE.Vector3(1, 0, 0);
 
-			v1.copy( axis ).applyQuaternion( this.quaternion );
+	return function (angle) {
+		return this.rotateOnAxis(v1, angle);
+	};
+})();
 
-			this.position.add( v1.multiplyScalar( distance ) );
 
-			return this;
-		};
-	}(),
+/**
+ * Incrementally rotates the object in Y axis for the given angle.
+ * @param angle The angle in radians
+ */
+var rotateY = (function() {
+	// Private axis vector
+	var v1 = new THREE.Vector3(0, 1, 0);
 
-    /**
-     * Translates an object by distance along axis X in object space.
-     * @param distance The distance to translate.
-     */
-	translateX: function () {
-        // Private axis vector
-		var v1 = new THREE.Vector3( 1, 0, 0 );
+	return function (angle) {
+		return this.rotateOnAxis(v1, angle);
+	};
+})();
 
-		return function ( distance ) {
-			return this.translateOnAxis( v1, distance );
-		};
-	}(),
+/**
+ * Incrementally rotates the object in Z axis for the given angle.
+ * @param angle The angle in radians
+ */
+var rotateZ = (function () {
+	// Private axis vector
+	var v1 = new THREE.Vector3(0, 0, 1);
 
-    /**
-     * Translates an object by distance along axis Y in object space.
-     * @param distance The distance to translate.
-     */
-	translateY: function () {
-        // Private axis vector
-		var v1 = new THREE.Vector3( 0, 1, 0 );
+	return function (angle) {
+		return this.rotateOnAxis(v1, angle);
+	};
+})();
 
-		return function ( distance ) {
-			return this.translateOnAxis( v1, distance );
-		};
-	}(),
 
-    /**
-     * Translates an object by distance along axis Z in object space.
-     * @param distance The distance to translate.
-     */
-	translateZ: function () {
-        // Private axis vector
-		var v1 = new THREE.Vector3( 0, 0, 1 );
+/**
+ * Translates an object by distance along an axis in object space.
+ * @param {THREE.Vector3} axis A normalized 3D vector in space
+ * @param distance The distance to translate.
+ */
+var translateOnAxis = (function () {
 
-		return function ( distance ) {
-			return this.translateOnAxis( v1, distance );
-		};
-	}()
+	// translate object by distance along axis in object space
+	// axis is assumed to be normalized
+
+	var v1 = new THREE.Vector3();
+
+	return function ( axis, distance ) {
+
+		v1.copy( axis ).applyQuaternion( this.quaternion );
+
+		this.position.add( v1.multiplyScalar( distance ) );
+
+		return this;
+	};
+})();
+
+/**
+ * Translates an object by distance along axis X in object space.
+ * @param distance The distance to translate.
+ */
+var translateX = (function () {
+	// Private axis vector
+	var v1 = new THREE.Vector3( 1, 0, 0 );
+
+	return function ( distance ) {
+		return this.translateOnAxis( v1, distance );
+	};
+})();
+
+/**
+ * Translates an object by distance along axis Y in object space.
+ * @param distance The distance to translate.
+ */
+var translateY = (function () {
+	// Private axis vector
+	var v1 = new THREE.Vector3( 0, 1, 0 );
+
+	return function ( distance ) {
+		return this.translateOnAxis( v1, distance );
+	};
+})();
+
+/**
+ * Translates an object by distance along axis Z in object space.
+ * @param distance The distance to translate.
+ */
+var translateZ = (function () {
+	// Private axis vector
+	var v1 = new THREE.Vector3( 0, 0, 1 );
+
+	return function ( distance ) {
+		return this.translateOnAxis( v1, distance );
+	};
+})();
 	
-}

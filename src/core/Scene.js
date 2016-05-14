@@ -2,17 +2,13 @@
  * Created by Primoz on 27. 03. 2016.
  */
 
+M3D.Scene = class extends M3D.Object3D {
 
-// TODO - Primoz: v ES6
-M3D.Scene = function () {
-    M3D.Object3D.call( this );
+    constructor() {
+        this.type = 'Scene';
 
-    this.type = 'Scene';
+        this.overrideMaterial = null;
 
-    this.overrideMaterial = null;
-
-    this.autoUpdate = true; // checked by the rendererw
+        this.autoUpdate = true; // checked by the renderer
+    }
 };
-
-M3D.Scene.prototype = Object.create( M3D.Object3D.prototype );
-M3D.Scene.prototype.constructor = M3D.Scene;

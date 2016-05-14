@@ -31,4 +31,4 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 		this.projectionMatrix.makePerspective(this.fov, this.aspect, this.near, this.far);
 	}
 
-}
+};

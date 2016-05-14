@@ -26,7 +26,7 @@ M3D.BufferAttribute = class {
 		return this.array.length / this.itemSize;
 	}
 
-}
+};
 
 M3D.Int8Attribute = function(array, itemSize) {
 	return new M3D.BufferAttribute(new Int8Array(array), itemSize);

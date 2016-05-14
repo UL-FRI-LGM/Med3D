@@ -25,8 +25,8 @@ M3D.Geometry = class {
 	 * Sets geometry indices.
 	 * @param indices Geometry indices
      */
-	setIndex(index) {
-		this.index = index;
+	setIndex(indices) {
+		this.indices = indices;
 	}
 
 	/**
