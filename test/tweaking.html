@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1600" height="900"></canvas>
+<script src="../src/Med3D.js"></script>
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/renderers/GLProgram.js"></script>
+<script src="../src/renderers/GLProgramManager.js"></script>
+<script>
+
+    var tmp = new M3D.ShaderLoader();
+
+    var canvas = document.getElementById("canvas");
+
+    var progManager = new M3D.GLProgramManager(canvas.getContext("webgl"));
+
+    tmp.addUrls("../src/shaders");
+
+    var onLoad = function(data) {
+        for (var i = 0; i < data.length; i++) {
+            var program = progManager.compileProgram(data[i]);
+            var test = "";
+            var test1 = progManager.fetchCompiledProgram("gl1_default");
+        }
+    };
+
+    var onProgress = function(event) {
+        var received = event;
+    };
+
+    var onError = function(event) {
+        var received = event;
+    };
+
+    //tmp.loadProgramSources("gl1_default", onLoad, onProgress, onError);
+    //tmp.loadProgramSources("gl2_default", onLoad, onProgress, onError);
+    //tmp.loadProgramSources("gl2_phong", onLoad, onProgress, onError);
+
+    tmp.loadMultipleProgramSources(["gl1_default", "gl2_default", "gl2_phong"], onLoad, onProgress, onError);
+
+</script>
+
+</body>
+</html>

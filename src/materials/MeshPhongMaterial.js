@@ -12,7 +12,7 @@ M3D.MeshPhongMaterial = function (parameters) {
 
     this.shininess = 30;
 
-    this.program = M3D.GL2_PROGRAM_PHONG;
+    this.program = "phong";
 };
 
 M3D.MeshPhongMaterial.prototype = Object.create( M3D.Material.prototype );

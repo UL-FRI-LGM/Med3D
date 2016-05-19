@@ -14,7 +14,7 @@ src/textures/Texture.js
 src/loaders/Cache.js
 src/loaders/LoadingManager.js
 src/loaders/XHRLoader.js
-src/loaders/OBJLoader.js
+src/loaders/ObjLoader.js
 src/loaders/ImageLoader.js
 src/loaders/ShaderLoader.js
 src/renderers/Renderer.js

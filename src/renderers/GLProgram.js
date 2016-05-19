@@ -2,50 +2,40 @@
  * Created by Ziga on 18.4.2016
  */
 
-M3D.Program = class {
+M3D.GLProgram = class {
 	
-	constructor(gl, sources) {
-		this.gl = gl;
-		this.uniforms = {};
-		this.attributes = {};
-		var shaders = [];
-		for (var shader of sources) {
-			shaders.push(M3D.createShader(
-				gl,
-				shader.source,
-				M3D.shaderTypeFromString(gl, shader.type)));
-		}
-		this.program = M3D.createProgram(gl, shaders);
-		this.getUniforms();
-		this.getAttributes();
+	constructor (gl) {
+		this._gl = gl;
+        this._program = this._gl.createProgram();
+
+		this._initialized = false;
+
+		this._attributeSetter = null;
+		this._uniformSetter = null;
 	}
 
-	getUniformLocation(name) {
-		return gl.getUniformLocation(this.program, name);
-	}
+    /**
+     * Attaches the compiled shader to the WebGL program
+     * @param {WebGLShader} shader Compiled WebGL shader
+     */
+    attachShader (shader) {
+        this._gl.attachShader(this._program, shader);
+    }
 
-	getUniforms() {
-		this.uniforms = {};
-		var n = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_UNIFORMS);
-		for (var i = 0; i < n; i++) {
-			var info = this.gl.getActiveUniform(this.program, i);
-			var location = this.gl.getUniformLocation(this.program, info.name);
-			console.log(location);
-			this.uniforms[info.name] = location;
-		}
-	}
+    // Getters
+    get glProgram () { return this._program; }
+	get initialized () { return this._initialized; }
+	get attributeSetter () { return this._attributeSetter; }
+	get uniformSetter () { return this._uniformSetter; }
 
-	getAttributes() {
-		this.attributes = {};
-		var n = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_ATTRIBUTES);
-		for (var i = 0; i < n; i++) {
-			var info = this.gl.getActiveAttrib(this.program, i);
-			this.attributes[info.name] = this.gl.getAttribLocation(this.program, info.name);
-		}
-	}
+    // Setters
+    set initialized (value) { this._initialized = value; }
+    set uniformSetter (uniformSetter) { this._uniformSetter = uniformSetter; }
+    set attributeSetter (attributeSetter) { this._attributeSetter = attributeSetter; }
 
-	use() {
-		this.gl.useProgram(this.program);
-	}
+    /**
+     * Tells GL to use this program
+     */
+	use() { this._gl.useProgram(this._program); }
 
-}
+};

@@ -14,7 +14,7 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 	 * @extends Camera
 	 */
 	constructor(fov, aspect, near, far) {
-		super();
+		super(M3D.Camera);
 
 		this.fov = fov || 1;
 		this.aspect = aspect || 1;

@@ -11,17 +11,21 @@ M3D.MeshRenderer = class {
         // Retrieve context from gl manager
         this._gl = this._glManager.context;
 
-        // Current program
-        this._loadingPrograms = false;
-        this._shaderLoader = new M3D.ShaderLoader();
-        this._programFetcher = new M3D.GLPrograms(this._gl);
-
         // Throw error if the gl context could not be retrieved
         if (!this._gl) {
             throw 'Something went wrong while initializing WebGL context.'
         }
 
+
+        // Current program
+        this._shaderLoader = new M3D.ShaderLoader();
+        this._glProgramManager = new M3D.GLProgramManager(this._gl);
+
+
         //region Current frame render arrays
+        this._requiredPrograms = new Set();
+        this._compiledPrograms = new Map();
+        this._loadingPrograms = new Set();
         this._opaqueObjects = [];
         this._transparentObjects = [];
         this._lights = [];
@@ -32,11 +36,6 @@ M3D.MeshRenderer = class {
             point: []
         };
         // endregion
-
-        //region Helper objects
-        this._properties = new M3D.GLProperties();
-        this._attributeManager = new M3D.GLAttributeManager(this._gl, this._properties);
-        //endregion
 
         //region Execution values
         this._autoClear = true;
@@ -59,11 +58,6 @@ M3D.MeshRenderer = class {
 
     render (scene, camera) {
 
-        // Check if all of the required programs are loaded
-        if (!this._loadPrograms(scene)) {
-            return;
-        }
-
         // Check if correct object instance was passed as camera
         if (camera instanceof M3D.Camera === false) {
             console.error(LOGTAG + "Given camera is not an instance of M3D.Camera");
@@ -84,9 +78,15 @@ M3D.MeshRenderer = class {
         this._opaqueObjects.length = 0;
         this._transparentObjects.length = 0;
         this._lights.length = 0;
+        this._requiredPrograms.clear();
+        this._compiledPrograms.clear();
 
         // Update objects attributes and setup lights
         this._projectObject(scene, camera);
+
+        if (!this._loadPrograms()) {
+            return;
+        }
 
         this._setupLights(this._lights, camera);
 
@@ -99,62 +99,70 @@ M3D.MeshRenderer = class {
         this._renderObjects(this._opaqueObjects, camera);
     }
 
-    _loadPrograms(scene) {
-        // Check if all of the required programs are loaded
-        if (scene.programsDirty) {
+    _loadPrograms() {
+        // Fetch compiled programs
+        var requiredPrograms = Array.from(this._requiredPrograms);
 
-            if (!this._loadingPrograms) {
-                this._loadingPrograms = true;
+        var scope = this;
+        var everythingLoaded = true;
+        var glVersion = this._glManager.glVersion;
 
-                // Store self reference for inner function
-                var self = this;
+        for (var i = 0; i < requiredPrograms.length; i++) {
+            const fullName = glVersion + "_" + requiredPrograms[i];
 
-                // Called after download finishes
-                var onShaderLoad = function (noErrors) {
-                    if (!noErrors) {
-                        throw "Errors occurred during the shader loading.";
-                    }
+            // Check if the program is already compiled
+            var compiledProgram = this._glProgramManager.fetchCompiledProgram(fullName);
 
-                    // Compile and link new programs
-                    for (var i = 0; i < scene.requiredPrograms.length; i++) {
-                        if (scene.requiredPrograms[i].program === undefined)
-                            self._glManager.setupProgram(scene.requiredPrograms[i]);
-                    }
+            if (compiledProgram === undefined ) {
+                everythingLoaded = false;
 
-                    // Mark loading finished and scene not dirty
-                    self._loadingPrograms = false;
-                    scene.setProgramsNotDirty();
+                // Called when the program template is loaded.. Initiates shader compilation
+                var onLoad = function (programTemplate) {
+                    scope._glProgramManager.compileProgram(programTemplate);
+                    scope._loadingPrograms.delete(fullName);
                 };
 
-                this._shaderLoader.loadProgramsSources(scene.requiredPrograms, onShaderLoad)
+                // Something went wrong while fetching the program templates
+                var onError = function (event) {
+                    console.error("Failed to load program " + fullName + ".")
+                    scope._loadingPrograms.delete(fullName);
+                };
+
+                if (!this._loadingPrograms.has(fullName)) {
+                    this._loadingPrograms.has(fullName);
+                    this._loadingPrograms.add(fullName);
+
+                    // Initiate loading
+                    this._shaderLoader.loadProgramSources(fullName, onLoad, undefined, onError);
+                }
             }
-            return false;
+            else {
+                this._compiledPrograms.set(requiredPrograms[i], compiledProgram);
+            }
         }
 
-        return true;
+        return everythingLoaded;
     }
 
     _renderObjects(objects, camera) {
 
         for (var i = 0; i < objects.length; i++) {
 
-            var program = objects[i].material.program.program;
-
-            this._gl.useProgram(program);
+            var program = this._compiledPrograms.get(objects[i].material.program);
+            program.use();
 
             this._setup_uniforms(program, objects[i], camera);
 
-            var positions = objects[i].geometry.attributes.position;
+            var vertices = objects[i].geometry.vertices;
+            this._setup_attributes(program, objects[i], vertices);
 
-            this._setup_attributes(program, objects[i], positions);
-
-            this._gl.drawArrays(this._gl.TRIANGLES, 0, positions.count);
+            this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count);
         }
 
     }
 
-    _setup_attributes (program, object, positions) {
-        var attributeSetter = program.attributesSetter;
+    _setup_attributes (program, object, vertices) {
+        var attributeSetter = program.attributeSetter;
 
         var noError = true;
 
@@ -164,12 +172,12 @@ M3D.MeshRenderer = class {
         for (var i = 0; i < attributes.length; i++) {
             switch (attributes[i]) {
                 case "VPos":
-                    var buffer = this._attributeManager.getAttributeBuffer(positions);
+                    var buffer = this._glManager.getBuffer(vertices);
                     attributeSetter["VPos"].set(buffer, 3);
                     break;
                 case "PNorm":
-                    var normal = object.geometry.attributes.normal;
-                    var buffer = this._attributeManager.getAttributeBuffer(normal);
+                    var normals = object.geometry.normals;
+                    var buffer = this._glManager.getBuffer(normals);
                     attributeSetter["PNorm"].set(buffer, 3);
                     break;
                 default:
@@ -211,7 +219,6 @@ M3D.MeshRenderer = class {
     }
 
     _projectObject(object, camera) {
-        //TODO:: Add frustum culling
 
         // If object is not visible do not bother projecting it
         if (object.visible === false)
@@ -223,9 +230,12 @@ M3D.MeshRenderer = class {
         }
         // If the object is mesh and it's visible. Update it's attributes.
         else if ( object instanceof  M3D.Mesh ) {
+            // Adds required program to set
+            this._requiredPrograms.add(object.material.program);
+
             if ( object.material.visible === true ) {
                 // Updates or derives attributes from the WebGL geometry
-                object.geometry = this._attributeManager.updateAttributes(object);
+                this._glManager.updateObjectData(object);
 
                 // Derive mv and normal matrices
                 object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
@@ -335,5 +345,5 @@ M3D.MeshRenderer = class {
      * Sets the url to shader server & directory from which the shaders source is loaded.
      * @param url Full url to the shader server directory
      */
-    set setShaderLoaderUrl (url) { this._shaderLoader.setFullUrl(url); }
+    addShaderLoaderUrls (...urls) { this._shaderLoader.addUrls(urls); }
 };

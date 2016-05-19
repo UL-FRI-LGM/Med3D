@@ -29,7 +29,7 @@ M3D.Material = function () {
 
     this._needsUpdate = true;
 
-    this.program = M3D.GL2_PROGRAM_BASIC;
+    this.program = "basic";
 };
 
 M3D.Material.prototype = {

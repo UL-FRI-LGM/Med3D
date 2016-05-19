@@ -3,17 +3,16 @@
  * Source: Three.js
  */
 
-/**
- * @param manager   LoadingManager that will act as the loader observer
- * @constructor     Creates new XHRLoader object. If the manager is undefined the default LoadingManager will be used.
- * @name XHRLoader
- */
-M3D.XHRLoader = function ( manager ) {
-    this.manager = ( manager !== undefined ) ? manager : new M3D.LoadingManager();
-};
+M3D.XHRLoader = class {
 
-M3D.XHRLoader.prototype = {
-    constructor: M3D.XHRLoader,
+    /**
+     * @param manager   LoadingManager that will act as the loader observer
+     * @constructor     Creates new XHRLoader object. If the manager is undefined the default LoadingManager will be used.
+     * @name XHRLoader
+     */
+    constructor (manager = new M3D.LoadingManager) {
+        this.manager = manager;
+    }
 
     /**
      * Starts downloading the item from url via the XMLHttpRequest. Additional notification functions may be passed (onLoad, onProgress, onError).
@@ -23,7 +22,7 @@ M3D.XHRLoader.prototype = {
      * @param onError       Function that will be called on loading error
      * @returns {XMLHttpRequest}
      */
-    load: function ( url, onLoad, onProgress, onError ) {
+    load (url, onLoad, onProgress, onError) {
         if ( this.path !== undefined ) url = this.path + url;
 
         // Store scope for nested functions
@@ -91,33 +90,33 @@ M3D.XHRLoader.prototype = {
         scope.manager.itemStart( url );
 
         return request;
-    },
+    }
 
     /**
      * This should be called to set the request path (url) in advance
      * @param path  Request path
      */
-    setPath: function ( path ) {
+    setPath (path) {
         this.path = path;
-    },
+    }
 
     /**
      * Defines the response type e.g. json, blob, text ...
      * @param responseType  Type of the response
      */
-    setResponseType: function ( responseType ) {
+    setResponseType (responseType) {
         this.responseType = responseType;
-    },
+    }
 
     /**
      * Is a Boolean that indicates weather or not Access-Control requests should be made using credentials
      * @param withCredentials   Should credentials be used
      */
-    setWithCredentials: function ( withCredentials ) {
+    setWithCredentials (withCredentials) {
         this.withCredentials = withCredentials;
-    },
+    }
 
-    extractUrlBase: function ( url ) {
+    extractUrlBase (url) {
         var parts = url.split( '/' );
 
         if ( parts.length === 1 ) return './';
@@ -126,5 +125,4 @@ M3D.XHRLoader.prototype = {
 
         return parts.join( '/' ) + '/';
     }
-
 };

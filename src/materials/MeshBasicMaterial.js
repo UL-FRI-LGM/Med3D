@@ -12,7 +12,7 @@ M3D.MeshBasicMaterial = function () {
 
     this.shading = M3D.SmoothShading;
 
-    this.program = M3D.GL2_PROGRAM_BASIC;
+    this.program = "basic";
 };
 
 M3D.MeshBasicMaterial.prototype = Object.create( M3D.Material.prototype );

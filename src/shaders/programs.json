@@ -1,0 +1,25 @@
+{
+    "gl1_default": {
+        "description": "Default WebGl 1 program used for testing.",
+        "shaders": {
+            "vertex": "gl1_basic.vert",
+            "fragment": "gl1_basic.frag"
+        }
+    },
+
+    "gl2_default": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "gl2_basic.vert",
+            "fragment": "gl2_basic.frag"
+        }
+    },
+
+    "gl2_phong": {
+        "description": "Phong shader program... ...",
+        "shaders": {
+            "vertex": "gl2_phong.vert",
+            "fragment": "gl2_phong.frag"
+        }
+    }
+}

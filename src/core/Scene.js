@@ -5,10 +5,7 @@
 M3D.Scene = class extends M3D.Object3D {
 
     constructor() {
-        this.type = 'Scene';
-
-        this.overrideMaterial = null;
-
+        super(M3D.Object3D);
         this.autoUpdate = true; // checked by the renderer
     }
 };

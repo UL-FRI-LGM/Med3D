@@ -83,11 +83,12 @@ M3D.Object3D = class {
 		if (object === this) {
 			return;
 		}
-		if (object.parent !== null) {	// TODO - Ziga: FIX!
+		if (object.parent !== null) {
 			object.parent.remove(object);
-			object.parent = this;
-			this.children.push(object);
 		}
+
+		object.parent = this;
+		this.children.push(object);
 	}
 
 	remove(object) {
@@ -113,12 +114,12 @@ M3D.Object3D = class {
  * @param angle The angle in radians.
  */
 var rotateOnAxis = (function() {
-	// Private quaternion
+	// Private static quaternion
 	var q1 = new THREE.Quaternion();
 
 	return function (axis, angle) {
 		q1.setFromAxisAngle(axis, angle);
-		this.quaternion.multiply( q1 );
+		this.quaternion.multiply(q1);
 
 		return this;
 	};
@@ -129,7 +130,7 @@ var rotateOnAxis = (function() {
  * @param angle The angle in radians
  */
 var rotateX = (function() {
-	// Private axis vector
+	// Private static axis vector
 	var v1 = new THREE.Vector3(1, 0, 0);
 
 	return function (angle) {
@@ -143,7 +144,7 @@ var rotateX = (function() {
  * @param angle The angle in radians
  */
 var rotateY = (function() {
-	// Private axis vector
+	// Private static axis vector
 	var v1 = new THREE.Vector3(0, 1, 0);
 
 	return function (angle) {
@@ -156,7 +157,7 @@ var rotateY = (function() {
  * @param angle The angle in radians
  */
 var rotateZ = (function () {
-	// Private axis vector
+	// Private static axis vector
 	var v1 = new THREE.Vector3(0, 0, 1);
 
 	return function (angle) {
@@ -177,11 +178,11 @@ var translateOnAxis = (function () {
 
 	var v1 = new THREE.Vector3();
 
-	return function ( axis, distance ) {
+	return function (axis, distance) {
 
-		v1.copy( axis ).applyQuaternion( this.quaternion );
+		v1.copy(axis).applyQuaternion(this.quaternion);
 
-		this.position.add( v1.multiplyScalar( distance ) );
+		this.position.add(v1.multiplyScalar(distance));
 
 		return this;
 	};
@@ -195,8 +196,8 @@ var translateX = (function () {
 	// Private axis vector
 	var v1 = new THREE.Vector3( 1, 0, 0 );
 
-	return function ( distance ) {
-		return this.translateOnAxis( v1, distance );
+	return function (distance) {
+		return this.translateOnAxis(v1, distance);
 	};
 })();
 
@@ -208,8 +209,8 @@ var translateY = (function () {
 	// Private axis vector
 	var v1 = new THREE.Vector3( 0, 1, 0 );
 
-	return function ( distance ) {
-		return this.translateOnAxis( v1, distance );
+	return function (distance) {
+		return this.translateOnAxis(v1, distance);
 	};
 })();
 
@@ -219,10 +220,10 @@ var translateY = (function () {
  */
 var translateZ = (function () {
 	// Private axis vector
-	var v1 = new THREE.Vector3( 0, 0, 1 );
+	var v1 = new THREE.Vector3(0, 0, 1);
 
-	return function ( distance ) {
-		return this.translateOnAxis( v1, distance );
+	return function (distance) {
+		return this.translateOnAxis(v1, distance);
 	};
 })();
 	

@@ -5,7 +5,7 @@
 M3D.Camera = class extends M3D.Object3D {
 
 	constructor() {
-		super();
+		super(M3D.Object3D);
 
 		this.matrixWorldInverse = new THREE.Matrix4();
 		this.projectionMatrix = new THREE.Matrix4();

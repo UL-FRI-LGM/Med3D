@@ -3,9 +3,8 @@
  */
 
 // Requested WebGL version
-M3D.WEBGL1 = ["webgl", "experimental-webgl"];
-M3D.WEBGL2 = ["webgl2", "experimental-webgl2"];
-
+M3D.WEBGL1 = "gl1";
+M3D.WEBGL2 = "gl2";
 
 M3D.GLManager = class {
 
@@ -14,14 +13,17 @@ M3D.GLManager = class {
      * @param {canvas} canvas HTML5 canvas from which GL context is retrieved
      * @param gl_version Specifies which version of GL context should be retrieved
      */
-    constructor (canvas, gl_version) {
+    constructor (canvas, glVersion) {
         // GL Context
         this._gl = null;
+        this._glVersion = glVersion;
+
+        var glKeys = (glVersion == M3D.WEBGL1) ? ["webgl", "experimental-webgl"] : ["webgl2", "experimental-webgl2"];
 
         // Try to fetch GL context
-        for (var i = 0; i < gl_version.length; i++) {
+        for (var i = 0; i < glKeys.length; i++) {
             try {
-                this._gl = canvas.getContext(gl_version[i]);
+                this._gl = canvas.getContext(glKeys[i]);
             } catch (e){
                 console.error(e);
             }
@@ -36,7 +38,7 @@ M3D.GLManager = class {
             throw 'ERROR: Failed to retrieve GL Context.'
         }
 
-        this._programs = new M3D.GLPrograms(this._gl);
+        this._attributeManager = new M3D.GLAttributeManager(this._gl);
 
         //region Clear values
         this.autoClear = true;
@@ -79,6 +81,37 @@ M3D.GLManager = class {
             throw "Given shaders have no source. Are you loading the shaders correctly?";
         }
     }
+
+    /**
+     * Updates object geometry attributes (creates GL buffers or updates them if they already exist)
+     * @param object
+     */
+    updateObjectData(object) {
+        // BufferedGeometry
+        var geometry = object.geometry;
+
+        // Add geometry indices if it specifies them
+        if (geometry.indices !== null) {
+            this._attributeManager.updateAttribute(geometry.indices, this._gl.ELEMENT_ARRAY_BUFFER);
+        }
+
+        if (geometry.vertices != null) {
+            this._attributeManager.updateAttribute(geometry.vertices, this._gl.ARRAY_BUFFER);
+        }
+
+        if (geometry.normals != null) {
+            this._attributeManager.updateAttribute(geometry.normals, this._gl.ARRAY_BUFFER);
+        }
+
+        if (geometry._vertColor != null) {
+            this._attributeManager.updateAttribute(geometry._vertColor, this._gl.ARRAY_BUFFER);
+        }
+    }
+
+    getBuffer (attribute) {
+        return this._attributeManager.getCachedBuffer(attribute);
+    }
+
 
     //region CANVAS CLEARING FUNCTIONS
     /**
@@ -142,6 +175,7 @@ M3D.GLManager = class {
      * GETTERS & SETTERS
      */
     get context () { return this._gl; }
+    get glVersion () { return this._glVersion; }
 
     get cache_programs () { return M3D._ProgramCaching; }
 
