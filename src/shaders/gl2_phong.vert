@@ -6,17 +6,20 @@ uniform mat4 PMat;  // Projection Matrix
 uniform mat4 NMat;  // Normal Matrix
 
 in vec3 VPos;       // Vertex position
-in vec3 PNorm;      // Plane normal
+in vec3 VNorm;      // Vertex normal
 
-// Output transformed vertex and plane normal
-out vec3 fragPNorm;
+// Output transformed vertex postion and normal
 out vec3 fragVPos;
+out vec3 fragVNorm;
 
 void main() {
-    gl_Position = PMat * MVMat * vec4(VPos, 1.0);
-
-    // Transform vertex and plane normal
+    // Model view position
     vec4 VPos4 = MVMat * vec4(VPos, 1.0);
+
+    // Projected position
+    gl_Position = PMat * VPos4;
+
     fragVPos = vec3(VPos4) / VPos4.w;
-    fragPNorm = vec3(NMat * vec4(PNorm, 0.0));
+    // Transform normals
+    fragVNorm = vec3(NMat * vec4(VNorm, 0.0));
 }

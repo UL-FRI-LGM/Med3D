@@ -7,10 +7,8 @@ M3D.MeshPhongMaterial = function (parameters) {
 
     // Diffuse
     this.color = new THREE.Color( 0xffffff );
-
     this.specular = new THREE.Color( 0x111111 );
-
-    this.shininess = 30;
+    this.shininess = 32;
 
     this.program = "phong";
 };

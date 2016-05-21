@@ -1,5 +1,5 @@
 {
-    "gl1_default": {
+    "gl1_basic": {
         "description": "Default WebGl 1 program used for testing.",
         "shaders": {
             "vertex": "gl1_basic.vert",
@@ -7,7 +7,7 @@
         }
     },
 
-    "gl2_default": {
+    "gl2_basic": {
         "description": "Default gl2 program used for testing.",
         "shaders": {
             "vertex": "gl2_basic.vert",

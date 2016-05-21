@@ -190,7 +190,12 @@ M3D.GLProgramManager = class {
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform4i(location, value[0], value[1], value[2], value[3]);
                     };
-                    break
+                    break;
+                case self._gl.BOOL:
+                    uniformSetter[info.name]['set'] = function (value) {
+                        self._gl.uniform1f(location, value);
+                    };
+                    break;
             }
         }
 

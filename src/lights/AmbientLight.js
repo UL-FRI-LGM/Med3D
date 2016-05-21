@@ -5,6 +5,6 @@
 M3D.AmbientLight = class extends M3D.Light {
 
     constructor (color, intensity) {
-
+        super(color, intensity);
     }
 };

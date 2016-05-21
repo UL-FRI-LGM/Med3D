@@ -30,7 +30,6 @@ M3D.MeshRenderer = class {
         this._transparentObjects = [];
         this._lights = [];
         this._lightsCombined = {
-            hash: '',
             ambient: [0, 0, 0],
             directional: [],
             point: []
@@ -44,15 +43,13 @@ M3D.MeshRenderer = class {
         // Initialize default GL state
         this._gl.viewport(0, 0, canvas.width, canvas.height);
         // Enable depth testing by default
-        this._gl.enable(this._gl.DEPTH_TEST);
         this._gl.depthFunc(this._gl.LEQUAL);
+        this._gl.enable(this._gl.DEPTH_TEST);
 
         // Enable back-face culling by default
-        this._gl.enable(this._gl.CULL_FACE);
         this._gl.frontFace(this._gl.CCW);
-        //this._gl.cullFace(this._gl.BACK);
-
-        this._gl.disable(this._gl.BLEND);
+        this._gl.cullFace(this._gl.BACK);
+        this._gl.enable(this._gl.CULL_FACE);
     }
 
 
@@ -156,7 +153,7 @@ M3D.MeshRenderer = class {
             var vertices = objects[i].geometry.vertices;
             this._setup_attributes(program, objects[i], vertices);
 
-            this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count);
+            this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count());
         }
 
     }
@@ -175,10 +172,10 @@ M3D.MeshRenderer = class {
                     var buffer = this._glManager.getBuffer(vertices);
                     attributeSetter["VPos"].set(buffer, 3);
                     break;
-                case "PNorm":
+                case "VNorm":
                     var normals = object.geometry.normals;
                     var buffer = this._glManager.getBuffer(normals);
-                    attributeSetter["PNorm"].set(buffer, 3);
+                    attributeSetter["VNorm"].set(buffer, 3);
                     break;
                 default:
                     console.error("Unknown Attribute!");
@@ -191,31 +188,83 @@ M3D.MeshRenderer = class {
     _setup_uniforms (program, object, camera) {
         var uniformSetter = program.uniformSetter;
 
-        var noError = true;
-
-        var uniforms = Object.getOwnPropertyNames(uniformSetter);
-
-        // Set all of the properties
-        for (var i = 0; i < uniforms.length; i++) {
-            switch (uniforms[i]) {
-                case "PMat":
-                    uniformSetter["PMat"].set(camera.projectionMatrix.elements);
-                    break;
-                case "MVMat":
-                    uniformSetter["MVMat"].set(object.modelViewMatrix.elements);
-                    break;
-                case "NMat":
-                    var mat = new THREE.Matrix4();
-                    uniformSetter["NMat"].set(mat.elements);
-                    break;
-                default:
-                    console.error("Unknown uniform!");
-                    noError = false;
-                    break;
-            }
+        if (uniformSetter["PMat"] !== undefined) {
+            uniformSetter["PMat"].set(camera.projectionMatrix.elements);
         }
 
-        return noError;
+        if (uniformSetter["MVMat"] !== undefined) {
+            uniformSetter["MVMat"].set(object.modelViewMatrix.elements);
+        }
+
+        if (uniformSetter["NMat"] !== undefined) {
+            var mat = new THREE.Matrix4();
+            uniformSetter["NMat"].set(mat.elements);
+        }
+
+        this._setup_light_uniforms(uniformSetter);
+
+        this._setup_material_uniforms(object.material, uniformSetter);
+    }
+
+    _setup_material_uniforms(material, uniformSetter) {
+        const prefix = "material";
+        if (material instanceof M3D.MeshPhongMaterial) {
+            const diffuse = prefix + ".diffuse";
+            if (uniformSetter[diffuse] !== undefined) {
+                uniformSetter[diffuse].set(material.color.toArray());
+            }
+
+            const specular = prefix + ".specular";
+            if (uniformSetter[specular] !== undefined) {
+                uniformSetter[specular].set(material.specular.toArray());
+            }
+
+            const shininess = prefix + ".shininess";
+            if (uniformSetter[shininess] !== undefined) {
+                uniformSetter[shininess].set(material.shininess);
+            }
+
+        }
+    }
+
+    _setup_light_uniforms(uniformSetter) {
+
+        if (uniformSetter["ambient"] !== undefined) {
+            uniformSetter["ambient"].set(this._lightsCombined.ambient);
+        }
+
+        const MAX_LIGHTS = 8;
+        var index = 0, prefix, light;
+
+        // DIRECTIONAL LIGHTS
+        for (var i = 0; i < this._lightsCombined.directional.length; i++) {
+            prefix = "lights[" + index + "]";
+            light = this._lightsCombined.directional[i];
+
+            uniformSetter[prefix + ".position"].set(light.direction.toArray());
+            uniformSetter[prefix + ".color"].set(light.color.toArray());
+            uniformSetter[prefix + ".directional"].set(1);
+
+            index ++;
+        }
+
+        // POINT LIGHTS
+        for (var i = 0; i < this._lightsCombined.point.length; i++) {
+            prefix = "lights[" + index + "]";
+            light = this._lightsCombined.point[i];
+
+            uniformSetter[prefix + ".position"].set(light.position.toArray());
+            uniformSetter[prefix + ".color"].set(light.color.toArray());
+            uniformSetter[prefix + ".directional"].set(0);
+
+            index ++;
+        }
+
+        // REMAINING
+        for (var i = index; i < MAX_LIGHTS; i++) {
+            prefix = "lights[" + i + "]";
+            uniformSetter[prefix + ".color"].set([0, 0, 0]);
+        }
     }
 
     _projectObject(object, camera) {
@@ -272,6 +321,11 @@ M3D.MeshRenderer = class {
      */
     _setupLights(lights, camera) {
 
+        // Reset combinedLights
+        this._lightsCombined.ambient = [0, 0, 0];
+        this._lightsCombined.directional.length = 0;
+        this._lightsCombined.point.length = 0;
+
         // Light properties
         var light,
             color,
@@ -281,18 +335,12 @@ M3D.MeshRenderer = class {
         // Light colors
         var r = 0, g = 0, b = 0;
 
-        // Number of directional lights in the scene
-        var directionalLength = 0;
-        // Number of point lights in the scene
-        var pointLength = 0;
-
         for (var i = 0; i < lights.length; i++) {
 
             light = lights[i];
 
             color = light.color;
             intensity = light.intensity;
-            distance = light.distance;
 
             if (light instanceof M3D.AmbientLight) {
                 r += color.r * intensity;
@@ -301,35 +349,34 @@ M3D.MeshRenderer = class {
             }
             else if (light instanceof M3D.DirectionalLight) {
 
-                var uniforms = lightsCache.get( light );
+                var lightProperties = { color: new THREE.Color(),
+                                        direction: new THREE.Vector3()};
 
-                uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
-                uniforms.direction.setFromMatrixPosition( light.matrixWorld );
-                uniforms.direction.transformDirection(camera.matrixWorldInverse);
-                _lights.directional[ directionalLength ++ ] = uniforms;
+                lightProperties.color.copy( light.color ).multiplyScalar( light.intensity );
+                lightProperties.direction.setFromMatrixPosition( light.matrixWorld );
+                lightProperties.direction.transformDirection(camera.matrixWorldInverse);
+
+                this._lightsCombined.directional.push(lightProperties);
             }
             else if (light instanceof M3D.PointLight) {
 
-                var uniforms = lightsCache.get(light);
+                var lightProperties = { color: new THREE.Color(),
+                    position: new THREE.Vector3()};
 
                 // Move the light to camera space
-                uniforms.position.setFromMatrixPosition(light.matrixWorld);
-                uniforms.position.applyMatrix4(camera.matrixWorldInverse);
+                lightProperties.position.setFromMatrixPosition(light.matrixWorld);
+                lightProperties.position.applyMatrix4(camera.matrixWorldInverse);
 
                 // Apply light intensity to color
-                uniforms.color.copy(light.color).multiplyScalar(light.intensity);
-                uniforms.distance = light.distance;
-                uniforms.decay = ( light.distance === 0 ) ? 0.0 : light.decay;
+                lightProperties.color.copy(light.color).multiplyScalar(light.intensity);
 
-                _lights.point[pointLength++] = uniforms;
+                this._lightsCombined.point.push(lightProperties);
             }
         }
 
         this._lightsCombined.ambient[0] = r;
         this._lightsCombined.ambient[1] = g;
         this._lightsCombined.ambient[2] = b;
-
-        this._lightsCombined.point.length = pointLength;
     }
 
 

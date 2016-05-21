@@ -1,31 +1,86 @@
 #version 300 es
 precision mediump float;
 
+#define MAX_LIGHTS 8
+
+struct Light {
+    bool directional;
+    vec3 position;
+    vec3 color;
+};
+
+struct Material {
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+
+uniform Light lights[MAX_LIGHTS];
+uniform vec3 ambient;
+uniform Material material;
+
 // From vertex shader
-in vec3 fragPNorm;
+in vec3 fragVNorm;
 in vec3 fragVPos;
 
 out vec4 color;
 
-// Start with basic predefined light
-const vec3 ambient = vec3(0.2, 0.0, 0.0);
-const vec3 lightPos = vec3(0.0, 0.0, 0.0);
-const vec3 diffuseColor = vec3(0.7, 0.0, 0.0);
-const vec3 specColor = vec3(1.0, 1.0, 1.0);
+// Calculates the point light color contribution
+vec3 calcPointLight (Light light, vec3 normal, vec3 viewDir) {
 
-void main() {
+    vec3 lightDir = normalize(light.position - fragVPos);
 
-    vec3 normal = normalize(fragPNorm);
-    vec3 lightDir = normalize(lightPos - fragVPos);
-
-    float lambertian = max(dot(lightDir, normal), 0.0);
+    // Difuse
+    float diffuseF = max(dot(normal, lightDir), 0.0f);
 
     // Specular
     vec3 reflectDir = reflect(-lightDir, normal);
+    float specularF = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
+
+    // Attenuation
+    float distance = length(light.position - fragVPos);
+    float attenuation = 1.0f / (1.0f + 0.1f * distance + 0.1f * (distance * distance));
+
+    // Combine results
+    vec3 diffuse  = light.color * diffuseF  * material.diffuse  * attenuation;
+    vec3 specular = light.color * specularF * material.specular * attenuation;
+
+    return (diffuse + specular);
+}
+
+vec3 calcDirectLight (Light light, vec3 normal, vec3 viewDir) {
+
+    vec3 lightDir = normalize(light.position);
+
+    // Difuse
+    float diffuseF = max(dot(normal, lightDir), 0.0f);
+
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float specularF = pow(max(dot(viewDir, reflectDir), 0.0f), material.shininess);
+
+    // Combine results
+    vec3 diffuse  = light.color  * diffuseF * material.diffuse;
+    vec3 specular = light.color * specularF * material.specular;
+
+    return (diffuse + specular);
+}
+
+void main() {
+    vec3 normal = normalize(fragVNorm);
     vec3 viewDir = normalize(-fragVPos);
 
-    float lightAngle = max(dot(reflectDir, viewDir), 0.0);
-    float specular = pow(lightAngle, 16.0);
+    // Calculate combined light contribution
+    vec3 combined = ambient;
 
-    color = vec4(lambertian * diffuseColor + specular * specColor + ambient, 1.0);
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        if (!lights[i].directional) {
+            combined += calcPointLight(lights[i], normal, viewDir);
+        }
+        else {
+            combined += calcDirectLight(lights[i], normal, viewDir);
+        }
+    }
+
+    color = vec4(combined, 1.0);
 }

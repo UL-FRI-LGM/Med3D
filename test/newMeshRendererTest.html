@@ -5,7 +5,7 @@
     <title>Title</title>
 </head>
 <body>
-<canvas id="canvas" width="1600" height="900"></canvas>
+<canvas id="canvas" width="1920" height="1080"></canvas>
 
 <script src="../lib/three-math.min.js"></script>
 <script src="../src/Med3D.js"></script>
@@ -52,32 +52,88 @@
 <script src="../src/renderers/MeshRenderer.js"></script>
 
 <script>
+    var mouseX = 0, mouseY = 0;
+
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+
     var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    var aLight = new M3D.AmbientLight(new THREE.Color("#110000"), 1);
+    var dLight = new M3D.DirectionalLight(new THREE.Color("#00FF00"), 1);
+    var dLight2 = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
+    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
+    pLight.position.z = 1;
+    dLight2.position = new THREE.Vector3(1, 0, 0);
+
     var scene = new M3D.Scene();
+    scene.add(aLight);
+    scene.add(dLight);
+    scene.add(dLight2);
+    scene.add(pLight);
+
     var camera = new M3D.PerspectiveCamera();
-    camera.position.z = -10;
+
+    camera.position.z = 600;
 
     renderer.addShaderLoaderUrls("../src/shaders");
 
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
 
+    var test = undefined;
+
     // Load objects
-    loader.load("models/Rock1.obj", function ( obj ) {
+    loader.load("models/untitled2.obj", function ( obj ) {
 
         for (var i = 0; i < obj.length; i++) {
             obj[i].position.z = 0;
             obj[i].material = new M3D.MeshPhongMaterial();
+            obj[i].material.specular = new THREE.Color("#999999");
+            //obj[i].geometry.computeVertexNormals();
+            test = obj[0].position;
             scene.add(obj[i]);
         }
 
         animate();
     });
 
+    var forward = true;
     function animate() {
         requestAnimationFrame(animate);
+
+        camera.lookAt(test, new THREE.Vector3(0, 1, 0))
+
         renderer.render(scene, camera);
     }
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+
+
+    function onDocumentMouseMove( event ) {
+        mouseX = ( event.clientX - windowHalfX ) / 2;
+        mouseY = ( event.clientY - windowHalfY ) / 2;
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if(event.keyCode == 87) {
+            camera.position.x += 5;
+        }
+        else if(event.keyCode == 83) {
+            camera.position.x -= 5;
+        }
+        else if(event.keyCode == 32) {
+            camera.position.y += 5;
+        }
+        else if(event.keyCode == 16) {
+            camera.position.y -= 5;
+        }
+        else if(event.keyCode == 65) {
+            camera.position.z -= 5;
+        }
+        else if(event.keyCode == 68) {
+            camera.position.z += 5;
+        }
+    });
 
 </script>
 

@@ -19,11 +19,11 @@ M3D.Object3D = class {
 		this.scale = new THREE.Vector3(1, 1, 1);
 
 		function onRotationChange() {
-			self.quaternion.setFromEuler(rotation, false);
+			self.quaternion.setFromEuler(self.rotation, false);
 		}
 
 		function onQuaternionChange() {
-			self.rotation.setFromQuaternion(quaternion, undefined, false);
+			self.rotation.setFromQuaternion(self.quaternion, undefined, false);
 		}
 
 		this.rotation.onChange(onRotationChange);
@@ -32,6 +32,7 @@ M3D.Object3D = class {
 		this.matrix = new THREE.Matrix4();
 		this.matrixWorld = new THREE.Matrix4();
 		this.matrixWorldNeedsUpdate = false;
+		this._matrixAutoUpdate = true;
 
 		this.visible = true;
 
@@ -58,7 +59,9 @@ M3D.Object3D = class {
 	}
 
 	// TODO - Ziga: FIX force :)
-	updateMatrixWorld(force) {
+	updateMatrixWorld() {
+		if ( this._matrixAutoUpdate === true ) this.updateMatrix();
+
 		if (this.matrixWorldNeedsUpdate === true) {
 			if (this.parent === null) {
 				this.matrixWorld.copy(this.matrix);
@@ -66,16 +69,17 @@ M3D.Object3D = class {
 				this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
 			}
 			this.matrixWorldNeedsUpdate = false;
-			force = true;
 		}
+
+
 		for (var i = 0; i < this.children.length; i++) {
-			this.children[i].updateMatrixWorld(force);
+			this.children[i].updateMatrixWorld();
 		}
 	}
 
 	lookAt(vector, up) {
 		var m = new THREE.Matrix4();
-		m.lookAt(vector, this.position, up);
+		m.lookAt(this.position, vector, up);
 		this.quaternion.setFromRotationMatrix(m);
 	}
 
