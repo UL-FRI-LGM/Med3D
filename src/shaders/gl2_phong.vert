@@ -3,7 +3,7 @@ precision mediump float;
 
 uniform mat4 MVMat; // Model View Matrix
 uniform mat4 PMat;  // Projection Matrix
-uniform mat4 NMat;  // Normal Matrix
+uniform mat3 NMat;  // Normal Matrix
 
 in vec3 VPos;       // Vertex position
 in vec3 VNorm;      // Vertex normal
@@ -21,5 +21,5 @@ void main() {
 
     fragVPos = vec3(VPos4) / VPos4.w;
     // Transform normals
-    fragVNorm = vec3(NMat * vec4(VNorm, 0.0));
+    fragVNorm = vec3(NMat * VNorm);
 }

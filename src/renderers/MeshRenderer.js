@@ -48,8 +48,6 @@ M3D.MeshRenderer = class {
 
         // Enable back-face culling by default
         this._gl.frontFace(this._gl.CCW);
-        this._gl.cullFace(this._gl.BACK);
-        this._gl.enable(this._gl.CULL_FACE);
     }
 
 
@@ -197,8 +195,7 @@ M3D.MeshRenderer = class {
         }
 
         if (uniformSetter["NMat"] !== undefined) {
-            var mat = new THREE.Matrix4();
-            uniformSetter["NMat"].set(mat.elements);
+            uniformSetter["NMat"].set(object.normalMatrix.elements);
         }
 
         this._setup_light_uniforms(uniformSetter);

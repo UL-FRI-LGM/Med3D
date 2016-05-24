@@ -73,7 +73,9 @@
 
     var camera = new M3D.PerspectiveCamera();
 
-    camera.position.z = 600;
+    camera.position.z = 200;
+    camera.position.x = 40;
+    camera.position.y = 40;
 
     renderer.addShaderLoaderUrls("../src/shaders");
 
@@ -101,37 +103,25 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        camera.lookAt(test, new THREE.Vector3(0, 1, 0))
+        camera.lookAt(test, new THREE.Vector3(0, 1, 0));
+        pLight.position = camera.position;
 
         renderer.render(scene, camera);
     }
-    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 
 
-
-    function onDocumentMouseMove( event ) {
-        mouseX = ( event.clientX - windowHalfX ) / 2;
-        mouseY = ( event.clientY - windowHalfY ) / 2;
-    }
-
+    var rotSpeed = .02;
     document.addEventListener('keydown', function(event) {
-        if(event.keyCode == 87) {
-            camera.position.x += 5;
-        }
-        else if(event.keyCode == 83) {
-            camera.position.x -= 5;
-        }
-        else if(event.keyCode == 32) {
-            camera.position.y += 5;
-        }
-        else if(event.keyCode == 16) {
-            camera.position.y -= 5;
-        }
-        else if(event.keyCode == 65) {
-            camera.position.z -= 5;
-        }
-        else if(event.keyCode == 68) {
-            camera.position.z += 5;
+        var x = camera.position.x,
+                y = camera.position.y,
+                z = camera.position.z;
+
+        if (event.keyCode === 65){
+            camera.position.x = x * Math.cos(rotSpeed) + z * Math.sin(rotSpeed);
+            camera.position.z = z * Math.cos(rotSpeed) - x * Math.sin(rotSpeed);
+        } else if (event.keyCode === 68){
+            camera.position.x = x * Math.cos(rotSpeed) - z * Math.sin(rotSpeed);
+            camera.position.z = z * Math.cos(rotSpeed) + x * Math.sin(rotSpeed);
         }
     });
 
