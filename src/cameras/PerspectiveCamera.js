@@ -18,7 +18,7 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 
 		this.fov = fov || 1;
 		this.aspect = aspect || 1;
-		this.near = near || 10;
+		this.near = near || 1;
 		this.far = far || 2000;
 		this.updateProjectionMatrix();
 	}
