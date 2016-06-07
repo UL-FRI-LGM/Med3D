@@ -32,7 +32,7 @@ M3D.Geometry = class {
         }
 
         // Create new buffer geometry for the wireframe
-        this._wireframeIndices = new M3D.BufferAttribute(new Uint16Array(indices), 1);
+        this._wireframeIndices = new M3D.BufferAttribute(new Uint32Array(indices), 1);
     }
 
     _normalizeNormals() {

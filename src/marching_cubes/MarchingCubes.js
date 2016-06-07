@@ -9,10 +9,7 @@ M3D.MarchingCubes = class {
         this._isRunning = false;
     }
 
-    extractMesh (dimensions, p, v, nThreads, callback) {
-        var positions = new Float32Array(p);
-        var values = new Float32Array(v);
-
+    extractMesh (dimensions, positions, values, nThreads, callback) {
         this._jobQueue.push({dimensions, positions, values, nThreads, callback});
 
         if (!this._isRunning) {
