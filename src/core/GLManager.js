@@ -98,6 +98,14 @@ M3D.GLManager = class {
         if (geometry.vertices != null) {
             this._attributeManager.updateAttribute(geometry.vertices, this._gl.ARRAY_BUFFER);
         }
+        
+        if (geometry.drawWireframe) {
+            if (geometry.wireframeIndices === null) {
+                geometry.buildWireframeBuffer();
+            }
+            
+            this._attributeManager.updateAttribute(geometry.wireframeIndices, this._gl.ELEMENT_ARRAY_BUFFER);
+        }
 
         if (geometry.normals != null) {
             this._attributeManager.updateAttribute(geometry.normals, this._gl.ARRAY_BUFFER);

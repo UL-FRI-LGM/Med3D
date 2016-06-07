@@ -14,14 +14,17 @@ M3D.Mesh = class extends M3D.Object3D {
 		this._normalMatrix = new THREE.Matrix3();
 
 		// Each mesh defines geometry and its material
-		this._geometry = geometry !== undefined ? geometry : new M3D.BufferGeometry();
+		this._geometry = geometry !== undefined ? geometry : new M3D.Geometry();
 		this._material = material !== undefined ? material : new M3D.MeshBasicMaterial( { color: Math.random() * 0xffffff } );
 	}
+	
+	
 
 	set modelViewMatrix(mvMat) { this._modelViewMatrix = mvMat; }
 	set normalMatrix(normMat) { this._normalMatrix = normMat; }
     set material(mat) { this._material = mat; }
     set geometry(geom) { this._geometry = geom; }
+    
 
 	get modelViewMatrix() { return this._modelViewMatrix; }
 	get normalMatrix() { return this._normalMatrix; }

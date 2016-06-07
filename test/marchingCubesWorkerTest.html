@@ -55,6 +55,7 @@
 <script src="../src/marching_cubes/MarchingCubesWorker.js"></script>
 <script src="../src/marching_cubes/MarchingCubes.js"></script>
 
+
 <script>
     var mouseX = 0, mouseY = 0;
 
@@ -93,52 +94,76 @@
 
     init();
     function init() {
-        var MC = new M3D.MarchingCubes();
+        fetchData({x: 200, y: 150, z: 130}, function(input) {
+            var MC = new M3D.MarchingCubes();
 
+            var start = new Date().getTime();
+
+            MC.extractMesh(input.size, input.positions, input.values, 4, function(data) {
+
+                var end = new Date().getTime();
+
+                console.log("Marching cubes execution time: " + (end - start)/1000);
+
+                var bufferGeometry = new M3D.Geometry();
+                bufferGeometry.vertices = new M3D.BufferAttribute(new Float32Array(data), 3);
+                bufferGeometry.computeVertexNormals();
+                bufferGeometry.drawWireframe = false;
+
+                mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
+                mesh.rotateX(40);
+                mesh.position.z = 0;
+                mesh.material = new M3D.MeshPhongMaterial();
+                mesh.material.specular = new THREE.Color("#999999");
+
+                scene.add(mesh);
+
+
+                animate();
+            });
+        });
+
+        /*
         var positions = [];
         var values = [];
 
         // number of cubes along a side
-        var size = 60;
+        var size = {x: 100, y: 50, z: 100};
         var axisMin = -10;
         var axisMax = 10;
         var axisRange = axisMax - axisMin;
 
         // Generate a list of 3D positions and values
-        for (var k = 0; k < size; k++) {
-            for (var j = 0; j < size; j++) {
-                for (var i = 0; i < size; i++) {
+        for (var k = 0; k < size.z; k++) {
+            for (var j = 0; j < size.y; j++) {
+                for (var i = 0; i < size.x; i++) {
                     // actual values
-                    var x = axisMin + axisRange * i / (size - 1);
-                    var y = axisMin + axisRange * j / (size - 1);
-                    var z = axisMin + axisRange * k / (size - 1);
-                    positions.push([x, y, z]);
+                    var x = axisMin + axisRange * i / (size.x - 1);
+                    var y = axisMin + axisRange * j / (size.y - 1);
+                    var z = axisMin + axisRange * k / (size.z - 1);
+                    positions.push(x, y, z);
 
-                    var value = (j > 0 && i > 0 && j < 30 && i < 59 && k > 0 && k < 10) ? -1 : 0;
+                    //var value = (k === 10) ? -1 : 0;
+                    //var value = (j > 5 && j < 30 && i > 5 && i < 20 && k > 5 && k < 10) ? -1 : 0;
                     //var value = x * x * x + y * y * z;
-                    //var value = Math.sin(5 * x) * Math.cos(5* y) / 5;
-                    //var value = x * x + y * y - z * z - 25;
+                    //var value = Math.sin(5 * x) * Math.cos(5* y) - Math.tan(10 * z);
+                    var value = x * x + y * y - z * z - 25;
                     values.push(value);
                 }
             }
         }
+        */
 
-        MC.extractMesh(size, positions, values, function(data) {
-            var bufferGeometry = new M3D.Geometry();
-            bufferGeometry.vertices = new M3D.BufferAttribute(new Float32Array(data), 3);
-            bufferGeometry.computeVertexNormals();
+    }
 
-            mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
-            mesh.rotateX(40);
-            mesh.position.z = 0;
-            mesh.material = new M3D.MeshPhongMaterial();
-            mesh.material.specular = new THREE.Color("#999999");
+    function fetchData(dimensions, callback) {
+        var worker = new Worker("MarchingCubesDataGenerator.js");
 
-            scene.add(mesh);
+        worker.onmessage = function (result) {
+            callback(result.data);
+        };
 
-
-            animate();
-        });
+        worker.postMessage([dimensions]);
     }
 
 
@@ -155,8 +180,8 @@
     var rotSpeed = .02;
     document.addEventListener('keydown', function(event) {
         var x = camera.position.x,
-                y = camera.position.y,
-                z = camera.position.z;
+            y = camera.position.y,
+            z = camera.position.z;
 
         if (event.keyCode === 65){
             mesh.rotateX(3.14159 / 32);
@@ -166,8 +191,10 @@
             mesh.rotateY(3.14159 / 32);
             //camera.position.x = x * Math.cos(rotSpeed) - z * Math.sin(rotSpeed);
             //camera.position.z = z * Math.cos(rotSpeed) + x * Math.sin(rotSpeed);
-        } else if (event.keyCode == 87) {
+        } else if (event.keyCode === 87) {
             mesh.rotateY(3.14159 / 32)
+        } else if (event.keyCode === 49) {
+            mesh.geometry.drawWireframe = !mesh.geometry.drawWireframe;
         }
     });
 

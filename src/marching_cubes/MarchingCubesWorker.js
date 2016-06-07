@@ -315,29 +315,47 @@ lerp = function(vec1, vec2, alpha) {
 
 
 onmessage = function(msg) {
+
+    var start = new Date();
+    console.log("Start time: " + start.toString());
+
     // Retrieve data from the message
     var size = msg.data[0];
     var positions = msg.data[1];
     var values = msg.data[2];
 
-    var size2 = size * size;
-
     // Actual position along edge weighted according to function values.
     var vlist = new Array(12);
     var vertices = [];
 
-    for (var z = 0; z < size - 1; z++) {
-        for (var y = 0; y < size - 1; y++) {
-            for (var x = 0; x < size - 1; x++) {
+    for (var z = 0; z < size.z - 1; z++) {
+        for (var y = 0; y < size.y - 1; y++) {
+            for (var x = 0; x < size.x - 1; x++) {
+
                 // Indices pointing to cube vertices
-                var p = x + size * y + size2 * z,
+                //              pyz  ___________________  pxyz
+                //                  /|                 /|
+                //                 / |                / |
+                //                /  |               /  |
+                //          pz   /___|______________/pxz|
+                //              |    |              |   |
+                //              |    |              |   |
+                //              | py |______________|___| pxy
+                //              |   /               |   /
+                //              |  /                |  /
+                //              | /                 | /
+                //              |/__________________|/
+                //             p                     px
+
+                var p = x + size.x * y + size.x * size.y * z,
                     px = p + 1,
-                    py = p + size,
+                    py = p + size.x,
                     pxy = py + 1,
-                    pz = p + size2,
-                    pxz = px + size2,
-                    pyz = py + size2,
-                    pxyz = pxy + size2;
+                    pz = p + size.x * size.y,
+                    pxz = px + size.x * size.y,
+                    pyz = py + size.x * size.y,
+                    pxyz = pxy + size.x * size.y;
+
 
                 // Voxel intensities
                 var value0 = values[p],
@@ -368,60 +386,59 @@ onmessage = function(msg) {
                 // If no edge is triggered... skip
                 if (bits === 0) continue;
 
-
                 // Interpolate the positions based od voxel intensities
                 var mu = 0.5;
 
                 // bottom of the cube
                 if (bits & 1) {
                     mu = ( isolevel - value0 ) / ( value1 - value0 );
-                    vlist[0] = lerp(positions[p], positions[px], mu);
+                    vlist[0] = lerp(positions.slice(p * 3, p * 3 + 3), positions.slice(px * 3, px * 3 + 3), mu);
                 }
                 if (bits & 2) {
                     mu = ( isolevel - value1 ) / ( value3 - value1 );
-                    vlist[1] = lerp(positions[px], positions[pxy], mu);
+                    vlist[1] = lerp(positions.slice(px * 3, px * 3 + 3), positions.slice(pxy * 3, pxy * 3 + 3), mu);
                 }
                 if (bits & 4) {
                     mu = ( isolevel - value2 ) / ( value3 - value2 );
-                    vlist[2] = lerp(positions[py], positions[pxy], mu);
+                    vlist[2] = lerp(positions.slice(py * 3, py * 3 + 3), positions.slice(pxy * 3, pxy * 3 + 3), mu);
                 }
                 if (bits & 8) {
                     mu = ( isolevel - value0 ) / ( value2 - value0 );
-                    vlist[3] = lerp(positions[p], positions[py], mu);
+                    vlist[3] = lerp(positions.slice(p * 3, p * 3 + 3), positions.slice(py * 3, py * 3 + 3), mu);
                 }
                 // top of the cube
                 if (bits & 16) {
                     mu = ( isolevel - value4 ) / ( value5 - value4 );
-                    vlist[4] = lerp(positions[pz], positions[pxz], mu);
+                    vlist[4] = lerp(positions.slice(pz * 3, pz * 3 + 3), positions.slice(pxz * 3, pxz * 3 + 3), mu);
                 }
                 if (bits & 32) {
                     mu = ( isolevel - value5 ) / ( value7 - value5 );
-                    vlist[5] = lerp(positions[pxz], positions[pxyz], mu);
+                    vlist[5] = lerp(positions.slice(pxz * 3, pxz * 3 + 3), positions.slice(pxyz * 3, pxyz * 3 + 3), mu);
                 }
                 if (bits & 64) {
                     mu = ( isolevel - value6 ) / ( value7 - value6 );
-                    vlist[6] = lerp(positions[pyz], positions[pxyz], mu);
+                    vlist[6] = lerp(positions.slice(pyz * 3, pyz * 3 + 3), positions.slice(pxyz * 3, pxyz * 3 + 3), mu);
                 }
                 if (bits & 128) {
                     mu = ( isolevel - value4 ) / ( value6 - value4 );
-                    vlist[7] = lerp(positions[pz], positions[pyz], mu);
+                    vlist[7] = lerp(positions.slice(pz * 3, pz * 3 + 3), positions.slice(pyz * 3, pyz * 3 + 3), mu);
                 }
                 // vertical lines of the cube
                 if (bits & 256) {
                     mu = ( isolevel - value0 ) / ( value4 - value0 );
-                    vlist[8] = lerp(positions[p], positions[pz], mu);
+                    vlist[8] = lerp(positions.slice(p * 3, p * 3 + 3), positions.slice(pz * 3, pz * 3 + 3), mu);
                 }
                 if (bits & 512) {
                     mu = ( isolevel - value1 ) / ( value5 - value1 );
-                    vlist[9] = lerp(positions[px], positions[pxz], mu);
+                    vlist[9] = lerp(positions.slice(px * 3, px * 3 + 3), positions.slice(pxz * 3, pxz * 3 + 3), mu);
                 }
                 if (bits & 1024) {
                     mu = ( isolevel - value3 ) / ( value7 - value3 );
-                    vlist[10] = lerp(positions[pxy], positions[pxyz], mu);
+                    vlist[10] = lerp(positions.slice(pxy * 3, pxy * 3 + 3), positions.slice(pxyz * 3, pxyz * 3 + 3), mu);
                 }
                 if (bits & 2048) {
                     mu = ( isolevel - value2 ) / ( value6 - value2 );
-                    vlist[11] = lerp(positions[py], positions[pyz], mu);
+                    vlist[11] = lerp(positions.slice(py * 3, py * 3 + 3), positions.slice(pyz * 3, pyz * 3 + 3), mu);
                 }
 
                 // construct triangles -- get correct vertices from triTable.
@@ -451,5 +468,8 @@ onmessage = function(msg) {
         }
     }
 
+    var end = new Date();
+    console.log("Processing time: " + (end - start)/1000);
+    console.log(vertices.length);
     postMessage(vertices);
 };

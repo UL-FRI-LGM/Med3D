@@ -9,6 +9,30 @@ M3D.Geometry = class {
         this._vertices = null;
         this._normals = null;
         this._vertColor = null;
+        this._wireframeIndices = null;
+
+        // If this is set to true.. wireframe will be rendered instead of planes
+        this._drawWireframe = false;
+    }
+
+    buildWireframeBuffer() {
+        if (this._vertices.count() === 0)
+            return;
+
+        var indices = [];
+        var array = this._vertices.array;
+
+        for ( var i = 0, l = ( array.length / 3 ) - 1; i < l; i += 3 ) {
+            var a = i;
+            var b = i + 1;
+            var c = i + 2;
+
+             // A - B - C - A
+            indices.push( a, b, b, c, c, a );
+        }
+
+        // Create new buffer geometry for the wireframe
+        this._wireframeIndices = new M3D.BufferAttribute(new Uint16Array(indices), 1);
     }
 
     _normalizeNormals() {
@@ -123,10 +147,14 @@ M3D.Geometry = class {
     get vertices() { return this._vertices; }
     get normals() { return this._normals; }
     get verticesColor() { return this._vertColor; }
+    get wireframeIndices() { return this._wireframeIndices; }
+    get drawWireframe() { return this._drawWireframe; }
 
 
     set indices(ind) { this._indices = ind; }
     set vertices(vert) { this._vertices = vert; }
     set normals(norm) { this._normals = norm; }
     set verticesColor(vertC) { this._vertColor = vertC; }
+    set wireframeIndices(wfi) { this._wireframeIndices = wfi; }
+    set drawWireframe(val) { this._drawWireframe = val; }
 };

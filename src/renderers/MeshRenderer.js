@@ -151,7 +151,15 @@ M3D.MeshRenderer = class {
             var vertices = objects[i].geometry.vertices;
             this._setup_attributes(program, objects[i], vertices);
 
-            this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count());
+            // Draw wireframe instead of the planes
+            if (objects[i].geometry.drawWireframe) {
+                var buffer = this._glManager.getBuffer(objects[i].geometry.wireframeIndices);
+                this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
+                this._gl.drawElements(this._gl.LINES, objects[i].geometry.wireframeIndices.count(), this._gl.UNSIGNED_SHORT, 0)
+            }
+            else {
+                this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count());
+            }
         }
 
     }

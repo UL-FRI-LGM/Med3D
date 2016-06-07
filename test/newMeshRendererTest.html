@@ -58,7 +58,7 @@
     var windowHalfY = window.innerHeight / 2;
 
     var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
-    var aLight = new M3D.AmbientLight(new THREE.Color("#110000"), 1);
+    var aLight = new M3D.AmbientLight(new THREE.Color("#222222"), 1);
     var dLight = new M3D.DirectionalLight(new THREE.Color("#00FF00"), 1);
     var dLight2 = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
     var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
@@ -85,12 +85,13 @@
     var test = undefined;
 
     // Load objects
-    loader.load("models/untitled2.obj", function ( obj ) {
+    loader.load("models/untitled3.obj", function ( obj ) {
 
         for (var i = 0; i < obj.length; i++) {
             obj[i].position.z = 0;
             obj[i].material = new M3D.MeshPhongMaterial();
             obj[i].material.specular = new THREE.Color("#999999");
+            obj[i].geometry.drawWireframe = true;
             //obj[i].geometry.computeVertexNormals();
             test = obj[0].position;
             scene.add(obj[i]);
