@@ -5,6 +5,7 @@
     <title>Title</title>
 </head>
 <body>
+<input
 <canvas id="canvas" width="1920" height="1080"></canvas>
 
 <script src="../lib/three-math.min.js"></script>
@@ -94,12 +95,12 @@
 
     init();
     function init() {
-        fetchData({x: 330, y: 300, z: 300}, function(input) {
+        fetchData({x: 200, y: 200, z: 200}, function(input) {
             var MC = new M3D.MarchingCubes();
 
             var start = new Date().getTime();
 
-            MC.extractMesh(input.size, input.positions, input.values, 4, function(data) {
+            MC.extractMesh(input.meta, input.values, 4, function(data) {
 
                 var end = new Date().getTime();
 

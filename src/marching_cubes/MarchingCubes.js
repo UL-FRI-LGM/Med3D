@@ -9,8 +9,8 @@ M3D.MarchingCubes = class {
         this._isRunning = false;
     }
 
-    extractMesh (dimensions, positions, values, nThreads, callback) {
-        this._jobQueue.push({dimensions, positions, values, nThreads, callback});
+    extractMesh (meta, values, nThreads, callback) {
+        this._jobQueue.push({meta, values, nThreads, callback});
 
         if (!this._isRunning) {
             this._executeNextJob();
@@ -22,13 +22,13 @@ M3D.MarchingCubes = class {
         var self = this;
 
         // Split the work among workers
-        var dimensions = this._jobQueue[0].dimensions;
+        var meta = this._jobQueue[0].meta;
         var nThreads = this._jobQueue[0].nThreads;
 
         var worker;
 
         // TODO: Find out optimal value
-        if (dimensions.x * dimensions.y * dimensions.z < 10000 || nThreads <= 1 || dimensions.z < nThreads) {
+        if (true || meta.dimensions.x * meta.dimensions.y * meta.dimensions.z < 10000 || nThreads <= 1 || meta.dimensions.z < nThreads) {
             worker = new Worker("../src/marching_cubes/MarchingCubesWorker.js");
 
             // When single worker is used.. When the result message comes.. immediately execute the callback and move to the next task
@@ -47,12 +47,12 @@ M3D.MarchingCubes = class {
             };
 
             // Start the worker task
-            worker.postMessage([this._jobQueue[0].dimensions, this._jobQueue[0].positions, this._jobQueue[0].values]);
+            worker.postMessage([this._jobQueue[0].meta, this._jobQueue[0].values]);
         }
         else {
             // Calculate segment sizes (work distribution)
-            var remainder = dimensions.z % nThreads;
-            var segment = Math.trunc(dimensions.z / nThreads);
+            var remainder = meta.dimensions.z % nThreads;
+            var segment = Math.trunc(meta.dimensions.z / nThreads);
 
             // Array for combined results finish counters
             var combinedResult = [];
@@ -65,14 +65,14 @@ M3D.MarchingCubes = class {
                 var size = (remainder-- > 0) ? segment + 1 : segment;
                 // Padding needs to be added to correctly close the gaps between segments
                 var paddedSize = (i !== nThreads - 1) ? size + 1 : size;
-                var chunkSize = paddedSize * dimensions.x * dimensions.y;
+                var chunkSize = paddedSize * meta.dimensions.x * meta.dimensions.y;
 
 
                 // Split the data
-                var positionsSegment = this._jobQueue[0].positions.slice(offset * 3, (offset + chunkSize) * 3);
+                //var positionsSegment = this._jobQueue[0].positions.slice(offset * 3, (offset + chunkSize) * 3);
                 var valuesSegment = this._jobQueue[0].values.slice(offset, offset + chunkSize);
 
-                offset += size * dimensions.x * dimensions.y;
+                offset += size * meta.dimensions.x * meta.dimensions.y;
 
                 // Initialize and start workers
 
@@ -105,7 +105,7 @@ M3D.MarchingCubes = class {
                     }
                 };
 
-                worker.postMessage([{x: dimensions.x, y: dimensions.y, z: paddedSize}, positionsSegment, valuesSegment]);
+                worker.postMessage([{dimensions: {x: meta.dimensions.x, y: meta.dimensions.y, z: paddedSize}, axisMin: meta.axisMin, axisMax: meta.axisMax }, valuesSegment]);
             }
 
         }
