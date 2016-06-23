@@ -42,8 +42,8 @@ M3D.MeshRenderer = class {
 
         // Initialize default GL state
         this._gl.viewport(0, 0, canvas.width, canvas.height);
-        // Enable depth testing by default
-        this._gl.depthFunc(this._gl.LEQUAL);
+
+        // Enable depth testing (disable depth testing with gl.ALWAYS)
         this._gl.enable(this._gl.DEPTH_TEST);
 
         // Enable back-face culling by default
@@ -151,6 +151,8 @@ M3D.MeshRenderer = class {
             var vertices = objects[i].geometry.vertices;
             this._setup_attributes(program, objects[i], vertices);
 
+            this._setup_material_settings(objects[i].material);
+
             // Draw wireframe instead of the planes
             if (objects[i].geometry.drawWireframe) {
                 var buffer = this._glManager.getBuffer(objects[i].geometry.wireframeIndices);
@@ -161,7 +163,6 @@ M3D.MeshRenderer = class {
                 this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count());
             }
         }
-
     }
 
     _setup_attributes (program, object, vertices) {
@@ -230,6 +231,52 @@ M3D.MeshRenderer = class {
             }
 
         }
+    }
+
+    _setup_material_settings(material) {
+
+        // Determine the type of face culling
+        if (material.side === M3D.FRONT_AND_BACK_SIDE) {
+            this._gl.disable(this._gl.CULL_FACE);
+        }
+        else if (material.side === M3D.FRONT_SIDE) {
+            this._gl.enable(this._gl.CULL_FACE);
+            this._gl.cullFace(this._gl.BACK);
+        }
+        else if (material.side === M3D.BACK_SIDE) {
+            this._gl.enable(this._gl.CULL_FACE);
+            this._gl.cullFace(this._gl.FRONT);
+        }
+
+        // If depth testing is not enabled set depth function to always pass
+        if (material.depthTest) {
+            switch (material.depthFunc) {
+                case M3D.FUNC_LEQUAL:
+                    this._gl.depthFunc(this._gl.LEQUAL);
+                    break;
+                case M3D.FUNC_LESS:
+                    this._gl.depthFunc(this._gl.LESS);
+                    break;
+                case M3D.FUNC_GEQUAL:
+                    this._gl.depthFunc(this._gl.GEQUAL);
+                    break;
+                case M3D.FUNC_GREATER:
+                    this._gl.depthFunc(this._gl.GREATER);
+                    break;
+                case M3D.FUNC_EQUAL:
+                    this._gl.depthFunc(this._gl.EQUAL);
+                    break;
+                case M3D.FUNC_NOTEQUAL:
+                    this._gl.depthFunc(this._gl.NOTEQUAL);
+                    break;
+            }
+        }
+        else if (material.depthTest) {
+            this._gl.depthFunc(this._gl.ALWAYS);
+        }
+
+        // Enable/Disable depth writing
+        this._gl.depthMask(material.depthWrite);
     }
 
     _setup_light_uniforms(uniformSetter) {

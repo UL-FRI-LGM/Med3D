@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1280" height="720"></canvas>
+<br>
+FPS: <span id="fps">N/A</span>
+
+<script src="../libraries/three-math.min.js"></script>
+<script src="../libraries/JSONC.js"></script>
+<script src="../src/Med3D.js"></script>
+
+<!-- LOADERS -->
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/loaders/ObjLoader.js"></script>
+
+<!-- ONLINE INTERACTION -->
+<script src="../src/online_interaction/UpdateListener.js"></script>
+<script src="../src/online_interaction/ScenePublisher.js"></script>
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLManager.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+
+<!-- MATERIALS -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+
+<!-- OBJECTS -->
+<script src="../src/objects/Geometry.js"></script>
+<script src="../src/objects/Mesh.js"></script>
+
+<!-- PROGRAM MANAGEMENT -->
+<script src="../src/renderers/GLProgram.js"></script>
+<script src="../src/renderers/GLProgramManager.js"></script>
+
+<!-- RENDERS -->
+<script src="../src/renderers/Renderer.js"></script>
+<script src="../src/renderers/MeshRenderer.js"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    var objects;
+
+
+    // Initialize renderer
+    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    // Set path to shader files
+    renderer.addShaderLoaderUrls("../src/shaders");
+
+    var scene = new M3D.Scene();
+
+    // Initialize lights and add them to the scene
+    var aLight = new M3D.AmbientLight(new THREE.Color("#222222"), 1);
+    var dLight = new M3D.DirectionalLight(new THREE.Color("#00FF00"), 1);
+    var dLight2 = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
+    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
+
+    pLight.position = new THREE.Vector3(40, 40, 200);
+    dLight.position = new THREE.Vector3(-1, 0, 0);
+    dLight2.position = new THREE.Vector3(1, 0, 0);
+
+    scene.add(aLight);
+    scene.add(dLight);
+    scene.add(dLight2);
+    scene.add(pLight);
+
+    // Camera initialization
+    var camera = new M3D.PerspectiveCamera();
+    camera.position = new THREE.Vector3(0, 0, 200);
+
+    // Publisher that shares the scene and camera to other users
+    var scenePublisher = new M3D.ScenePublisher(scene, camera, 100);
+
+
+    // Initialize object loader and load the objects
+    var manager = new M3D.LoadingManager();
+    var loader = new M3D.ObjLoader(manager);
+
+    // Load objects
+    loader.load("models/untitled3.obj", function ( obj ) {
+        objects = obj;
+        for (var i = 0; i < obj.length; i++) {
+            obj[i].position.z = 0;
+            obj[i].material = new M3D.MeshPhongMaterial();
+            obj[i].material.specular = new THREE.Color("#999999");
+            obj[i].geometry.drawWireframe = false;
+
+
+            scene.add(obj[i]);
+        }
+
+        // Publish the scene
+        scenePublisher.startPublishing();
+
+        animate();
+    });
+
+    var now = 0, last = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        calculateFps();
+
+        objects[0].rotateX(0.01);
+        objects[1].rotateX(-0.01);
+        objects[2].rotateX(-0.01);
+
+        camera.lookAt(objects[0].position, new THREE.Vector3(0, 1, 0));
+        pLight.position = camera.position;
+
+
+        now = new Date().getTime();
+        if (now - last >= 0) {
+            scenePublisher.publishUpdates();
+            last = now;
+        }
+
+
+        renderer.render(scene, camera);
+    }
+
+    // FPS calculation
+    var timeNow = 0, timeLast = 0, fps = 0;
+    function calculateFps() {
+        timeNow = new Date().getTime();
+        fps++;
+
+        if (timeNow - timeLast >= 1000) {
+            //Write value in HTML
+            //multiply with 1000.0 / (timeNow - timeLast) for accuracy
+            document.getElementById("fps").innerHTML = Number(fps * 1000.0 / (timeNow - timeLast)).toPrecision( 5 );
+
+            //reset
+            timeLast = timeNow;
+            fps = 0;
+        }
+    }
+
+
+    var rotSpeed = .02;
+    document.addEventListener('keydown', function(event) {
+        var x = camera.position.x,
+                y = camera.position.y,
+                z = camera.position.z;
+
+        if (event.keyCode === 65){
+            camera.positionX = x * Math.cos(rotSpeed) + z * Math.sin(rotSpeed);
+            camera.positionZ = z * Math.cos(rotSpeed) - x * Math.sin(rotSpeed);
+        } else if (event.keyCode === 68){
+            camera.positionX = x * Math.cos(rotSpeed) - z * Math.sin(rotSpeed);
+            camera.positionZ = z * Math.cos(rotSpeed) + x * Math.sin(rotSpeed);
+        } else if (event.keyCode === 49) {
+            for (var i = 0; i < objects.length; i++) {
+                objects[i].geometry.drawWireframe = !objects[i].geometry.drawWireframe;
+            }
+        } else if (event.keyCode === 67) {
+            objects[0].material.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+            objects[1].material.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+            objects[2].material.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+        } else if (event.keyCode === 86) {
+            dLight.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+            dLight2.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+            pLight.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
+        }
+    });
+
+</script>
+
+</body>
+</html>

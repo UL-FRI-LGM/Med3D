@@ -5,11 +5,16 @@
 M3D.Geometry = class {
 
 	constructor() {
+        this._uuid = THREE.Math.generateUUID();
+        this.type = "Geometry";
+
         this._indices = null;
         this._vertices = null;
         this._normals = null;
         this._vertColor = null;
         this._wireframeIndices = null;
+
+        this._onChangeListener = null;
 
         // If this is set to true.. wireframe will be rendered instead of planes
         this._drawWireframe = false;
@@ -151,10 +156,120 @@ M3D.Geometry = class {
     get drawWireframe() { return this._drawWireframe; }
 
 
-    set indices(ind) { this._indices = ind; }
-    set vertices(vert) { this._vertices = vert; }
-    set normals(norm) { this._normals = norm; }
-    set verticesColor(vertC) { this._vertColor = vertC; }
-    set wireframeIndices(wfi) { this._wireframeIndices = wfi; }
+    set indices(values) {
+        this._indices = values;
+
+        // Notify onChange subscriber
+        if (this._onChangeListener) {
+            var update = {uuid: this._uuid, changes: {indices: this._indices}};
+            this._onChangeListener.geometryUpdate(update)
+        }
+    }
+
+    set vertices(values) {
+        this._vertices = values;
+
+        // Notify onChange subscriber
+        if (this._onChangeListener) {
+            var update = {uuid: this._uuid, changes: {vertices: this._vertices}};
+            this._onChangeListener.geometryUpdate(update)
+        }
+    }
+
+    set normals(values) {
+        this._normals = values;
+
+        // Notify onChange subscriber
+        if (this._onChangeListener) {
+            var update = {uuid: this._uuid, changes: {normals: this._normals}};
+            this._onChangeListener.geometryUpdate(update)
+        }
+    }
+
+    set verticesColor(values) {
+        this._vertColor = values;
+
+        // Notify onChange subscriber
+        if (this._onChangeListener) {
+            var update = {uuid: this._uuid, changes: {vertColor: this._vertColor}};
+            this._onChangeListener.geometryUpdate(update)
+        }
+    }
+
+    set wireframeIndices(values) { this._wireframeIndices = values; }
     set drawWireframe(val) { this._drawWireframe = val; }
+    set onChangeListener(listener) { this._onChangeListener = listener; }
+
+    toJson() {
+        var obj = {};
+
+        obj._uuid = this._uuid;
+        obj.type = this.type;
+
+        if (this._indices) {
+            obj.indices = this._indices;
+        }
+
+        if (this._vertices) {
+            obj.vertices = this._vertices;
+        }
+
+        if (this._normals) {
+            obj.normals = this._normals;
+        }
+
+        if (this._vertColor) {
+            obj.vertColor = this._vertColor;
+        }
+
+        return obj;
+    }
+
+    static fromJson(obj) {
+        var geometry = new M3D.Geometry();
+
+        geometry._uuid = obj._uuid;
+
+        if (obj.indices) {
+            geometry._indices = M3D.Uint32Attribute(Object.keys(obj.indices.array).map(key => obj.indices.array[key]), obj.indices.itemSize);
+        }
+
+        if (obj.vertices) {
+            geometry._vertices = M3D.Float32Attribute(Object.keys(obj.vertices.array).map(key => obj.vertices.array[key]), obj.vertices.itemSize);
+        }
+
+        if (obj.normals) {
+            geometry._normals = M3D.Float32Attribute(Object.keys(obj.normals.array).map(key => obj.normals.array[key]), obj.normals.itemSize);
+        }
+
+        if (obj.vertColor) {
+            geometry._vertColor = M3D.Float32Attribute(Object.keys(obj.vertColor.array).map(key => obj.vertColor.array[key]), obj.vertColor.itemSize);
+        }
+
+        return geometry;
+    }
+
+    update(data) {
+
+        for (var prop in data) {
+            switch (prop) {
+                case "indices":
+                    this._indices = data.indices;
+                    delete data.indices;
+                    break;
+                case "vertices":
+                    this._vertices = data.vertices;
+                    delete data.vertices;
+                    break;
+                case "normals":
+                    this._normals = data.normals;
+                    delete data.normals;
+                    break;
+                case "vertColor":
+                    this._vertColor = data.vertColor;
+                    delete data.vertColor;
+                    break;
+            }
+        }
+    }
 };

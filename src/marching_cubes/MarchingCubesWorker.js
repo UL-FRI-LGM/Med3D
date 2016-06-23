@@ -322,14 +322,11 @@ onmessage = function(msg) {
     var meta = msg.data[0];
     var dimensions = meta.dimensions;
 
-    var axisMax = meta.axisMax;
-    var axisMin = meta.axisMin;
-    var axisRange = axisMax - axisMin;
+    var voxelDim = meta.voxelDimensions;
+    var isoLevel = meta.isoLevel;
 
-    var voxelX = axisRange / (dimensions.x - 1);
-    var voxelY = axisRange / (dimensions.y - 1);
-    var voxelZ = axisRange / (dimensions.z - 1);
-
+    // If parallelized take correctly offset z axis
+    var offset = (meta.dimensions.offset) ? meta.dimensions.offset : 0;
 
     // Voxel intensities
     var values = msg.data[1];
@@ -337,6 +334,11 @@ onmessage = function(msg) {
     // Actual position along edge weighted according to function values.
     var vlist = new Array(12);
     var vertices = [];
+
+    var maxX = voxelDim.x * (dimensions.x -1);
+    var maxY = voxelDim.y * (dimensions.y -1);
+    var maxZ = voxelDim.z * (((dimensions.zFull) ? dimensions.zFull : dimensions.z) -1);
+    var maxAxisVal = Math.max(maxX, maxY, maxZ);
 
     for (var z = 0; z < dimensions.z - 1; z++) {
         for (var y = 0; y < dimensions.y - 1; y++) {
@@ -367,7 +369,7 @@ onmessage = function(msg) {
                     pxyz = pxy + dimensions.x * dimensions.y;
 
 
-                var position = [axisMin + axisRange * x / (dimensions.x - 1),axisMin + axisRange * y / (dimensions.y - 1), axisMin + axisRange * z / (dimensions.z - 1)];
+                var position = [x * voxelDim.x, y * voxelDim.y, (z + offset) * voxelDim.z];
 
                 // Voxel intensities
                 var value0 = values[p],
@@ -379,18 +381,16 @@ onmessage = function(msg) {
                     value6 = values[pyz],
                     value7 = values[pxyz];
 
-                // Voxel is active if its intensity is below isolevel
-                var isolevel = 0;
-
+                // Voxel is active if its intensity is above isolevel
                 var cubeindex = 0;
-                if (value0 < isolevel) cubeindex |= 1;
-                if (value1 < isolevel) cubeindex |= 2;
-                if (value2 < isolevel) cubeindex |= 8;
-                if (value3 < isolevel) cubeindex |= 4;
-                if (value4 < isolevel) cubeindex |= 16;
-                if (value5 < isolevel) cubeindex |= 32;
-                if (value6 < isolevel) cubeindex |= 128;
-                if (value7 < isolevel) cubeindex |= 64;
+                if (value0 > isoLevel) cubeindex |= 1;
+                if (value1 > isoLevel) cubeindex |= 2;
+                if (value2 > isoLevel) cubeindex |= 8;
+                if (value3 > isoLevel) cubeindex |= 4;
+                if (value4 > isoLevel) cubeindex |= 16;
+                if (value5 > isoLevel) cubeindex |= 32;
+                if (value6 > isoLevel) cubeindex |= 128;
+                if (value7 > isoLevel) cubeindex |= 64;
 
                 // Fetch the triggered edges
                 var bits = MC_EDGE_TABLE[cubeindex];
@@ -403,54 +403,54 @@ onmessage = function(msg) {
 
                 // bottom of the cube
                 if (bits & 1) {
-                    mu = ( isolevel - value0 ) / ( value1 - value0 );
-                    vlist[0] = lerp(position, [position[0] + voxelX, position[1], position[2]], mu);
+                    mu = ( isoLevel - value0 ) / ( value1 - value0 );
+                    vlist[0] = lerp(position, [position[0] + voxelDim.x, position[1], position[2]], mu);
                 }
                 if (bits & 2) {
-                    mu = ( isolevel - value1 ) / ( value3 - value1 );
-                    vlist[1] = lerp([position[0] + voxelX, position[1], position[2]], [position[0] + voxelX, position[1] + voxelY, position[2]], mu);
+                    mu = ( isoLevel - value1 ) / ( value3 - value1 );
+                    vlist[1] = lerp([position[0] + voxelDim.x, position[1], position[2]], [position[0] + voxelDim.x, position[1] + voxelDim.y, position[2]], mu);
                 }
                 if (bits & 4) {
-                    mu = ( isolevel - value2 ) / ( value3 - value2 );
-                    vlist[2] = lerp([position[0], position[1] + voxelY, position[2]], [position[0] + voxelX, position[1] + voxelY, position[2]], mu);
+                    mu = ( isoLevel - value2 ) / ( value3 - value2 );
+                    vlist[2] = lerp([position[0], position[1] + voxelDim.y, position[2]], [position[0] + voxelDim.x, position[1] + voxelDim.y, position[2]], mu);
                 }
                 if (bits & 8) {
-                    mu = ( isolevel - value0 ) / ( value2 - value0 );
-                    vlist[3] = lerp(position, [position[0], position[1] + voxelY, position[2]], mu);
+                    mu = ( isoLevel - value0 ) / ( value2 - value0 );
+                    vlist[3] = lerp(position, [position[0], position[1] + voxelDim.y, position[2]], mu);
                 }
                 // top of the cube
                 if (bits & 16) {
-                    mu = ( isolevel - value4 ) / ( value5 - value4 );
-                    vlist[4] = lerp([position[0], position[1], position[2] + voxelZ], [position[0] + voxelX, position[1], position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value4 ) / ( value5 - value4 );
+                    vlist[4] = lerp([position[0], position[1], position[2] + voxelDim.z], [position[0] + voxelDim.x, position[1], position[2] + voxelDim.z], mu);
                 }
                 if (bits & 32) {
-                    mu = ( isolevel - value5 ) / ( value7 - value5 );
-                    vlist[5] = lerp([position[0] + voxelX, position[1], position[2] + voxelZ], [position[0] + voxelX, position[1] + voxelY, position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value5 ) / ( value7 - value5 );
+                    vlist[5] = lerp([position[0] + voxelDim.x, position[1], position[2] + voxelDim.z], [position[0] + voxelDim.x, position[1] + voxelDim.y, position[2] + voxelDim.z], mu);
                 }
                 if (bits & 64) {
-                    mu = ( isolevel - value6 ) / ( value7 - value6 );
-                    vlist[6] = lerp([position[0], position[1] + voxelY, position[2] + voxelZ], [position[0] + voxelX, position[1] + voxelY, position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value6 ) / ( value7 - value6 );
+                    vlist[6] = lerp([position[0], position[1] + voxelDim.y, position[2] + voxelDim.z], [position[0] + voxelDim.x, position[1] + voxelDim.y, position[2] + voxelDim.z], mu);
                 }
                 if (bits & 128) {
-                    mu = ( isolevel - value4 ) / ( value6 - value4 );
-                    vlist[7] = lerp([position[0], position[1], position[2] + voxelZ], [position[0], position[1] + voxelY, position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value4 ) / ( value6 - value4 );
+                    vlist[7] = lerp([position[0], position[1], position[2] + voxelDim.z], [position[0], position[1] + voxelDim.y, position[2] + voxelDim.z], mu);
                 }
                 // vertical lines of the cube
                 if (bits & 256) {
-                    mu = ( isolevel - value0 ) / ( value4 - value0 );
-                    vlist[8] = lerp(position, [position[0], position[1], position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value0 ) / ( value4 - value0 );
+                    vlist[8] = lerp(position, [position[0], position[1], position[2] + voxelDim.z], mu);
                 }
                 if (bits & 512) {
-                    mu = ( isolevel - value1 ) / ( value5 - value1 );
-                    vlist[9] = lerp([position[0] + voxelX, position[1], position[2]], [position[0] + voxelX, position[1], position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value1 ) / ( value5 - value1 );
+                    vlist[9] = lerp([position[0] + voxelDim.x, position[1], position[2]], [position[0] + voxelDim.x, position[1], position[2] + voxelDim.z], mu);
                 }
                 if (bits & 1024) {
-                    mu = ( isolevel - value3 ) / ( value7 - value3 );
-                    vlist[10] = lerp([position[0] + voxelX, position[1] + voxelY, position[2]], [position[0] + voxelX, position[1] + voxelY, position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value3 ) / ( value7 - value3 );
+                    vlist[10] = lerp([position[0] + voxelDim.x, position[1] + voxelDim.y, position[2]], [position[0] + voxelDim.x, position[1] + voxelDim.y, position[2] + voxelDim.z], mu);
                 }
                 if (bits & 2048) {
-                    mu = ( isolevel - value2 ) / ( value6 - value2 );
-                    vlist[11] = lerp([position[0], position[1] + voxelY, position[2]], [position[0], position[1] + voxelY, position[2] + voxelZ], mu);
+                    mu = ( isoLevel - value2 ) / ( value6 - value2 );
+                    vlist[11] = lerp([position[0], position[1] + voxelDim.y, position[2]], [position[0], position[1] + voxelDim.y, position[2] + voxelDim.z], mu);
                 }
 
                 // construct triangles -- get correct vertices from triTable.
@@ -463,16 +463,16 @@ onmessage = function(msg) {
                     var index2 = MC_TRI_TABLE[cubeindex + i + 1];
                     var index3 = MC_TRI_TABLE[cubeindex + i + 2];
 
-                    // Add triangles
-                    vertices.push(vlist[index1][0] / 100);  // x
-                    vertices.push(vlist[index1][1] / 100);  // y
-                    vertices.push(vlist[index1][2] / 100);  // z
-                    vertices.push(vlist[index2][0] / 100);  // x
-                    vertices.push(vlist[index2][1] / 100);  // y
-                    vertices.push(vlist[index2][2] / 100);  // z
-                    vertices.push(vlist[index3][0] / 100);  // x
-                    vertices.push(vlist[index3][1] / 100);  // y
-                    vertices.push(vlist[index3][2] / 100);  // z
+                    // Add triangles vertices normalized with the maximal possible value
+                    vertices.push(vlist[index1][0]/maxAxisVal - 0.5);  // x
+                    vertices.push(vlist[index1][1]/maxAxisVal - 0.5);  // y
+                    vertices.push(vlist[index1][2]/maxAxisVal - 0.5);  // z
+                    vertices.push(vlist[index2][0]/maxAxisVal - 0.5);  // x
+                    vertices.push(vlist[index2][1]/maxAxisVal - 0.5);  // y
+                    vertices.push(vlist[index2][2]/maxAxisVal - 0.5);  // z
+                    vertices.push(vlist[index3][0]/maxAxisVal - 0.5);  // x
+                    vertices.push(vlist[index3][1]/maxAxisVal - 0.5);  // y
+                    vertices.push(vlist[index3][2]/maxAxisVal - 0.5);  // z
 
                     i += 3;
                 }

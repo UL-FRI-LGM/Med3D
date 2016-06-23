@@ -274,7 +274,7 @@ M3D.Object3D = class {
 
 		this.matrix = new THREE.Matrix4();
 		this.matrixWorld = new THREE.Matrix4();
-		this.matrixWorldNeedsUpdate = false;
+		this._matrixWorldNeedsUpdate = false;
 
 		this.visible = true;
 	}
@@ -286,17 +286,17 @@ M3D.Object3D = class {
 
 	updateMatrix() {
 		this.matrix.compose(this.position, this.quaternion, this.scale);
-		this.matrixWorldNeedsUpdate = true;
+		this._matrixWorldNeedsUpdate = true;
 	}
 
 	updateMatrixWorld(force) {
-		if (this.matrixWorldNeedsUpdate === true) {
+		if (this._matrixWorldNeedsUpdate) {
 			if (this.parent === null) {
 				this.matrixWorld.copy(this.matrix);
 			} else {
 				this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
 			}
-			this.matrixWorldNeedsUpdate = false;
+			this._matrixWorldNeedsUpdate = false;
 			force = true;
 		}
 		for (var i = 0; i < this.children.length; i++) {

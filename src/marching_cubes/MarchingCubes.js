@@ -27,8 +27,7 @@ M3D.MarchingCubes = class {
 
         var worker;
 
-        // TODO: Find out optimal value
-        if (true || meta.dimensions.x * meta.dimensions.y * meta.dimensions.z < 10000 || nThreads <= 1 || meta.dimensions.z < nThreads) {
+        if (meta.dimensions.x * meta.dimensions.y * meta.dimensions.z < 1000000 || nThreads <= 1 || meta.dimensions.z < nThreads) {
             worker = new Worker("../src/marching_cubes/MarchingCubesWorker.js");
 
             // When single worker is used.. When the result message comes.. immediately execute the callback and move to the next task
@@ -47,7 +46,7 @@ M3D.MarchingCubes = class {
             };
 
             // Start the worker task
-            worker.postMessage([this._jobQueue[0].meta, this._jobQueue[0].values]);
+            worker.postMessage([{dimensions: meta.dimensions, voxelDimensions: meta.voxelDimensions, isoLevel: meta.isoLevel}, this._jobQueue[0].values]);
         }
         else {
             // Calculate segment sizes (work distribution)
@@ -59,6 +58,7 @@ M3D.MarchingCubes = class {
             var counter = 0;
 
             var offset = 0;
+            var zAxisOffset = 0;
 
             for (var i = 0; i < nThreads; i++) {
                 // Correctly distribute the remainder
@@ -71,7 +71,7 @@ M3D.MarchingCubes = class {
                 // Split the data
                 //var positionsSegment = this._jobQueue[0].positions.slice(offset * 3, (offset + chunkSize) * 3);
                 var valuesSegment = this._jobQueue[0].values.slice(offset, offset + chunkSize);
-
+                //var valuesSegment = this._jobQueue[0].values.splice(0, chunkSize);
                 offset += size * meta.dimensions.x * meta.dimensions.y;
 
                 // Initialize and start workers
@@ -104,10 +104,12 @@ M3D.MarchingCubes = class {
                         }
                     }
                 };
-
-                worker.postMessage([{dimensions: {x: meta.dimensions.x, y: meta.dimensions.y, z: paddedSize}, axisMin: meta.axisMin, axisMax: meta.axisMax }, valuesSegment]);
+                console.log(window.performance.memory);
+                worker.postMessage([{dimensions: {x: meta.dimensions.x, y: meta.dimensions.y, z: paddedSize, zFull: meta.dimensions.z, offset: zAxisOffset}, voxelDimensions: meta.voxelDimensions, isoLevel: meta.isoLevel}, valuesSegment]);
+                zAxisOffset += size;
             }
 
+            this._jobQueue[0].values = null;
         }
     }
 };

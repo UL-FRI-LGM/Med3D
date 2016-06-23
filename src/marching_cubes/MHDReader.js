@@ -4,6 +4,10 @@
 
 M3D.MHDReader = class {
 
+    /**
+     * Instantiates MHD reader with the loading callback
+     * @param onLoad {function} Callback used by the loading functions.
+     */
     constructor(onLoad) {
         // Loading callback
         this._onLoad = onLoad;
@@ -22,6 +26,15 @@ M3D.MHDReader = class {
         this._loadingInProgress = false;
     }
 
+    /**
+     * Asynchronously loads the volume values and meta data from the specified HTML5 files. Data is returned via object
+     * global onLoad callback specified in the constructor. Besides the values and meta data the callback also contains
+     * warning and error messages produced during the loading.
+     *
+     * @param mhdFile {Blob} HTML5 file pointing at .mhd file containing volume meta data like dimensions, orientation, position and data format.
+     * @param rawFile {Blob} HTML5 file pointing at .raw file containing volume values
+     * @returns {boolean} True if the loading was starter. False if the loading could not be started because there is already loading in progress.
+     */
     fileLoad (mhdFile, rawFile) {
         // Check if anything is beeing loaded
         if (this._loadingInProgress) {
@@ -38,44 +51,40 @@ M3D.MHDReader = class {
 
         var rawParser = function(event) {
             var rez = {};
+            var data;
             try {
 
                 var dataLength = self._mhdMeta.dimensions[0] * self._mhdMeta.dimensions[1] * self._mhdMeta.dimensions[2];
                 var requiredByteLength = 0;
+
+                // Build the correct typed array based on the volume element type
                 switch (self._mhdMeta.elementType) {
                     case "MET_CHAR":
-                        //rez = new Int8Array(this.result);
-                        //rez = (new DataView(this.result)).getInt8(0, self._mhdMeta.byteOrderMsb);
+                        data = new Int8Array(this.result);
                         requiredByteLength = dataLength;
                         break;
                     case "MET_UCHAR":
-                        //rez = new Uint8Array(this.result);
-                        //rez = new DataView(this.result).getUint8(0, self._mhdMeta.byteOrderMsb);
+                        data = new Uint8Array(this.result);
                         requiredByteLength = dataLength;
                         break;
                     case "MET_SHORT":
-                        //rez = new Int16Array(this.result);
-                        //rez = (new DataView(this.result)).getInt16(0, self._mhdMeta.byteOrderMsb);
+                        data = new Int16Array(this.result);
                         requiredByteLength = dataLength * 2;
                         break;
                     case "MET_USHORT":
-                        //rez = new Uint16Array(this.result);
-                        //rez = new DataView(this.result).getUint16(0, self._mhdMeta.byteOrderMsb);
+                        data = new Uint16Array(this.result);
                         requiredByteLength = dataLength * 2;
                         break;
                     case "MET_INT":
-                        //rez = new Int32Array(this.result);
-                        //rez = new DataView(this.result).getInt32(0, self._mhdMeta.byteOrderMsb);
+                        data = new Int32Array(this.result);
                         requiredByteLength = dataLength * 4;
                         break;
                     case "MET_UINT":
-                        //rez = new Uint32Array(this.result);
-                        //rez = new DataView(this.result).getUint32(0, self._mhdMeta.byteOrderMsb);
+                        data = new Uint32Array(this.result);
                         requiredByteLength = dataLength * 4;
                         break;
                     case "MET_DOUBLE":
-                        //rez = new Float64Array(this.result);
-                        //rez = new DataView(this.result).getFloat64(0, self._mhdMeta.byteOrderMsb);
+                        data = new Float64Array(this.result);
                         requiredByteLength = dataLength * 8;
                         break;
                 }
@@ -83,7 +92,7 @@ M3D.MHDReader = class {
                 if (this.result.byteLength !== requiredByteLength) {
                     self._warnings.push("WARNING: Invalid data byte count.");
                 }
-                rez = {meta: self._mhdMeta, data: this.result, errorMsg: "", warnings: self._warnings};
+                rez = {meta: self._mhdMeta, data: data, errorMsg: "", warnings: self._warnings};
             }
             catch (err) {
                 rez = {errorMsg: "ERROR: Could not correctly parse the RAW file!", warnings: self._warnings};
