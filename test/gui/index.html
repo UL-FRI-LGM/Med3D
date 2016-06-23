@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Med3D - Medical Web Visualisation Framework</title>
+
+        <!-- Bootstrap -->
+<!-- build:css styles/main.css -->
+    <link href="styles/bootstrap.min.css" rel="stylesheet">
+    <link href="styles/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="styles/font-awesome.min.css" rel="stylesheet">
+    <link href="styles/bootstrap-social.css" rel="stylesheet">
+    <link href="styles/mystyles.css" rel="stylesheet">
+<!-- endbuild -->
+</head>
+
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#"><img class="navbar-image" src="images/med3D-icon.png" width="24" height="24"></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-file"></span> 
+                        File <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a data-toggle="modal" data-target="#fileOpenModal">Open / Upload</a></li>
+                        <li><a data-toggle="modal" data-target="#fileSaveModal">Save As</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-cog"></span> 
+                        Options <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a data-toggle="modal" data-target="#optionsInputModal">Inputs</a></li>
+                        <li><a data-toggle="modal" data-target="#optionsDisplayModal">Display Settings</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-question-sign"></span> 
+                        Help <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a data-toggle="modal" data-target="#aboutModal">About</a></li>
+                        <li><a href="https://www.google.com" target="_blank">User Manual <i class="fa fa-external-link" aria-hidden="true" style="float: right;"></i></a></li>
+                        <li><a data-toggle="modal" data-target="#licenceModal">Licence</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-wrench"></span> 
+                        Test <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#floatingWindow" data-backdrop="false" data-toggle="modal">Example Window</a></li>
+                        <li><a href="#widgetExample" data-backdrop="false" data-toggle="modal">Example Widget</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right-no-margin">
+                <li>
+                    <a data-toggle="modal" data-target="#loginModal">
+                        <span class="glyphicon glyphicon-log-in"></span> Login
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <canvas id="med3d-canvas" width="1280px" height="720px"></canvas>
+
+    <div id="fileOpenModal" class="modal face" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Open / Upload </h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fileSaveModal" class="modal face" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Save As </h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="optionsInputModal" class="modal face" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Options - Inputs </h4>
+                </div>
+                <div class="modal-body">
+                    <h5>Navigation widgets:</h5>
+                    <ul class="med3d-ul">
+                        <li>
+                            <input class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true" onClick="toggleNavigator('navigatorTranslation');" ><span style="width: 10px;">Translation widget</span>
+                        </li>
+                        <li>
+                            <input class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true" onClick="toggleNavigator('navigatorRotation')"; ><span style="width: 10px;">Rotation widget</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="optionsDisplayModal" class="modal face" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Options - Display </h4>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="modal face" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h5 class="modal-title">About </h5>
+                </div>
+                <div class="modal-body">
+                    <p>The project is being developed at Laboratory for Computer Graphics and Multimedia, Faculty of Computer and Information Science, University of Ljubljana. Project is developed mostly as work of students as part of their seminar work, thesis work and summer internship work. Project Website <a href="https://ul-fri-lgm.github.io/Med3D/" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>.</p>
+
+                    <p>The project is lead and coordinated by <strong>Ciril Bohak</strong>.</p>
+
+                    <h5>Development history:</h5>
+
+                    <p>The original application was developed by <strong>Simon Žagar</strong> (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=25723&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science. He developed 3D visualisation environment and navigation, loading OBJ files and interlaced stereoscopic display.</p>
+
+                    <p>Afterwards the application was extended and adapted by several authors as stated below:</p>
+
+                    <ul>
+                        <li><strong>Matevž Ropret</strong> - contributed integration of several separately developed methods into the application. He also implemented new design into the application.</li>
+
+                        <li><strong>Matjaž Krmelj, Pia Jerkič, Ciril Bohak</strong> - put together design of the application and website.</li>
+
+                        <li><strong>Žiga Lesar</strong> - contributed implementation of raycasting method for direct visualisation of volumetric data. (Thesis - in Slovenian  <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29459&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) </li>
+
+                        <li><strong>Boštjan Čotar</strong> - contributed implementation of subdivision of volumetric data approximation for better conversion to 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29535&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                        <li><strong>Miloš Lukić</strong> - contributed implementation of Multiple Partitions of Unity Implicits (MPUI) algorithm - an alternative to MC - for transforming volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29488&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                        <li><strong>Peter Škrlj</strong> - contributed integration of 3D mouse support (<a href="http://www.3dconnexion.eu/" target="_blank">3D Connexion</a>) for navigation, integration of <a href="https://www.leapmotion.com/" target="_blank">Leap Motion</a> controller. He also conducted an usability study on using different input devices for interaction. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=68822&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                        <li><strong>Anže Sodja</strong> - contributed code refactoring, implementation of MHD reader for reading raw volumetric data, implementation of Marching Cube (MC) algorithm in Java and integration of MC algorithm in OpenCL for transformation of volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=26240&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+                    </ul>
+
+                    <h5>Publications:</h5>
+
+                    <p><strong>Ciril Bohak, Simon Žagar, Anže Sodja, Peter Škrlj, Uroš Mitrović, Franjo Pernuš, Matija Marolt,</strong> <em>"Neck veins : an interactive 3D visualization of head veins"</em>, In: <em>Proceedings of the 4th International Conference World Usability Day Slovenia 2013</em>, Ljubljana, Slovenia, 25th November 2013, (International series on information systems and management in creative media), Tampere, IugYmedia, 2013, p. 64-66. <a href="http://lit.fe.uni-lj.si/pubobtain.php?lang=eng&pub=287" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
+<pre>@inproceedings{Bohak2013,
+    author = {  Bohak, Ciril and
+                \v{Z}agar, Simon and
+                Sodja, An\v{z}e and
+                \v{S}krlj, Peter and
+                Mitrovi\'{c}, Uro\v{s} and
+                Pernu\v{s}, Franjo and
+                Marolt, Matija },
+    title = {Neck veins: an interactive 3{D} visualization
+            of head veins},
+    booktitle = {Proceedings of the 4th International Conference
+                World Usability Day Slovenia 2013, 25 Nov, 
+                Ljubljana, Slovenia, E. Stojmenova (Ed.)},
+    pages = {64--66},
+    year = {2013}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                    <p><strong>Ciril Bohak, Anže Sodja, Matija Marolt, Uroš Mitrović, Franjo Pernuš,</strong> <em>"Fast segmentation, conversion and rendering of volumetric data using GPU"</em>, In: <em>IWSSIP 2014 : proceedings, (International Conference on Systems, Signals, and Image Processing (Print))</em>, Zagreb, Faculty of Electrical Engineering and Computing, Department of Wireless Communications, cop. 2014, p. 239-242. <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6837675&tag=1" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
+<pre>@inproceedings{Bohak2014a, 
+    author = {  Bohak, Ciril and
+                Sodja, An\v{z}e and
+                Marolt, Matija and
+                Mitrovi\'{c}, Uro\v{s} and
+                Pernu\v{s}, Franjo }, 
+    booktitle={IWSSIP 2014 Proceedings},
+    title = {Fast segmentation, conversion and rendering of
+            volumetric data using GPU}, 
+    year = {2014}, 
+    pages = {239-242},
+    ISSN = {2157-8672},
+    month = {May}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                    <p><strong>Peter Škrlj, Jože Guna, Ciril Bohak, Matija Marolt,</strong> <em>"Usability evaluation of input devices for navigation and interaction in 3D visualisation"</em>, In: <em>Proceedings of the 7th International Workshop on Semantic Ambient Media Experience (SAME 2014) - Ambient Media Usability, Interaction, and Smart Media Technologies : Helsinki, Finland</em>, 26th October 2014, (International series on information systems and management in creative emedia, no. 2014/1), Tampere, iAMEA, 2014, p. 19-23. <a href="http://www.ambientmediaassociation.org/Journal/index.php/series/article/view/222" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Bohak2014b, 
+    author = {  \v{S}krlj, Peter and
+                Bohak, Ciril and
+                Guna, Jo\v{z}e and
+                Marolt Matija }, 
+    booktitle = {Proceedings of the 7th International Workshop
+                on Semantic Ambient Media Experience (SAME 2014)
+                - Ambient Media Usability, Interaction, and
+                Smart Media Technologies : Helsinki, Finland,
+                26th October 2014, (International series on
+                information systems and management in creative
+                emedia, no. 2014/1)},
+    title = {Usability evaluation of input devices for
+            navigation and interaction in 3D visualisation}, 
+    year = {2014}, 
+    pages = {19-23}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                    <p><strong>Žiga Lesar,</strong> <em>"Real-time ray casting of volumetric data"</em>, In: <em>Proceedings of ERK 2014, Portorož, Slovenija, IEEE Region 8, Slovenska sekcija IEEE</em>, 2014, p. 199-200. <a href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7313802" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Lesar2015a, 
+    author = {Lesar, \v{Z}iga}, 
+    booktitle = {EUROCON 2015 - International Conference on
+                Computer as a Tool (EUROCON), IEEE}, 
+    title = {Real-time ray casting of volumetric data}, 
+    year = {2015}, 
+    pages = {1-6}, 
+    doi = {10.1109/EUROCON.2015.7313802}, 
+    month = {Sept}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                    <p><strong>Žiga Lesar, Ciril Bohak, Matija Marolt,</strong> <em>"Evaluation of angiogram visualization methods for fast and reliable aneurysm diagnosis"</em>, In: <em>Medical imaging 2015 : image perception, observer performance, and technology assessment : 25-26 February 2015</em>, Orlando, Florida, United States, (Progress in biomedical optics and imaging, vol. 16, no. 44), (Proceedings of SPIE, the International Society for Optical Engineering, vol. 9416), Claudia R. Mello-Thoms, ur., Matthew A. Kupinski, ur., Bellingham (Washington), SPIE, cop. 2015, str. [1-8]. <a href="http://spie.org/Publications/Proceedings/Paper/10.1117/12.2082179" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Lesar2015a, 
+    author = {  Lesar, \v{Z}iga and
+                Bohak, Ciril and
+                Marotl, Matija }, 
+    booktitle = {Medical imaging 2015 : image perception, 
+                observer performance, and technology 
+                assessment : 25-26 February 2015, Orlando, 
+                Florida, United States, (Progress in 
+                biomedical optics and imaging, vol. 16, 
+                no. 44), (Proceedings of SPIE, the 
+                International Society for Optical Engineering, 
+                vol. 9416), Bellingham (Washington), SPIE}, 
+    title = {Evaluation of angiogram visualization methods 
+            for fast and reliable aneurysm diagnosis}, 
+    year = {2015}, 
+    pages = {1-8}, 
+    doi = {10.1117/12.2082179}, 
+    month = {March}
+}</pre>
+                    ">[BIB]</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="licenceModal" class="modal face" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Licence </h4>
+                </div>
+                <div class="modal-body">
+                    <p>The original application was developed by <strong>Simon Žagar</strong> in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science.</p>
+
+                    <p>The application was later adapted and extended by <strong>Anže Sodja</strong>, <strong>Peter Škrlj</strong>, <strong>Miloš Lukić</strong>, <strong>Boštjan Čotar</strong>, <strong>Žiga Lesar</strong>, <strong>Matevž Ropret</strong> and <strong>Ciril Bohak</strong></p>
+
+                    <p>This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a copy of this license, visit <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/">http://creativecommons.org/licenses/by-nc-sa/3.0/</a> or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.</p>
+
+                    <p>Licences of used Libraries can be foun in code and on above mentioned web sites.</p>
+
+                    <br />
+                    <br />
+                    <p style="text-align: center; font-size: x-small;"><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/80x15.png" /></a>
+                        <br />
+                        This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="floatingWindow" class="modal fade floating-window">
+        <div class="modal-dialog">
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                     <h4 class="modal-title">Example window</h4>
+
+                </div>
+                <div class="modal-body">
+                    <p>Test</p>
+                </div>
+                <div class="modal-footer med3d-modal-footer">
+                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn med3d-btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="widgetExample" class="modal fade floating-window">
+        <div class="modal-dialog">
+            <div class="modal-content med3d-modal-widget hover-div">
+                <div class="modal-header med3d-modal-widget-header">
+                    <button type="button" class="med3d-modal-widget-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                     <p class="modal-title">Example Widget</p>
+
+                </div>
+                <div class="modal-widget-body">
+                    <p>Test Widget</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="navigatorTranslation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 50px;">
+        <svg x="0px" y="0px"
+             width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
+             xml:space="preserve">
+        <symbol  id="NAVIGACIJA" class="drag-handle" viewBox="-39.687 -39.687 79.374 79.374">
+            <g>
+                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-8.374,30.581 -0.258,38.697 
+                    7.856,30.581        "/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-0.258" y1="38.697" x2="-0.258" y2="20.064"/>
+            </g>
+            <g>
+                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-30.581,-8.374 -38.697,-0.258 
+                    -30.581,7.856       "/>
+                
+                    <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-38.697" y1="-0.258" x2="-20.064" y2="-0.258"/>
+            </g>
+            <g>
+                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="8.374,-30.581 0.258,-38.697 
+                    -7.856,-30.581      "/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="0.258" y1="-38.697" x2="0.258" y2="-20.064"/>
+            </g>
+            <g>
+                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="30.581,8.374 38.697,0.258 
+                    30.581,-7.856       "/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="38.697" y1="0.258" x2="20.064" y2="0.258"/>
+            </g>
+        </symbol>
+        <g>
+            <g>
+                <circle class="drag-handle-1" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
+            </g>
+            <g>
+                <circle class="navigator-btn-close-1" circle fill="#FFFFFF" cx="109.962" cy="19.692" r="19.691"/>
+            </g>
+            <circle fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0376" x2="124.5459" y2="56.0376">
+                <stop  offset="0" style="stop-color:#3B3F44"/>
+                <stop  offset="0.5" style="stop-color:#4D4B50"/>
+                <stop  offset="1" style="stop-color:#393E42"/>
+            </linearGradient>
+            <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.037" r="51.385"/>
+            <circle class="navigator-btn-circ-nav-1" fill="#424143" cx="73.161" cy="56.037" r="51.385"/>
+            <g>
+                <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0376" x2="109.7109" y2="56.0376">
+                    <stop  offset="0.1" style="stop-color:#C0282D"/>
+                    <stop  offset="0.5153" style="stop-color:#676690"/>
+                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
+                </linearGradient>
+                <polygon fill="url(#SVGID_2_)" points="109.278,92.589 36.61,19.919 37.042,19.486 109.711,92.156         "/>
+                <linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0376" x2="109.7109" y2="56.0376">
+                    <stop  offset="0.1" style="stop-color:#C0282D"/>
+                    <stop  offset="0.5153" style="stop-color:#676690"/>
+                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
+                </linearGradient>
+                <polygon fill="url(#SVGID_3_)" points="37.042,92.589 36.61,92.156 109.278,19.486 109.711,19.919         "/>
+            </g>
+            <g class="drag-handle-1" >
+                <g>
+                    <g>
+                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.086" x2="116.181" y2="98.499"/>
+                    </g>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="114.208,98.502 116.181,98.502 116.179,100.473             "/>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="111.565,105.088 109.594,105.086 109.595,103.116           "/>
+                </g>
+                <g>
+                    <g>
+                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.595" y1="98.499" x2="116.182" y2="105.086"/>
+                    </g>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="116.179,103.114 116.179,105.084 114.207,105.083           "/>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.472 109.595,98.499 111.565,98.5           "/>
+                </g>
+            </g>
+            <g class="navigator-btn-close-1">
+                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
+                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
+            </g>
+            <g>
+                <g>
+                    <text transform="matrix(1 0 0 1 128.626 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">R</text>
+                </g>
+                <g>
+                    <text transform="matrix(1 0 0 1 7.0303 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">F</text>
+                </g>
+            </g>
+            
+                <use xlink:href="#NAVIGACIJA"  width="79.374" height="79.374" x="-39.687" y="-39.687" transform="matrix(1 0 0 -1 72.5586 56.0371)" overflow="visible"/>
+        </g>
+        </svg>
+    </div>
+
+    <div id="navigatorRotation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 175px;">
+        <svg x="0px" y="0px"
+         width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
+         xml:space="preserve">
+        <g>
+            <g>
+                <circle class="drag-handle-2" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
+            </g>
+            <g>
+                <circle class="navigator-btn-close-2" fill="#FFFFFF" cx="109.962" cy="19.691" r="19.691"/>
+            </g>
+            <circle fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0371" x2="124.5459" y2="56.0371">
+                <stop  offset="0" style="stop-color:#3B3F44"/>
+                <stop  offset="0.5" style="stop-color:#4D4B50"/>
+                <stop  offset="1" style="stop-color:#393E42"/>
+            </linearGradient>
+            <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.036" r="51.385"/>
+            <circle class="navigator-btn-circ-nav-2" fill="#424143" cx="73.161" cy="56.036" r="51.385"/>
+            <g>
+                <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0371" x2="109.7109" y2="56.0371">
+                    <stop  offset="0.1" style="stop-color:#C0282D"/>
+                    <stop  offset="0.5153" style="stop-color:#676690"/>
+                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
+                </linearGradient>
+                <polygon fill="url(#SVGID_2_)" points="109.278,92.588 36.61,19.919 37.042,19.486 109.711,92.155         "/>
+                <linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0371" x2="109.7109" y2="56.0371">
+                    <stop  offset="0.1" style="stop-color:#C0282D"/>
+                    <stop  offset="0.5153" style="stop-color:#676690"/>
+                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
+                </linearGradient>
+                <polygon fill="url(#SVGID_3_)" points="37.042,92.588 36.61,92.155 109.278,19.486 109.711,19.919         "/>
+            </g>
+            <g class="drag-handle-2" >
+                <g>
+                    <g>
+                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.085" x2="116.181" y2="98.499"/>
+                    </g>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="114.208,98.502 116.181,98.502 116.179,100.473             "/>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="111.565,105.088 109.594,105.085 109.595,103.116           "/>
+                </g>
+                <g>
+                    <g>
+                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.595" y1="98.499" x2="116.182" y2="105.085"/>
+                    </g>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="116.179,103.113 116.179,105.084 114.207,105.083           "/>
+                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.471 109.595,98.499 111.565,98.501             "/>
+                </g>
+            </g>
+            <g class="navigator-btn-close-2">
+                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
+                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
+            </g>
+            <g>
+                <text transform="matrix(1 0 0 1 63.9385 32.5542)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">W</text>
+                <text transform="matrix(1 0 0 1 67.6084 92.3916)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">S</text>
+                <text transform="matrix(1 0 0 1 97.9521 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">D</text>
+                <g>
+                    <text transform="matrix(1 0 0 1 128.626 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">E</text>
+                </g>
+                <text transform="matrix(1 0 0 1 36.5225 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">A</text>
+                <g>
+                    <text transform="matrix(1 0 0 1 5.1982 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">Q</text>
+                </g>
+            </g>
+        </g>
+        </svg>
+    </div>
+
+
+    <footer class="footer hover-div">
+        <p><span class="glyphicon glyphicon-console"></span> Application status.</p>
+    </footer>
+
+
+<!-- build:js scripts/main.js -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="scripts/jquery.min.js"></script>
+    <script src="scripts/jquery-ui.min.js"></script>
+    <script src="scripts/bootstrap.min.js"></script>
+    <script src="scripts/angular.min.js"></script>
+<!-- endbuild -->
+    <script>
+    /*  // For WebGL purposes
+        function resize(gl) {
+          // Get the canvas from the WebGL context
+          var canvas = gl.canvas;
+         
+          // Lookup the size the browser is displaying the canvas.
+          var displayWidth  = canvas.clientWidth;
+          var displayHeight = canvas.clientHeight;
+         
+          // Check if the canvas is not the same size.
+          if (canvas.width  != displayWidth ||
+              canvas.height != displayHeight) {
+         
+            // Make the canvas the same size
+            canvas.width  = displayWidth;
+            canvas.height = displayHeight;
+         
+            // Set the viewport to match
+            gl.viewport(0, 0, canvas.width, canvas.height);
+          }
+        }
+    */
+
+        function resize(canvas) {
+          // Lookup the size the browser is displaying the canvas.
+          var displayWidth  = canvas.clientWidth;
+          var displayHeight = canvas.clientHeight;
+         
+          // Check if the canvas is not the same size.
+          if (canvas.width  != displayWidth ||
+              canvas.height != displayHeight) {
+         
+            // Make the canvas the same size
+            canvas.width  = displayWidth;
+            canvas.height = displayHeight;
+          }
+        }
+
+        function init() {
+            initNavigators();
+
+            var canvas = document.getElementById("med3d-canvas");
+
+            resize(canvas);
+
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#369";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        var detachedNavigators = [];
+        function initNavigators() {
+            $("#navigatorTranslation").draggable({
+                handle: ".drag-handle-1"
+            });
+
+            $("#navigatorRotation").draggable({
+                handle: ".drag-handle-2"
+            });
+
+            $(".navigator-btn-close-1").click(function() {
+                detachedNavigators.push($("#navigatorTranslation").detach());
+            });
+
+            $(".navigator-btn-close-2").click(function() {
+                detachedNavigators.push($("#navigatorRotation").detach());
+            });
+
+            $(".navigator-btn-circ-nav-1").click(function() {
+                handleCircleNavigator(".navigator-btn-circ-nav-1");
+            });
+
+            $(".navigator-btn-circ-nav-1").draggable({
+                start: function() {},
+                drag: function() {
+                    handleCircleNavigator(".navigator-btn-circ-nav-1");
+                },
+                stop: function() {}
+            });
+
+            $(".navigator-btn-circ-nav-2").click(function() {
+                handleCircleNavigator(".navigator-btn-circ-nav-2");
+            });
+
+            $(".navigator-btn-circ-nav-2").draggable({
+                start: function() {},
+                drag: function() {
+                    handleCircleNavigator(".navigator-btn-circ-nav-2");
+                },
+                stop: function() {}
+            });
+        }
+
+        function handleCircleNavigator(circNavigator) {
+            var outX = (event.clientX - $(circNavigator).position().left - $(circNavigator).attr("r")) / $(circNavigator).attr("r");
+            var outY = - ((event.clientY - $(circNavigator).position().top - $(circNavigator).attr("r")) / $(circNavigator).attr("r"));
+
+            outX = outX > 1.0 ? 1.0 : (outX < -1.0 ? -1.0 : outX);
+            outY = outY > 1.0 ? 1.0 : (outY < -1.0 ? -1.0 : outY);
+            
+            console.log(outX + " " + outY);
+        }
+
+        function showNavigator(navigator) {
+            if (navigator === undefined) {
+                for (var i = 0; i < detachedNavigators.length; i++) 
+                    detachedNavigators[i].appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
+            } else {
+                navigator.appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
+            }
+        }
+
+        function toggleNavigator(navigatorName) {
+            if (detachedNavigators.length > 0) {
+                for (var i = 0;  i < detachedNavigators.length; i++) {
+                    if (detachedNavigators[i].attr("id") === navigatorName) {
+                        detachedNavigators[i].appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
+                        detachedNavigators.splice(i, 1);
+                        return;
+                    }
+                }
+            }
+            detachedNavigators.push($("#" + navigatorName).detach());
+        }
+
+        $(document).ready(function(){
+            $(".hover-div").stop().fadeTo("slow", 0.5);
+
+            $(".hover-div").hover(function(){
+                $(this).stop().fadeTo( "fast" , 1.0);
+            }, function(){
+                $(this).stop().fadeTo( "fast" , 0.5);
+            });
+
+            $('[data-toggle="popover"]').popover();
+            $(".floating-window").draggable({
+                handle: ".modal-header"
+            });
+
+            init();
+        });
+
+
+        
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,273 @@
+html, body {
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+/* make any canvas fill its container */
+canvas {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+.row-header {
+  margin: 0px auto;
+  padding: 0px 0px;
+}
+.row-content {
+  margin: 0px auto;
+  padding: 50px 0px;
+  border-bottom: 1px ridge;
+  min-height: 400px;
+}
+.row-footer {
+  margin: 0px auto;
+  padding: 20px 0px;
+  background-color: #AfAfAf;
+}
+.navbar-nav > li > a, .navbar-brand {
+    padding-top: 5px !important; 
+    padding-bottom: 2px !important;
+    height: 32px;
+}
+.navbar {
+  min-height: 32px !important;
+}
+.navbar-inverse {
+  background-color: rgba(70, 71, 76, 0.5); /*#46474c;*/
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .active > a {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .active > a:hover {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .active > a:focus {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .open > a {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .open > a:hover {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav > .open > a:focus {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav .open .dropdown-menu > li > a {
+  background-color: #46474c;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav .open .dropdown-menu > li > a:hover {
+  background: #4ab5b4;
+  color: #ffffff;
+}
+.navbar-inverse .navbar-nav .open .dropdown-menu {
+  background-color: #46474c;
+  color: #eeeeee;
+}
+.navbar-right-no-margin {
+  float: right!important;
+  margin-right: 0px;
+}
+
+.footer {
+  padding: 2px 10px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 24px;
+  background-color: rgba(70, 71, 76, 0.5);
+}
+.footer p {
+  color: #fff;
+}
+
+.med3d-modal {
+  background-color: #c8c8c8;
+  border-radius: 0px;
+}
+
+.med3d-modal-header {
+  background-color: #46474c;
+  color: #fff;
+  padding: 0px;
+  cursor:move;
+}
+
+.med3d-modal-header h1, h2, h3, h4 {
+  display: inline;
+  font-weight: 200;
+  padding-left: 10px;
+  border: none;
+}
+.med3d-modal-header img {
+  margin-left: 5px;
+}
+
+.med3d-modal-footer {
+  padding: 5px;
+  border: none;
+}
+
+.med3d-modal-widget {
+  background-color: #46474c;
+  border-radius: 0px;
+  width: 200px;
+  font-variant: small-caps;
+}
+
+.modal-widget-body {
+  font-size: 10px;
+  font-weight: normal;
+  color: white;
+  padding: 5px !important;
+  font-variant: normal;
+}
+
+.med3d-modal-widget-header {
+  background-color: #46474c;
+  color: white;
+  padding: 5px;
+  font-size: 10px;
+  font-weight: bold;
+  border: none;
+  cursor: move;
+}
+
+.med3d-modal-widget-close {
+  color: black;
+  background-color: #46474c;
+  border: none;
+  float: right;
+  font-size: 10px;
+  font-weight: bold;
+  width: 10px;
+  height: 10px;
+  padding: 0px;
+  margin: 0px;
+}
+
+.med3d-modal-widget-close:hover{
+  color: white;
+}
+
+.med3d-close {
+  color: white;
+  background-color: #c7282b;
+  border: none;
+  float: right;
+  font-size: 15px;
+  font-weight: 200;
+  width: 28px;
+  height: 28px;
+}
+
+.med3d-close:hover {
+  color: #c7282b;
+  background-color: black;
+}
+
+.med3d-close:active {
+  color: #c7282b;
+  background-color: white;
+}
+
+.med3d-btn-primary {
+  background-color: #49b2b2;
+  color: white;
+  font-weight: 200;
+  border-radius: 0px;
+}
+
+.med3d-btn-primary:hover {
+  background-color: #647296;
+  color: white;
+  font-weight: 200;
+}
+
+.med3d-btn-primary:active {
+  background-color: white;
+  color: #49b2b2;
+  font-weight: 200;
+}
+
+.med3d-btn-default {
+  background-color: #46474c;
+  color: white;
+  font-weight: 200;
+  border-radius: 0px;
+}
+
+.med3d-btn-default:hover {
+  background-color: black;
+  color: white;
+  font-weight: 200;
+}
+
+.med3d-btn-default:active {
+  background-color: white;
+  color: #46474c;
+  font-weight: 200;
+}
+
+.med3d-ul {
+  list-style-type: none;
+  padding-left: 10px;
+}
+
+.med3d-ul li {
+  display: inline;
+  margin-right: 20px;
+} 
+
+.med3d-checkbox {
+  width: 10px;
+  height: 11px;
+  padding-right: 7px;
+  -webkit-appearance: none;
+  border: 1px solid black;
+  padding: 9px;
+  border-radius: 0px;
+  display: inline-block;
+  position: relative;
+  margin-right: 5px;
+}
+
+.med3d-checkbox:checked {
+  border: 1px solid black;
+  color: #49b2b2;
+}
+
+.med3d-checkbox:checked:after {
+  content: '\2588';
+  color: #49b2b2;
+  font-size: 4px;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+.hover-div {
+  background-color: rgba(70, 71, 76, 1.0);
+}
+
+.popover{
+    max-width: 100%;
+}
+
+body {
+  align: center;
+  padding: 50px 0px 0px 0px;
+  z-index: 0;
+}
