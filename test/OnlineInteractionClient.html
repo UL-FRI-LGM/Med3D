@@ -72,8 +72,8 @@ FPS: <span id="fps">N/A</span>
     renderer.addShaderLoaderUrls("../src/shaders");
 
     var listener = new M3D.SceneSubscriberListener(function (status, s, c) {
-        scene = s;
-        camera = c;
+        scene = s[0];
+        camera = c[0];
 
         animate()
     });

@@ -10,7 +10,6 @@ var Session = class {
         this._objects = {};
         this._geometries = {};
         this._materials = {};
-        this._camera = {};
         this._host = host;
         this._initialized = false;
     }
@@ -19,7 +18,6 @@ var Session = class {
         this._objects = data.objects;
         this._geometries = data.geometries;
         this._materials = data.materials;
-        this._camera = data.camera;
         this._initialized = true;
     }
 
@@ -28,8 +26,26 @@ var Session = class {
     get materials() { return this._materials; }
     get camera() { return this._camera; }
     get host() { return this._host; }
-    get initialData() { return {objects: this._objects, geometries: this._geometries, materials: this._materials, camera: this._camera}}
+    get initialData() { return {objects: this._objects, geometries: this._geometries, materials: this._materials}}
 
+
+    addObjects(newObjects) {
+        for (var uuid in newObjects) {
+            this._objects[uuid] = newObjects[uuid];
+        }
+    }
+
+    addMaterials(newMaterials) {
+        for (var uuid in newMaterials) {
+            this._materials[uuid] = newMaterials[uuid];
+        }
+    }
+
+    addGeometries(newGeometries) {
+        for (var uuid in newGeometries) {
+            this._geometries[uuid] = newGeometries[uuid];
+        }
+    }
 
     // TODO: Security
     updateObjects(update) {
@@ -65,13 +81,6 @@ var Session = class {
             for (var prop in updateEntry) {
                 material[prop] = updateEntry[prop];
             }
-        }
-    }
-
-    updateCamera(update) {
-        // Object entry update
-        for (var prop in update) {
-            this._camera[prop] = update[prop];
         }
     }
 

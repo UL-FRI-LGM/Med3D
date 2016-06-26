@@ -7,7 +7,6 @@ M3D.ScenePublisher = class {
     constructor(scene, camera, updateInterval) {
 
         var self = this;
-        var selftest = this;
 
         this._socket = io();
 
@@ -17,39 +16,30 @@ M3D.ScenePublisher = class {
 
         this._scene = scene;
         this._camera = camera;
-        this._updateInterval = updateInterval;
 
+        // Scheduled updates
         this._scheduledObjectsUpdates = {};
         this._scheduledMaterialsUpdates = {};
         this._scheduledGeometriesUpdates = {};
-        this._cameraUpdate = {};
 
-        this._newObjects = {objects: {}, geometries: {}, materials: {}, camera: {}};
+        this._newObjects = {objects: {}, geometries: {}, materials: {}};
         this._synchronizedObjects = new Set();
 
-        this._timer = null;
 
         var onObjectUpdate = function(update) {
             // Update previous update entry
             var changes = update.changes;
 
-            if (update.uuid !== self._camera._uuid) {
-                var entry = self._scheduledObjectsUpdates[update.uuid];
+            var entry = self._scheduledObjectsUpdates[update.uuid];
 
-                if (entry !== undefined) {
-                    for (var prop in changes) {
-                        entry[prop] = changes[prop];
-                    }
-                }
-                else {
-                    // Add new update entry
-                    self._scheduledObjectsUpdates[update.uuid] = update.changes;
+            if (entry !== undefined) {
+                for (var prop in changes) {
+                    entry[prop] = changes[prop];
                 }
             }
             else {
-                for (var prop in changes) {
-                    self._cameraUpdate[prop] = changes[prop];
-                }
+                // Add new update entry
+                self._scheduledObjectsUpdates[update.uuid] = update.changes;
             }
         };
 
@@ -58,18 +48,35 @@ M3D.ScenePublisher = class {
             var object = changes.objectRef;
 
             if (object === undefined || self._synchronizedObjects.has(update.uuid)) {
+                // No object reference was given (Object was removed from hierarchy)
                 delete changes.objectRef;
 
-                self._scheduledObjectsUpdates[update.uuid].parentUuid = changes.parentUuid;
+                // Schedule parent change update
+                var scheduledUpdate = self._scheduledObjectsUpdates[update.uuid];
+                if (scheduledUpdate) {
+                    scheduledUpdate.parentUuid = changes.parentUuid;
+                } else {
+                    self._scheduledObjectsUpdates[update.uuid] = { parentUuid: changes.parentUuid }
+                }
             } else {
+                // New object not previously seen was added to the hierarchy
                 self._newObjects.objects[object._uuid] = object.toJson();
                 self._synchronizedObjects.add(object._uuid);
 
+                // TODO: If hierarchy is added import whole hierarchy not just the given object
+                // Start listening for changes on this object
+                object.addOnChangeListener(this, false);
+
+                // If the object is mesh also synchronize material and geometry
                 if (object.type === "Mesh") {
-                    self._newObjects.geometries[object.geometry._uuid] = object.geometry.toJson();
-                    self._newObjects.materials[object.material._uuid] = object.material.toJson();
-                    self._synchronizedObjects.add(object.geometry._uuid);
-                    self._synchronizedObjects.add(object.material._uuid);
+                    if (!self._synchronizedObjects.has(object.geometry._uuid)) {
+                        self._newObjects.geometries[object.geometry._uuid] = object.geometry.toJson();
+                        self._synchronizedObjects.add(object.geometry._uuid);
+                    }
+                    if (!self._synchronizedObjects.has(object.material._uuid)) {
+                        self._newObjects.materials[object.material._uuid] = object.material.toJson();
+                        self._synchronizedObjects.add(object.material._uuid);
+                    }
                 }
             }
         };
@@ -114,12 +121,18 @@ M3D.ScenePublisher = class {
     startPublishing() {
         var data = {objects: {}, geometries: {}, materials: {}, camera: {}};
 
+        // Recursively the shared scene
         this._scene.exportHierarchyToJson(data);
-        data.camera = this._camera.toJson();
 
+        // Export the camera
+        var cameraJson = this._camera.toJson();
+        data.objects[cameraJson.uuid] = cameraJson;
+
+        // Form the request and forward it to server via socket.io
         var request = {type: "create", data: data};
         this._socket.emit("session", request);
 
+        // Add change listeners to the given scene and camera
         this._scene.addOnChangeListener(this._changeListener, true);
         this._camera.addOnChangeListener(this._changeListener, false);
     }
@@ -146,11 +159,6 @@ M3D.ScenePublisher = class {
             updateEmpty = false;
         }
 
-        if (Object.keys(this._cameraUpdate).length > 0) {
-            updateData.updates.camera = this._cameraUpdate;
-            updateEmpty = false;
-        }
-
 
         // Add newly added objects
         if (Object.keys(this._newObjects.objects).length > 0) {
@@ -168,17 +176,18 @@ M3D.ScenePublisher = class {
             updateEmpty = false;
         }
 
+        // If there is nothing to update.. fallback
         if (updateEmpty) {
             return;
         }
 
-        // Post the update
+        // Forward the request to the server
         this._socket.emit("sessionUpdate", updateData);
 
+        // Reset scheduled updates
         this._scheduledObjectsUpdates = {};
         this._scheduledMaterialsUpdates = {};
         this._scheduledGeometriesUpdates = {};
-        this._cameraUpdate = {};
         this._newObjects = {objects: {}, geometries: {}, materials: {}, camera: {}};
     }
 };

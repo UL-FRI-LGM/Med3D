@@ -57,6 +57,8 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/renderers/Renderer.js"></script>
 <script src="../src/renderers/MeshRenderer.js"></script>
 
+<script src="../src/controls/Controls.js"></script>
+
 <script>
     var objects;
 
@@ -71,7 +73,7 @@ FPS: <span id="fps">N/A</span>
     var dLight2 = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
     var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
 
-    pLight.position = new THREE.Vector3(40, 40, 200);
+    pLight.position = new THREE.Vector3(0, 0, 200);
     dLight.position = new THREE.Vector3(-1, 0, 0);
     dLight2.position = new THREE.Vector3(1, 0, 0);
 
@@ -81,25 +83,81 @@ FPS: <span id="fps">N/A</span>
     scene.add(pLight);
 
     // Camera initialization
-    var camera = new M3D.PerspectiveCamera();
-    camera.position = new THREE.Vector3(40, 40, 200);
+    var camera = new M3D.PerspectiveCamera(1.483, 16/9, 10, 10000);
+    camera.position = new THREE.Vector3(0, 0, 20);
 
     // Set path to shader files
     renderer.addShaderLoaderUrls("../src/shaders");
 
-
     // Initialize object loader and load the objects
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
+    var controls = new M3D.Controls();
 
-    loader.load("models/badMonkey.obj", function ( obj ) {
+    controls.addListener(function (dt, pressedKeys) {
+        // ROTATIONS
+        if (pressedKeys[65]) {  // A
+            camera.rotateY(0.0001 * dt);
+        }
+
+        if (pressedKeys[68]) {  // D
+            camera.rotateY(-0.0001 * dt);
+        }
+
+        if (pressedKeys[87]) {  // W
+            camera.rotateX(0.0001 * dt);
+        }
+
+        if (pressedKeys[83]) {  // S
+            camera.rotateX(-0.0001 * dt);
+        }
+
+        if (pressedKeys[81]) {  // Q
+            camera.rotateZ(0.001 * dt);
+        }
+
+        if (pressedKeys[69]) {  // R
+            camera.rotateZ(-0.001 * dt);
+        }
+
+
+        // TRANSLATIONS
+        if (pressedKeys[39]) {  // RIGHT - Right
+            camera.translateX(0.1 * dt);
+        }
+
+        if (pressedKeys[37]) {  // LEFT - Left
+            camera.translateX(-0.1 * dt);
+        }
+
+        if (pressedKeys[40]) {  // DOWN - Backward
+            camera.translateZ(1 * dt);
+        }
+
+        if (pressedKeys[38]) {  // UP - Forward
+            camera.translateZ(-1 * dt);
+        }
+
+        if (pressedKeys[82]) {  // LEFT - Left
+            camera.translateY(0.1 * dt);
+        }
+
+        if (pressedKeys[70]) {  // F - Downward
+            camera.translateY(-0.1 * dt);
+        }
+
+        if (pressedKeys[82]) {  // Q - Upward
+            camera.translateY(0.1 * dt);
+        }
+    });
+
+    loader.load("models/untitled4.obj", function ( obj ) {
         objects = obj;
         for (var i = 0; i < obj.length; i++) {
             obj[i].position.z = 0;
             obj[i].material = new M3D.MeshPhongMaterial();
             obj[i].material.specular = new THREE.Color("#999999");
             obj[i].geometry.drawWireframe = false;
-
             scene.add(obj[i]);
         }
 
@@ -107,12 +165,19 @@ FPS: <span id="fps">N/A</span>
         animate();
     });
 
-    var forward = true;
+    var prevTime = -1, currTime, dt;
     function animate() {
         requestAnimationFrame(animate);
         calculateFps();
 
-        camera.lookAt(objects[0].position, new THREE.Vector3(0, 1, 0));
+        // Calculate delta time and update timestamps
+        currTime = new Date();
+        dt = (prevTime !== -1) ? currTime - prevTime : 0;
+        prevTime = currTime;
+
+        controls.update(dt);
+
+        //camera.lookAt(objects[0].position, new THREE.Vector3(0, 1, 0));
         pLight.position = camera.position;
 
         renderer.render(scene, camera);
@@ -121,7 +186,7 @@ FPS: <span id="fps">N/A</span>
     // FPS calculation
     var timeNow = 0, timeLast = 0, fps = 0;
     function calculateFps() {
-        timeNow = new Date().getTime();
+        timeNow = new Date();
         fps++;
 
         if (timeNow - timeLast >= 1000) {
@@ -134,26 +199,6 @@ FPS: <span id="fps">N/A</span>
             fps = 0;
         }
     }
-
-
-    var rotSpeed = .02;
-    document.addEventListener('keydown', function(event) {
-        var x = camera.position.x,
-                y = camera.position.y,
-                z = camera.position.z;
-
-        if (event.keyCode === 65){
-            camera.positionX = x * Math.cos(rotSpeed) + z * Math.sin(rotSpeed);
-            camera.positionZ = z * Math.cos(rotSpeed) - x * Math.sin(rotSpeed);
-        } else if (event.keyCode === 68){
-            camera.positionX = x * Math.cos(rotSpeed) - z * Math.sin(rotSpeed);
-            camera.positionZ = z * Math.cos(rotSpeed) + x * Math.sin(rotSpeed);
-        } else if (event.keyCode === 49) {
-            for (var i = 0; i < objects.length; i++) {
-                objects[i].geometry.drawWireframe = !objects[i].geometry.drawWireframe;
-            }
-        }
-    });
 
 </script>
 

@@ -36,6 +36,22 @@ var SessionManager = class {
             return false;
         }
 
+        // New objects, materials and geometries need to be processed before the updates
+        if (data.newObjects) {
+            if (data.newObjects.objects) {
+                session.addObjects(data.newObjects.objects);
+            }
+            
+            if (data.newObjects.materials) {
+                session.addMaterials(data.newObjects.materials);
+            }
+            
+            if (data.newObjects.geometries) {
+                session.addGeometries(data.newObjects.geometries);
+            }
+        }
+        
+        // Process the updates
         if (data.updates) {
             if (data.updates.objects) {
                 session.updateObjects(data.updates.objects);
@@ -47,10 +63,6 @@ var SessionManager = class {
 
             if (data.updates.materials) {
                 session.updateMaterials(data.updates.materials);
-            }
-
-            if (data.updates.camera) {
-                session.updateCamera(data.updates.camera);
             }
         }
 
