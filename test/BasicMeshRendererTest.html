@@ -57,7 +57,7 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/renderers/Renderer.js"></script>
 <script src="../src/renderers/MeshRenderer.js"></script>
 
-<script src="../src/controls/Controls.js"></script>
+<script src="../src/controls/KeyboardInput.js"></script>
 
 <script>
     var objects;
@@ -92,62 +92,60 @@ FPS: <span id="fps">N/A</span>
     // Initialize object loader and load the objects
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
-    var controls = new M3D.Controls();
+    var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
+    var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
-    controls.addListener(function (dt, pressedKeys) {
+    var keyboardInput = new M3D.KeyboardInput();
+    keyboardInput.addListener(function (pressedKeys) {
         // ROTATIONS
         if (pressedKeys[65]) {  // A
-            camera.rotateY(0.0001 * dt);
+            keyboardRotation.y = 1;
         }
 
         if (pressedKeys[68]) {  // D
-            camera.rotateY(-0.0001 * dt);
+            keyboardRotation.y = -1;
         }
 
         if (pressedKeys[87]) {  // W
-            camera.rotateX(0.0001 * dt);
+            keyboardRotation.x = 1;
         }
 
         if (pressedKeys[83]) {  // S
-            camera.rotateX(-0.0001 * dt);
+            keyboardRotation.x = -1;
         }
 
         if (pressedKeys[81]) {  // Q
-            camera.rotateZ(0.001 * dt);
+            keyboardRotation.z = 1;
         }
 
         if (pressedKeys[69]) {  // R
-            camera.rotateZ(-0.001 * dt);
+            keyboardRotation.z = -1;
         }
 
 
         // TRANSLATIONS
         if (pressedKeys[39]) {  // RIGHT - Right
-            camera.translateX(0.1 * dt);
+            keyboardTranslation.x = 1;
         }
 
         if (pressedKeys[37]) {  // LEFT - Left
-            camera.translateX(-0.1 * dt);
+            keyboardTranslation.x = -1;
         }
 
         if (pressedKeys[40]) {  // DOWN - Backward
-            camera.translateZ(1 * dt);
+            keyboardTranslation.z = 1;
         }
 
         if (pressedKeys[38]) {  // UP - Forward
-            camera.translateZ(-1 * dt);
-        }
-
-        if (pressedKeys[82]) {  // LEFT - Left
-            camera.translateY(0.1 * dt);
-        }
-
-        if (pressedKeys[70]) {  // F - Downward
-            camera.translateY(-0.1 * dt);
+            keyboardTranslation.z = -1;
         }
 
         if (pressedKeys[82]) {  // Q - Upward
-            camera.translateY(0.1 * dt);
+            keyboardTranslation.y = 1;
+        }
+
+        if (pressedKeys[70]) {  // F - Downward
+            keyboardTranslation.y = -1;
         }
     });
 
@@ -175,7 +173,17 @@ FPS: <span id="fps">N/A</span>
         dt = (prevTime !== -1) ? currTime - prevTime : 0;
         prevTime = currTime;
 
-        controls.update(dt);
+        keyboardTranslation.reset();
+        keyboardRotation.reset();
+        keyboardInput.update();
+
+        camera.translateX(keyboardTranslation.x * dt * 0.01);
+        camera.translateY(keyboardTranslation.y * dt * 0.01);
+        camera.translateZ(keyboardTranslation.z * dt * 0.1);
+
+        camera.rotateX(keyboardRotation.x * dt * 0.0001);
+        camera.rotateY(keyboardRotation.y  * dt * 0.0001);
+        camera.rotateZ(keyboardRotation.z * dt * 0.001);
 
         //camera.lookAt(objects[0].position, new THREE.Vector3(0, 1, 0));
         pLight.position = camera.position;

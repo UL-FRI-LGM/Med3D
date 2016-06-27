@@ -4,7 +4,7 @@
 
 M3D.MeshRenderer = class {
 
-    constructor (canvas, gl_version) {
+    constructor(canvas, gl_version) {
         // Create new gl manager with appropriate version
         this._glManager = new M3D.GLManager(canvas, gl_version);
 
@@ -51,7 +51,7 @@ M3D.MeshRenderer = class {
     }
 
 
-    render (scene, camera) {
+    render(scene, camera) {
 
         // Check if correct object instance was passed as camera
         if (camera instanceof M3D.Camera === false) {
@@ -108,7 +108,7 @@ M3D.MeshRenderer = class {
             // Check if the program is already compiled
             var compiledProgram = this._glProgramManager.fetchCompiledProgram(fullName);
 
-            if (compiledProgram === undefined ) {
+            if (compiledProgram === undefined) {
                 everythingLoaded = false;
 
                 // Called when the program template is loaded.. Initiates shader compilation
@@ -165,7 +165,7 @@ M3D.MeshRenderer = class {
         }
     }
 
-    _setup_attributes (program, object, vertices) {
+    _setup_attributes(program, object, vertices) {
         var attributeSetter = program.attributeSetter;
 
         var noError = true;
@@ -192,7 +192,7 @@ M3D.MeshRenderer = class {
         }
     }
 
-    _setup_uniforms (program, object, camera) {
+    _setup_uniforms(program, object, camera) {
         var uniformSetter = program.uniformSetter;
 
         if (uniformSetter["PMat"] !== undefined) {
@@ -297,7 +297,7 @@ M3D.MeshRenderer = class {
             uniformSetter[prefix + ".color"].set(light.color.toArray());
             uniformSetter[prefix + ".directional"].set(1);
 
-            index ++;
+            index++;
         }
 
         // POINT LIGHTS
@@ -309,7 +309,7 @@ M3D.MeshRenderer = class {
             uniformSetter[prefix + ".color"].set(light.color.toArray());
             uniformSetter[prefix + ".directional"].set(0);
 
-            index ++;
+            index++;
         }
 
         // REMAINING
@@ -330,11 +330,11 @@ M3D.MeshRenderer = class {
             this._lights.push(object);
         }
         // If the object is mesh and it's visible. Update it's attributes.
-        else if ( object instanceof  M3D.Mesh ) {
+        else if (object instanceof M3D.Mesh) {
             // Adds required program to set
             this._requiredPrograms.add(object.material.program);
 
-            if ( object.material.visible === true ) {
+            if (object.material.visible === true) {
                 // Updates or derives attributes from the WebGL geometry
                 this._glManager.updateObjectData(object);
 
@@ -360,8 +360,8 @@ M3D.MeshRenderer = class {
         var children = object.children;
 
         // Recurse through the children
-        for ( var i = 0, l = children.length; i < l; i ++ ) {
-            this._projectObject( children[ i ], camera );
+        for (var i = 0, l = children.length; i < l; i++) {
+            this._projectObject(children[i], camera);
         }
     }
 
@@ -401,19 +401,23 @@ M3D.MeshRenderer = class {
             }
             else if (light instanceof M3D.DirectionalLight) {
 
-                var lightProperties = { color: new THREE.Color(),
-                                        direction: new THREE.Vector3()};
+                var lightProperties = {
+                    color: new THREE.Color(),
+                    direction: new THREE.Vector3()
+                };
 
-                lightProperties.color.copy( light.color ).multiplyScalar( light.intensity );
-                lightProperties.direction.setFromMatrixPosition( light.matrixWorld );
+                lightProperties.color.copy(light.color).multiplyScalar(light.intensity);
+                lightProperties.direction.setFromMatrixPosition(light.matrixWorld);
                 lightProperties.direction.transformDirection(camera.matrixWorldInverse);
 
                 this._lightsCombined.directional.push(lightProperties);
             }
             else if (light instanceof M3D.PointLight) {
 
-                var lightProperties = { color: new THREE.Color(),
-                    position: new THREE.Vector3()};
+                var lightProperties = {
+                    color: new THREE.Color(),
+                    position: new THREE.Vector3()
+                };
 
                 // Move the light to camera space
                 lightProperties.position.setFromMatrixPosition(light.matrixWorld);
@@ -432,13 +436,28 @@ M3D.MeshRenderer = class {
     }
 
 
-
     /**
      * SETTERS / GETTERS
      */
 
-    set autoClear (clear) { this._autoClear = clear; }
-    get autoClear () { return this._autoClear; }
+    set autoClear(clear) {
+        this._autoClear = clear;
+    }
+
+    get autoClear() {
+        return this._autoClear;
+    }
+
+    set clearColor(hexColor) {
+        var components = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor);
+        if (components) {
+            this._glManager.setClearColor(parseInt(components[1], 16) / 255, parseInt(components[2], 16) / 255, parseInt(components[3], 16) / 255, 1)
+        }
+    }
+
+    updateViewport() {
+        this._gl.viewport(0, 0, canvas.width, canvas.height);
+    }
 
     /**
      * Sets the url to shader server & directory from which the shaders source is loaded.

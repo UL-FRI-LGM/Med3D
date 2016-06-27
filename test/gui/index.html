@@ -8,14 +8,68 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Med3D - Medical Web Visualisation Framework</title>
 
-        <!-- Bootstrap -->
-<!-- build:css styles/main.css -->
+    <!-- Bootstrap -->
+    <!-- build:css styles/main.css -->
     <link href="styles/bootstrap.min.css" rel="stylesheet">
     <link href="styles/bootstrap-theme.min.css" rel="stylesheet">
     <link href="styles/font-awesome.min.css" rel="stylesheet">
     <link href="styles/bootstrap-social.css" rel="stylesheet">
     <link href="styles/mystyles.css" rel="stylesheet">
-<!-- endbuild -->
+    <!-- endbuild -->
+
+    <!-- DEBUG INCLUDE -->
+    <script src="../../libraries/three-math.min.js"></script>
+    <script src="../../src/Med3D.js"></script>
+
+    <!-- LOADERS -->
+    <script src="../../src/loaders/Cache.js"></script>
+    <script src="../../src/loaders/LoadingManager.js"></script>
+    <script src="../../src/loaders/XHRLoader.js"></script>
+    <script src="../../src/loaders/ShaderLoader.js"></script>
+    <script src="../../src/loaders/ObjLoader.js"></script>
+
+    <!-- ONLINE INTERACTION -->
+    <script src="../../src/online_interaction/UpdateListener.js"></script>
+    <script src="../../src/online_interaction/ScenePublisher.js"></script>
+    <!-- CORE -->
+    <script src="../../src/core/BufferAttribute.js"></script>
+    <script src="../../src/core/GLAttributeManager.js"></script>
+    <script src="../../src/core/GLManager.js"></script>
+    <script src="../../src/core/Object3D.js"></script>
+    <script src="../../src/core/Scene.js"></script>
+
+    <!-- CAMERA -->
+    <script src="../../src/cameras/Camera.js"></script>
+    <script src="../../src/cameras/PerspectiveCamera.js"></script>
+
+    <!-- LIGHTS -->
+    <script src="../../src/lights/Light.js"></script>
+    <script src="../../src/lights/AmbientLight.js"></script>
+    <script src="../../src/lights/DirectionalLight.js"></script>
+    <script src="../../src/lights/PointLight.js"></script>
+
+    <!-- MATERIALS -->
+    <script src="../../src/materials/Material.js"></script>
+    <script src="../../src/materials/MeshBasicMaterial.js"></script>
+    <script src="../../src/materials/MeshPhongMaterial.js"></script>
+
+    <!-- OBJECTS -->
+    <script src="../../src/objects/Geometry.js"></script>
+    <script src="../../src/objects/Mesh.js"></script>
+
+    <!-- PROGRAM MANAGEMENT -->
+    <script src="../../src/renderers/GLProgram.js"></script>
+    <script src="../../src/renderers/GLProgramManager.js"></script>
+
+    <!-- RENDERS -->
+    <script src="../../src/renderers/Renderer.js"></script>
+    <script src="../../src/renderers/MeshRenderer.js"></script>
+
+    <script src="../../libraries/socket.io-1.4.5.js"></script>
+    <script src="../../src/controls/KeyboardInput.js"></script>
+
+    <script src="scripts/main.js"></script>
+    <!-- DEBUG INCLUDE -->
 </head>
 
 <body>
@@ -352,31 +406,31 @@
         </div>
     </div>
 
-    <div id="navigatorTranslation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 50px;">
+    <div id="navigatorTranslation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 50px;  -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none; cursor:default;">
         <svg x="0px" y="0px"
              width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
              xml:space="preserve">
         <symbol  id="NAVIGACIJA" class="drag-handle" viewBox="-39.687 -39.687 79.374 79.374">
             <g>
                 <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-8.374,30.581 -0.258,38.697 
-                    7.856,30.581        "/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-0.258" y1="38.697" x2="-0.258" y2="20.064"/>
+                    7.856,30.581        " style="pointer-events:none;"/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-0.258" y1="38.697" x2="-0.258" y2="20.064" style="pointer-events:none;"/>
             </g>
             <g>
                 <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-30.581,-8.374 -38.697,-0.258 
-                    -30.581,7.856       "/>
+                    -30.581,7.856       " style="pointer-events:none;"/>
                 
-                    <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-38.697" y1="-0.258" x2="-20.064" y2="-0.258"/>
+                    <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-38.697" y1="-0.258" x2="-20.064" y2="-0.258" style="pointer-events:none;"/>
             </g>
             <g>
                 <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="8.374,-30.581 0.258,-38.697 
-                    -7.856,-30.581      "/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="0.258" y1="-38.697" x2="0.258" y2="-20.064"/>
+                    -7.856,-30.581      " style="pointer-events:none;"/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="0.258" y1="-38.697" x2="0.258" y2="-20.064" style="pointer-events:none;"/>
             </g>
             <g>
                 <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="30.581,8.374 38.697,0.258 
-                    30.581,-7.856       "/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="38.697" y1="0.258" x2="20.064" y2="0.258"/>
+                    30.581,-7.856       " style="pointer-events:none;"/>
+                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="38.697" y1="0.258" x2="20.064" y2="0.258" style="pointer-events:none;"/>
             </g>
         </symbol>
         <g>
@@ -386,8 +440,8 @@
             <g>
                 <circle class="navigator-btn-close-1" circle fill="#FFFFFF" cx="109.962" cy="19.692" r="19.691"/>
             </g>
-            <circle fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <circle class="navigator-translate-y-up" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle class="navigator-translate-y-down" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
             <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0376" x2="124.5459" y2="56.0376">
                 <stop  offset="0" style="stop-color:#3B3F44"/>
                 <stop  offset="0.5" style="stop-color:#4D4B50"/>
@@ -431,10 +485,10 @@
             </g>
             <g>
                 <g>
-                    <text transform="matrix(1 0 0 1 128.626 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">R</text>
+                    <text transform="matrix(1 0 0 1 128.626 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">R</text>
                 </g>
                 <g>
-                    <text transform="matrix(1 0 0 1 7.0303 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">F</text>
+                    <text transform="matrix(1 0 0 1 7.0303 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">F</text>
                 </g>
             </g>
             
@@ -443,7 +497,7 @@
         </svg>
     </div>
 
-    <div id="navigatorRotation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 175px;">
+    <div id="navigatorRotation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 175px; -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none; cursor:default;">
         <svg x="0px" y="0px"
          width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
          xml:space="preserve">
@@ -454,8 +508,8 @@
             <g>
                 <circle class="navigator-btn-close-2" fill="#FFFFFF" cx="109.962" cy="19.691" r="19.691"/>
             </g>
-            <circle fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <circle class="navigator-rotate-z-left" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle class="navigator-rotate-z-right" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
             <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0371" x2="124.5459" y2="56.0371">
                 <stop  offset="0" style="stop-color:#3B3F44"/>
                 <stop  offset="0.5" style="stop-color:#4D4B50"/>
@@ -498,15 +552,15 @@
                 <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
             </g>
             <g>
-                <text transform="matrix(1 0 0 1 63.9385 32.5542)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">W</text>
-                <text transform="matrix(1 0 0 1 67.6084 92.3916)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">S</text>
-                <text transform="matrix(1 0 0 1 97.9521 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">D</text>
+                <text transform="matrix(1 0 0 1 63.9385 32.5542)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">W</text>
+                <text transform="matrix(1 0 0 1 67.6084 92.3916)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">S</text>
+                <text transform="matrix(1 0 0 1 97.9521 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">D</text>
                 <g>
-                    <text transform="matrix(1 0 0 1 128.626 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">E</text>
+                    <text transform="matrix(1 0 0 1 128.626 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">E</text>
                 </g>
-                <text transform="matrix(1 0 0 1 36.5225 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">A</text>
+                <text transform="matrix(1 0 0 1 36.5225 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">A</text>
                 <g>
-                    <text transform="matrix(1 0 0 1 5.1982 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786">Q</text>
+                    <text transform="matrix(1 0 0 1 5.1982 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">Q</text>
                 </g>
             </g>
         </g>
@@ -527,107 +581,115 @@
     <script src="scripts/angular.min.js"></script>
 <!-- endbuild -->
     <script>
-    /*  // For WebGL purposes
-        function resize(gl) {
-          // Get the canvas from the WebGL context
-          var canvas = gl.canvas;
-         
-          // Lookup the size the browser is displaying the canvas.
-          var displayWidth  = canvas.clientWidth;
-          var displayHeight = canvas.clientHeight;
-         
-          // Check if the canvas is not the same size.
-          if (canvas.width  != displayWidth ||
-              canvas.height != displayHeight) {
-         
-            // Make the canvas the same size
-            canvas.width  = displayWidth;
-            canvas.height = displayHeight;
-         
-            // Set the viewport to match
-            gl.viewport(0, 0, canvas.width, canvas.height);
-          }
-        }
-    */
-
-        function resize(canvas) {
-          // Lookup the size the browser is displaying the canvas.
-          var displayWidth  = canvas.clientWidth;
-          var displayHeight = canvas.clientHeight;
-         
-          // Check if the canvas is not the same size.
-          if (canvas.width  != displayWidth ||
-              canvas.height != displayHeight) {
-         
-            // Make the canvas the same size
-            canvas.width  = displayWidth;
-            canvas.height = displayHeight;
-          }
-        }
-
         function init() {
             initNavigators();
 
             var canvas = document.getElementById("med3d-canvas");
 
-            resize(canvas);
+            window.onresize = function(event){
+                resizeCanvas();
+            };
 
-            var ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#369";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            initializeRenderer(canvas);
+            resizeCanvas();
         }
 
         var detachedNavigators = [];
         function initNavigators() {
+
+            // Rotation navigator dragging
             $("#navigatorTranslation").draggable({
                 handle: ".drag-handle-1"
             });
 
+            // Translation navigator dragging
             $("#navigatorRotation").draggable({
                 handle: ".drag-handle-2"
             });
 
+            // Rotation navigator detaching
             $(".navigator-btn-close-1").click(function() {
                 detachedNavigators.push($("#navigatorTranslation").detach());
             });
 
+            // Translation navigator detaching
             $(".navigator-btn-close-2").click(function() {
                 detachedNavigators.push($("#navigatorRotation").detach());
             });
 
-            $(".navigator-btn-circ-nav-1").click(function() {
+            // Click interpretation TRANSLATION
+            $(".navigator-btn-circ-nav-1").mousedown(function() {
                 handleCircleNavigator(".navigator-btn-circ-nav-1");
             });
 
+            $(".navigator-translate-y-down").mousedown(function() {
+                handleTranslationY(false);
+            });
+
+            $(".navigator-translate-y-up").mousedown(function() {
+                handleTranslationY(true);
+            });
+
             $(".navigator-btn-circ-nav-1").draggable({
-                start: function() {},
+                start: function() {
+                },
                 drag: function() {
                     handleCircleNavigator(".navigator-btn-circ-nav-1");
                 },
                 stop: function() {}
             });
 
-            $(".navigator-btn-circ-nav-2").click(function() {
+            // Click interpretation ROTATION
+            $(".navigator-btn-circ-nav-2").mousedown(function() {
                 handleCircleNavigator(".navigator-btn-circ-nav-2");
             });
 
+            $(".navigator-rotate-z-left").mousedown(function() {
+                handleRotationZ(false);
+            });
+
+            $(".navigator-rotate-z-right").mousedown(function() {
+                handleRotationZ(true);
+            });
+
             $(".navigator-btn-circ-nav-2").draggable({
-                start: function() {},
+                start: function() {
+                },
                 drag: function() {
                     handleCircleNavigator(".navigator-btn-circ-nav-2");
                 },
                 stop: function() {}
             });
+
+            $(document).mouseup(function() {
+                navigatorRotation.reset();
+                navigatorTranslation.reset();
+            });
         }
 
         function handleCircleNavigator(circNavigator) {
             var outX = (event.clientX - $(circNavigator).position().left - $(circNavigator).attr("r")) / $(circNavigator).attr("r");
-            var outY = - ((event.clientY - $(circNavigator).position().top - $(circNavigator).attr("r")) / $(circNavigator).attr("r"));
+            var outY = -((event.clientY - $(circNavigator).position().top - $(circNavigator).attr("r")) / $(circNavigator).attr("r"));
 
             outX = outX > 1.0 ? 1.0 : (outX < -1.0 ? -1.0 : outX);
             outY = outY > 1.0 ? 1.0 : (outY < -1.0 ? -1.0 : outY);
-            
-            console.log(outX + " " + outY);
+
+            if (circNavigator === ".navigator-btn-circ-nav-1") {
+                navigatorTranslation.x = outX;
+                navigatorTranslation.z = -outY;
+            }
+            else if (circNavigator === ".navigator-btn-circ-nav-2") {
+                navigatorRotation.y = -outX;
+                navigatorRotation.x = outY;
+            }
+        }
+
+        function handleTranslationY(sign) {
+            navigatorTranslation.y = (sign) ? 1 : -1;
+        }
+
+        function handleRotationZ(sign) {
+            navigatorRotation.z = (sign) ? 1 : -1;
         }
 
         function showNavigator(navigator) {
@@ -669,8 +731,6 @@
             init();
         });
 
-
-        
     </script>
 </body>
 

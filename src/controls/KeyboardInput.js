@@ -2,7 +2,7 @@
  * Created by Primoz on 26. 06. 2016.
  */
 
-M3D.Controls = class {
+M3D.KeyboardInput = class {
 
     constructor() {
         var self = this;
@@ -11,6 +11,10 @@ M3D.Controls = class {
         
         document.addEventListener("keydown", function (event) {
             self._pressedKeys[event.keyCode] = true;
+            // Disable arrow key default behavior
+            if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {
+                event.preventDefault();
+            }
         });
         
         document.addEventListener("keyup", function (event) {
@@ -34,9 +38,9 @@ M3D.Controls = class {
         this._listeners = [];
     }
 
-    update(dt) {
+    update() {
         for (var i = 0; i < this._listeners.length; i++) {
-            this._listeners[i](dt, this._pressedKeys)
+            this._listeners[i](this._pressedKeys)
         }
     }
 };
