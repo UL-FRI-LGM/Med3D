@@ -97,7 +97,7 @@
     scene.add(dLight2);
     //scene.add(pLight);
 
-    var camera = new M3D.PerspectiveCamera(1.483, 16/9, 10, 10000);
+    var camera = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
 
     camera.position.z = 40;
     camera.position.x = 0;
@@ -279,10 +279,10 @@
 
         camera.translateX(keyboardTranslation.x * dt * 0.01);
         camera.translateY(keyboardTranslation.y * dt * 0.01);
-        camera.translateZ(keyboardTranslation.z * dt * 0.1);
+        camera.translateZ(keyboardTranslation.z * dt * 0.01);
 
-        camera.rotateX(keyboardRotation.x * dt * 0.0001);
-        camera.rotateY(keyboardRotation.y  * dt * 0.0001);
+        camera.rotateX(keyboardRotation.x * dt * 0.001);
+        camera.rotateY(keyboardRotation.y  * dt * 0.001);
         camera.rotateZ(keyboardRotation.z * dt * 0.001);
 
         renderer.render(scene, camera);

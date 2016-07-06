@@ -161,7 +161,7 @@ M3D.Geometry = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {indices: this._indices}};
+            var update = {uuid: this._uuid, changes: {array: this._indices.array.buffer.slice(0), itemSize: this._indices.itemSize}};
             this._onChangeListener.geometryUpdate(update)
         }
     }
@@ -171,7 +171,7 @@ M3D.Geometry = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {vertices: this._vertices}};
+            var update = {uuid: this._uuid, changes: {array: this._vertices.array.buffer.slice(0), itemSize: this._vertices.itemSize}};
             this._onChangeListener.geometryUpdate(update)
         }
     }
@@ -181,7 +181,7 @@ M3D.Geometry = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {normals: this._normals}};
+            var update = {uuid: this._uuid, changes: {array: this._normals.array.buffer.slice(0), itemSize: this._normals.itemSize}};
             this._onChangeListener.geometryUpdate(update)
         }
     }
@@ -191,7 +191,7 @@ M3D.Geometry = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {vertColor: this._vertColor}};
+            var update = {uuid: this._uuid, changes: {array: this._vertColor.array.buffer.slice(0), itemSize: this._vertColor.itemSize}};
             this._onChangeListener.geometryUpdate(update)
         }
     }
@@ -207,19 +207,19 @@ M3D.Geometry = class {
         obj.type = this.type;
 
         if (this._indices) {
-            obj.indices = this._indices;
+            obj.indices = {array: this._indices.array.buffer.slice(0), itemSize: this._indices.itemSize};
         }
 
         if (this._vertices) {
-            obj.vertices = this._vertices;
+            obj.vertices = {array: this._vertices.array.buffer.slice(0), itemSize: this._vertices.itemSize};
         }
 
         if (this._normals) {
-            obj.normals = this._normals;
+            obj.normals = {array: this._normals.array.buffer.slice(0), itemSize: this._normals.itemSize};
         }
 
         if (this._vertColor) {
-            obj.vertColor = this._vertColor;
+            obj.vertColor = {array: this._vertColor.array.buffer.slice(0), itemSize: this._vertColor.itemSize};
         }
 
         return obj;
@@ -231,19 +231,19 @@ M3D.Geometry = class {
         geometry._uuid = obj._uuid;
 
         if (obj.indices) {
-            geometry._indices = M3D.Uint32Attribute(Object.keys(obj.indices.array).map(key => obj.indices.array[key]), obj.indices.itemSize);
+            geometry._indices = M3D.Uint32Attribute(obj.indices.array, obj.indices.itemSize);
         }
 
         if (obj.vertices) {
-            geometry._vertices = M3D.Float32Attribute(Object.keys(obj.vertices.array).map(key => obj.vertices.array[key]), obj.vertices.itemSize);
+            geometry._vertices = M3D.Float32Attribute(obj.vertices.array, obj.vertices.itemSize);
         }
 
         if (obj.normals) {
-            geometry._normals = M3D.Float32Attribute(Object.keys(obj.normals.array).map(key => obj.normals.array[key]), obj.normals.itemSize);
+            geometry._normals = M3D.Float32Attribute(obj.normals.array, obj.normals.itemSize);
         }
 
         if (obj.vertColor) {
-            geometry._vertColor = M3D.Float32Attribute(Object.keys(obj.vertColor.array).map(key => obj.vertColor.array[key]), obj.vertColor.itemSize);
+            geometry._vertColor = M3D.Float32Attribute(obj.vertColor.array, obj.vertColor.itemSize);
         }
 
         return geometry;
@@ -254,19 +254,19 @@ M3D.Geometry = class {
         for (var prop in data) {
             switch (prop) {
                 case "indices":
-                    this._indices = data.indices;
+                    this._indices = M3D.Uint32Attribute(data.indices.array, data.indices.itemSize);
                     delete data.indices;
                     break;
                 case "vertices":
-                    this._vertices = data.vertices;
+                    this._vertices = M3D.Float32Attribute(data.vertices.array, data.vertices.itemSize);
                     delete data.vertices;
                     break;
                 case "normals":
-                    this._normals = data.normals;
+                    this._normals = M3D.Float32Attribute(data.normals.array, data.normals.itemSize);
                     delete data.normals;
                     break;
                 case "vertColor":
-                    this._vertColor = data.vertColor;
+                    this._vertColor = M3D.Float32Attribute(data.vertColor.array, data.vertColor.itemSize);
                     delete data.vertColor;
                     break;
             }

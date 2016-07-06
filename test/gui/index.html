@@ -27,6 +27,7 @@
     <script src="../../src/loaders/XHRLoader.js"></script>
     <script src="../../src/loaders/ShaderLoader.js"></script>
     <script src="../../src/loaders/ObjLoader.js"></script>
+    <script src="../../src/marching_cubes/MHDReader.js"></script>
 
     <!-- ONLINE INTERACTION -->
     <script src="../../src/online_interaction/UpdateListener.js"></script>
@@ -56,6 +57,7 @@
     <!-- OBJECTS -->
     <script src="../../src/objects/Geometry.js"></script>
     <script src="../../src/objects/Mesh.js"></script>
+    <script src="../../src/objects/Group.js"></script>
 
     <!-- PROGRAM MANAGEMENT -->
     <script src="../../src/renderers/GLProgram.js"></script>
@@ -67,12 +69,20 @@
 
     <script src="../../libraries/socket.io-1.4.5.js"></script>
     <script src="../../src/controls/KeyboardInput.js"></script>
+    <script src="scripts/Input.js"></script>
+
+    <script src="../../src/marching_cubes/MarchingCubes.js"></script>
+
+    <!-- ONLINE INTERACTION -->
+    <script src="../../src/online_interaction/ScenePublisher.js"></script>
+    <script src="../../src/online_interaction/SceneSubscriber.js"></script>
 
     <script src="scripts/main.js"></script>
     <!-- DEBUG INCLUDE -->
 </head>
 
 <body>
+
     <nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -85,18 +95,28 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
+
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                         <span class="glyphicon glyphicon-file"></span> 
                         File <span class="caret"></span>
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a data-toggle="modal" data-target="#fileOpenModal">Open / Upload</a></li>
-                        <li><a data-toggle="modal" data-target="#fileSaveModal">Save As</a></li>
+
+                    <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
+                        <li><a>Save</a></li>
+                        <li class="dropdown-submenu">
+                            <a class="dropdown-submenu-anchor">Open / Upload</a>
+                            <ul class="dropdown-menu">
+                                <li><a data-toggle="modal" data-target="#wavefrontObjOpenModal">Wavefront (.obj)</a></li>
+                                <li><a data-toggle="modal" data-target="#volumeOpenModal">Volume (.mhd)</a></li>
+                            </ul>
+                        </li>
                     </ul>
                 </li>
+
+
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                         <span class="glyphicon glyphicon-cog"></span> 
                         Options <span class="caret"></span>
                     </a>
@@ -105,8 +125,23 @@
                         <li><a data-toggle="modal" data-target="#optionsDisplayModal">Display Settings</a></li>
                     </ul>
                 </li>
+
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-wrench"></span>
+                        Sharing<span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li id="dropdownCloseSessionItem" class="collapse"><a>Close session</a></li>
+                        <li id="dropdownStartSharingSceneItem" class="collapse"><a>Share scene</a></li>
+                        <li id="dropdownStopSharingSceneItem" class="collapse"><a>Stop sharing</a></li>
+                        <li id="dropdownSessionUrlItem" class="collapse"><a href="#sharedSessionUrl" data-backdrop="false" data-toggle="modal">Session URL</a></li>
+                    </ul>
+                </li>
+
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                         <span class="glyphicon glyphicon-question-sign"></span> 
                         Help <span class="caret"></span>
                     </a>
@@ -116,8 +151,9 @@
                         <li><a data-toggle="modal" data-target="#licenceModal">Licence</a></li>
                     </ul>
                 </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+
+                <!-- <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                         <span class="glyphicon glyphicon-wrench"></span> 
                         Test <span class="caret"></span>
                     </a>
@@ -125,7 +161,8 @@
                         <li><a href="#floatingWindow" data-backdrop="false" data-toggle="modal">Example Window</a></li>
                         <li><a href="#widgetExample" data-backdrop="false" data-toggle="modal">Example Widget</a></li>
                     </ul>
-                </li>
+                </li> -->
+
             </ul>
             <ul class="nav navbar-nav navbar-right-no-margin">
                 <li>
@@ -139,35 +176,66 @@
 
     <canvas id="med3d-canvas" width="1280px" height="720px"></canvas>
 
-    <div id="fileOpenModal" class="modal face" role="dialog">
-        <div class="modal-dialog modal-lg">
+    <div id="wavefrontObjOpenModal" class="modal fade floating-window">
+        <div class="modal-dialog">
             <!-- Modal content-->
             <div class="modal-content med3d-modal">
                 <div class="modal-header med3d-modal-header">
                     <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
                     <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Open / Upload </h4>
+                    <h4 class="modal-title">Wavefront (.obj)</h4>
                 </div>
                 <div class="modal-body">
+                    <h4 style="padding-left: 0">Select .obj file from your computer</h4>
+                    <div class="form-group"></div> <!-- To prevent weird Chrome bug -->
+                    <label>Select .obj file:</label>
+                    <input id="objFileInput" type="file" accept=".obj" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
+                    <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
+                </div>
+
+                <div class="modal-footer med3d-modal-footer">
+                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+                    <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the .obj file." style="display: inline-block">
+                        <button id="objFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Open</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="fileSaveModal" class="modal face" role="dialog">
-        <div class="modal-dialog modal-lg">
+    <div id="volumeOpenModal" class="modal fade floating-window">
+        <div class="modal-dialog">
             <!-- Modal content-->
             <div class="modal-content med3d-modal">
                 <div class="modal-header med3d-modal-header">
                     <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
                     <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Save As </h4>
+                    <h4 class="modal-title">Wavefront (.obj)</h4>
                 </div>
                 <div class="modal-body">
+                    <h4 style="padding-left: 0">Select .mhd and its corresponding .raw file from your computer</h4>
+                    <div class="form-group"></div> <!-- To prevent weird Chrome bug -->
+                    <label>Select mhd file:</label>
+                    <input id="volumeMhdFileInput" type="file" accept=".mhd" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
+                    <label style="margin-top: 10px;">Select raw file:</label>
+                    <input id="volumeRawFileInput" type="file" accept=".raw" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
+                    <label style="margin-top: 10px;">ISO value:</label>
+                    <input id="volumeIsoValueInput" type="number" value="0" class="form-control" style="width: 25%; height: 30px" required>
+                    <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
+                </div>
+
+                <div class="modal-footer med3d-modal-footer">
+                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+
+                    <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the volume files and enter the iso value." style="display: inline-block">
+                        <button id="volumeFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Open</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+
 
     <div id="optionsInputModal" class="modal face" role="dialog">
         <div class="modal-dialog modal-lg">
@@ -182,10 +250,10 @@
                     <h5>Navigation widgets:</h5>
                     <ul class="med3d-ul">
                         <li>
-                            <input class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true" onClick="toggleNavigator('navigatorTranslation');" ><span style="width: 10px;">Translation widget</span>
+                            <input id="optionsTNavigatorCheckbox" class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true"><span style="width: 10px;">&nbspTranslation widget</span>
                         </li>
                         <li>
-                            <input class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true" onClick="toggleNavigator('navigatorRotation')"; ><span style="width: 10px;">Rotation widget</span>
+                            <input id="optionsRNavigatorCheckbox" class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true"><span style="width: 10px;">&nbspRotation widget</span>
                         </li>
                     </ul>
                 </div>
@@ -341,7 +409,6 @@
         </div>
     </div>
 
-
     <div id="licenceModal" class="modal face" role="dialog">
         <div class="modal-dialog">
             <!-- Modal content-->
@@ -371,6 +438,8 @@
         </div>
     </div>
 
+
+
     <div id="floatingWindow" class="modal fade floating-window">
         <div class="modal-dialog">
             <div class="modal-content med3d-modal">
@@ -393,15 +462,41 @@
 
     <div id="widgetExample" class="modal fade floating-window">
         <div class="modal-dialog">
-            <div class="modal-content med3d-modal-widget hover-div">
+            <div class="modal-content med3d-modal-widget hover-div" style="width: 500px">
                 <div class="modal-header med3d-modal-widget-header">
                     <button type="button" class="med3d-modal-widget-close" data-dismiss="modal" aria-hidden="true">&times;</button>
                      <p class="modal-title">Example Widget</p>
 
                 </div>
                 <div class="modal-widget-body">
-                    <p>Test Widget</p>
+                    <p>Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content - Content</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sharedSessionUrl" class="modal fade floating-window">
+        <div class="modal-dialog">
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Session url</h4>
+
+                </div>
+                <div class="modal-body">
+                    <p><b>Send this link to the person that you want to share your scene with.</b></p>
+                    <div class="input-group" style="width: 100%;">
+                        <!-- Target -->
+                        <input id="sessionUrl" type="text" value="http://localhost:8080/test/gui/index.html?sessionUuid=f0KTPED12sPx_HR6AAAI" class="form-control" style="width: calc(100% - 40px);; height: 35px;">
+
+                        <!-- Trigger -->
+                        <button class="btn clipboard" data-clipboard-target="#sessionUrl" style="border-top-left-radius: 0; border-bottom-left-radius: 0; display: table-cell; height: 35px; border: 1px solid #ccc;">
+                            <img class="clippy" src="images/clippy.svg" alt="Copy to clipboard" style="height: 16px">
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -435,20 +530,20 @@
         </symbol>
         <g>
             <g>
-                <circle class="drag-handle-1" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
+                <circle class="drag-handle" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
             </g>
             <g>
-                <circle class="navigator-btn-close-1" circle fill="#FFFFFF" cx="109.962" cy="19.692" r="19.691"/>
+                <circle class="navigator-btn-close" circle fill="#FFFFFF" cx="109.962" cy="19.692" r="19.691"/>
             </g>
-            <circle class="navigator-translate-y-up" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle class="navigator-translate-y-down" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <circle class="navigator-circ-right" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle class="navigator-circ-left" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
             <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0376" x2="124.5459" y2="56.0376">
                 <stop  offset="0" style="stop-color:#3B3F44"/>
                 <stop  offset="0.5" style="stop-color:#4D4B50"/>
                 <stop  offset="1" style="stop-color:#393E42"/>
             </linearGradient>
             <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.037" r="51.385"/>
-            <circle class="navigator-btn-circ-nav-1" fill="#424143" cx="73.161" cy="56.037" r="51.385"/>
+            <circle class="navigator-btn-circ-nav" fill="#424143" cx="73.161" cy="56.037" r="51.385"/>
             <g>
                 <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0376" x2="109.7109" y2="56.0376">
                     <stop  offset="0.1" style="stop-color:#C0282D"/>
@@ -463,7 +558,7 @@
                 </linearGradient>
                 <polygon fill="url(#SVGID_3_)" points="37.042,92.589 36.61,92.156 109.278,19.486 109.711,19.919         "/>
             </g>
-            <g class="drag-handle-1" >
+            <g class="drag-handle" >
                 <g>
                     <g>
                         <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.086" x2="116.181" y2="98.499"/>
@@ -479,7 +574,7 @@
                     <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.472 109.595,98.499 111.565,98.5           "/>
                 </g>
             </g>
-            <g class="navigator-btn-close-1">
+            <g class="navigator-btn-close">
                 <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
                 <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
             </g>
@@ -503,20 +598,20 @@
          xml:space="preserve">
         <g>
             <g>
-                <circle class="drag-handle-2" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
+                <circle class="drag-handle" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
             </g>
             <g>
-                <circle class="navigator-btn-close-2" fill="#FFFFFF" cx="109.962" cy="19.691" r="19.691"/>
+                <circle class="navigator-btn-close" fill="#FFFFFF" cx="109.962" cy="19.691" r="19.691"/>
             </g>
-            <circle class="navigator-rotate-z-left" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle class="navigator-rotate-z-right" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
+            <circle class="navigator-circ-right" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
+            <circle class="navigator-circ-left" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
             <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0371" x2="124.5459" y2="56.0371">
                 <stop  offset="0" style="stop-color:#3B3F44"/>
                 <stop  offset="0.5" style="stop-color:#4D4B50"/>
                 <stop  offset="1" style="stop-color:#393E42"/>
             </linearGradient>
             <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.036" r="51.385"/>
-            <circle class="navigator-btn-circ-nav-2" fill="#424143" cx="73.161" cy="56.036" r="51.385"/>
+            <circle class="navigator-btn-circ-nav" fill="#424143" cx="73.161" cy="56.036" r="51.385"/>
             <g>
                 <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0371" x2="109.7109" y2="56.0371">
                     <stop  offset="0.1" style="stop-color:#C0282D"/>
@@ -531,7 +626,7 @@
                 </linearGradient>
                 <polygon fill="url(#SVGID_3_)" points="37.042,92.588 36.61,92.155 109.278,19.486 109.711,19.919         "/>
             </g>
-            <g class="drag-handle-2" >
+            <g class="drag-handle" >
                 <g>
                     <g>
                         <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.085" x2="116.181" y2="98.499"/>
@@ -547,7 +642,7 @@
                     <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.471 109.595,98.499 111.565,98.501             "/>
                 </g>
             </g>
-            <g class="navigator-btn-close-2">
+            <g class="navigator-btn-close">
                 <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
                 <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
             </g>
@@ -569,7 +664,7 @@
 
 
     <footer class="footer hover-div">
-        <p><span class="glyphicon glyphicon-console"></span> Application status.</p>
+        <p><span class="glyphicon glyphicon-console"></span>&nbsp&nbsp<span id="applicationStatus">Application status.</span></p>
     </footer>
 
 
@@ -579,142 +674,248 @@
     <script src="scripts/jquery-ui.min.js"></script>
     <script src="scripts/bootstrap.min.js"></script>
     <script src="scripts/angular.min.js"></script>
+    <script src="scripts/bootstrap-filestyle.min.js"></script>
+    <script src="scripts/clipboard.min.js"></script>
 <!-- endbuild -->
     <script>
+        var SESSION_STATE = Object.freeze({NOT_SHARED: 0, HOSTING: 1, SUBSCRIBED: 2});
+        var sessionState = SESSION_STATE.NOT_SHARED;
+
         function init() {
+            registerClickListeners();
             initNavigators();
 
             var canvas = document.getElementById("med3d-canvas");
 
-            window.onresize = function(event){
+            window.onresize = function(){
                 resizeCanvas();
             };
 
             initializeRenderer(canvas);
-            resizeCanvas();
-        }
 
-        var detachedNavigators = [];
-        function initNavigators() {
+            var urlParams = getUrlParameters();
 
-            // Rotation navigator dragging
-            $("#navigatorTranslation").draggable({
-                handle: ".drag-handle-1"
-            });
-
-            // Translation navigator dragging
-            $("#navigatorRotation").draggable({
-                handle: ".drag-handle-2"
-            });
-
-            // Rotation navigator detaching
-            $(".navigator-btn-close-1").click(function() {
-                detachedNavigators.push($("#navigatorTranslation").detach());
-            });
-
-            // Translation navigator detaching
-            $(".navigator-btn-close-2").click(function() {
-                detachedNavigators.push($("#navigatorRotation").detach());
-            });
-
-            // Click interpretation TRANSLATION
-            $(".navigator-btn-circ-nav-1").mousedown(function() {
-                handleCircleNavigator(".navigator-btn-circ-nav-1");
-            });
-
-            $(".navigator-translate-y-down").mousedown(function() {
-                handleTranslationY(false);
-            });
-
-            $(".navigator-translate-y-up").mousedown(function() {
-                handleTranslationY(true);
-            });
-
-            $(".navigator-btn-circ-nav-1").draggable({
-                start: function() {
-                },
-                drag: function() {
-                    handleCircleNavigator(".navigator-btn-circ-nav-1");
-                },
-                stop: function() {}
-            });
-
-            // Click interpretation ROTATION
-            $(".navigator-btn-circ-nav-2").mousedown(function() {
-                handleCircleNavigator(".navigator-btn-circ-nav-2");
-            });
-
-            $(".navigator-rotate-z-left").mousedown(function() {
-                handleRotationZ(false);
-            });
-
-            $(".navigator-rotate-z-right").mousedown(function() {
-                handleRotationZ(true);
-            });
-
-            $(".navigator-btn-circ-nav-2").draggable({
-                start: function() {
-                },
-                drag: function() {
-                    handleCircleNavigator(".navigator-btn-circ-nav-2");
-                },
-                stop: function() {}
-            });
-
-            $(document).mouseup(function() {
-                navigatorRotation.reset();
-                navigatorTranslation.reset();
-            });
-        }
-
-        function handleCircleNavigator(circNavigator) {
-            var outX = (event.clientX - $(circNavigator).position().left - $(circNavigator).attr("r")) / $(circNavigator).attr("r");
-            var outY = -((event.clientY - $(circNavigator).position().top - $(circNavigator).attr("r")) / $(circNavigator).attr("r"));
-
-            outX = outX > 1.0 ? 1.0 : (outX < -1.0 ? -1.0 : outX);
-            outY = outY > 1.0 ? 1.0 : (outY < -1.0 ? -1.0 : outY);
-
-            if (circNavigator === ".navigator-btn-circ-nav-1") {
-                navigatorTranslation.x = outX;
-                navigatorTranslation.z = -outY;
-            }
-            else if (circNavigator === ".navigator-btn-circ-nav-2") {
-                navigatorRotation.y = -outX;
-                navigatorRotation.x = outY;
-            }
-        }
-
-        function handleTranslationY(sign) {
-            navigatorTranslation.y = (sign) ? 1 : -1;
-        }
-
-        function handleRotationZ(sign) {
-            navigatorRotation.z = (sign) ? 1 : -1;
-        }
-
-        function showNavigator(navigator) {
-            if (navigator === undefined) {
-                for (var i = 0; i < detachedNavigators.length; i++) 
-                    detachedNavigators[i].appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
-            } else {
-                navigator.appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
-            }
-        }
-
-        function toggleNavigator(navigatorName) {
-            if (detachedNavigators.length > 0) {
-                for (var i = 0;  i < detachedNavigators.length; i++) {
-                    if (detachedNavigators[i].attr("id") === navigatorName) {
-                        detachedNavigators[i].appendTo("body").css("left", "auto").css("right", "20px").css("top", (detachedNavigators[i].attr("id") === "navigatorTranslation" ? 50 : 175)+"px").stop().fadeTo( "fast" , 0.5);
-                        detachedNavigators.splice(i, 1);
-                        return;
+            // Check if the session uuid was given
+            if (urlParams.sessionUuid) {
+                createSessionSubscriberScene(urlParams.sessionUuid, function (success) {
+                    if (success) {
+                        // Successfully subscribed
+                        $("#dropdownCloseSessionItem").removeClass("collapse");
+                        $(".warning-active-subscription").css("display", "block");
+                        sessionState = SESSION_STATE.SUBSCRIBED;
                     }
-                }
+                    else {
+                        // Something went wrong
+                        $("#dropdownStartSharingSceneItem").removeClass("collapse");
+                        createDefaultEmptyScene();
+                    }
+                    resizeCanvas();
+                });
             }
-            detachedNavigators.push($("#" + navigatorName).detach());
+            else {
+                $("#dropdownStartSharingSceneItem").removeClass("collapse");
+                createDefaultEmptyScene();
+                resizeCanvas();
+            }
+        }
+
+        function initNavigators() {
+            Input.instance.initNavigators($("#navigatorRotation"), $("#navigatorTranslation"));
+
+            // OPTIONS - Navigator toggling
+            var rotationCheckbox = $('#optionsRNavigatorCheckbox');
+            var translationCheckbox = $('#optionsTNavigatorCheckbox');
+
+            $('#optionsInputModal').on('shown.bs.modal', function() {
+                rotationCheckbox.prop('checked', Input.instance.rotationNavigatorAttached);
+                translationCheckbox.prop('checked', Input.instance.translationNavigatorAttached);
+            });
+
+            rotationCheckbox.change(function() {
+                if ($(this).is(':checked')){
+                    Input.instance.attachNavigator("rotationNavigator");
+                } else {
+                    Input.instance.detachNavigator("rotationNavigator");
+                }
+            });
+
+            translationCheckbox.change(function() {
+                if ($(this).is(':checked')){
+                    Input.instance.attachNavigator("translationNavigator");
+                } else {
+                    Input.instance.detachNavigator("translationNavigator");
+                }
+            });
+        }
+
+        function registerClickListeners() {
+            // Do not close on sub-dropdown click
+            $('.dropdown-submenu-anchor').bind('click', function (e) {
+                e.stopPropagation()
+            });
+
+            //region Wavefront OBJ opening modal
+            var objFileOpenButton = $("#objFileOpenButton");
+            var objButtonTooltipWrapper = objFileOpenButton.closest(".tooltip-wrapper");
+            var objFileInput = $("#objFileInput");
+            var wavefrontObjOpenModal = $('#wavefrontObjOpenModal');
+
+            objFileInput.change(function(event) {
+                if (objFileInput.val() === "") {
+                    objFileOpenButton.prop('disabled', true);
+                    objButtonTooltipWrapper.tooltip('enable');
+                }
+                else {
+                    objFileOpenButton.prop('disabled', false);
+                    objButtonTooltipWrapper.tooltip('disable');
+                }
+            });
+
+            objFileOpenButton.click(function() {
+                if (sessionState === SESSION_STATE.SUBSCRIBED) {
+                    sessionUnsubscribeEvent();
+                }
+
+                var objFile = objFileInput.prop('files')[0];
+                loadObjFromFile(objFile);
+                wavefrontObjOpenModal.modal('hide');
+            });
+            //endregion
+
+            //region Volume MHD opening modal
+            var volumeMhdFileInput = $("#volumeMhdFileInput");
+            var volumeRawFileInput = $("#volumeRawFileInput");
+            var volumeIsoValueInput = $("#volumeIsoValueInput");
+            var volumeFileOpenButton = $("#volumeFileOpenButton");
+            var volumeButtonTooltipWrapper = volumeFileOpenButton.closest(".tooltip-wrapper");
+            var volumeOpenModal = $("#volumeOpenModal");
+
+            var volOpenUnlocker = function() {
+                if (volumeMhdFileInput.val() === "" || volumeRawFileInput.val() === "" || volumeIsoValueInput.val() === "") {
+                    volumeFileOpenButton.prop('disabled', true);
+                    volumeButtonTooltipWrapper.tooltip('enable');
+                }
+                else {
+                    volumeFileOpenButton.prop('disabled', false);
+                    volumeButtonTooltipWrapper.tooltip('disable');
+                }
+            };
+
+            volumeMhdFileInput.change(volOpenUnlocker);
+            volumeRawFileInput.change(volOpenUnlocker);
+            volumeIsoValueInput.change(volOpenUnlocker);
+
+            volumeFileOpenButton.click(function() {
+                if (sessionState === SESSION_STATE.SUBSCRIBED) {
+                    sessionUnsubscribeEvent();
+                }
+
+                var mhdFile = volumeMhdFileInput.prop('files')[0];
+                var rawFile = volumeRawFileInput.prop('files')[0];
+                var isoval = parseFloat(volumeIsoValueInput.val());
+                loadMhdVolumeFromFile(mhdFile, rawFile, isoval);
+
+                volumeOpenModal.modal('hide');
+            });
+            //endregion
+
+            //region Scene sharing
+            var dropdownStartSharingSceneItem = $("#dropdownStartSharingSceneItem");
+            var dropdownStopSharingSceneItem = $("#dropdownStopSharingSceneItem");
+            var dropdownCloseSessionItem = $("#dropdownCloseSessionItem");
+
+            // Stop sharing scene event
+            dropdownStopSharingSceneItem.bind("click", function() {
+                stopSharingScene();
+
+                sessionState = SESSION_STATE.NOT_SHARED;
+
+                // Toggle start sharing button
+                dropdownStopSharingSceneItem.addClass("collapse");
+                dropdownStartSharingSceneItem.removeClass("collapse");
+
+                // Toggle URL
+                $("#dropdownSessionUrlItem").addClass("collapse");
+
+                $("#applicationStatus").text("Stopped scene sharing.");
+            });
+
+            // Start sharing scene event
+            dropdownStartSharingSceneItem.bind("click", function() {
+                // Disable scene sharing button
+                dropdownStartSharingSceneItem.addClass('disabled');
+                $("#applicationStatus").text("Uploading the scene to the server.");
+
+                startSharingScene(function (result) {
+                    // Scene was shared successfully
+                    if (result.status === 0) {
+                        sessionState = SESSION_STATE.HOSTING;
+
+                        // Toggle stop sharing button
+                        dropdownStartSharingSceneItem.removeClass('disabled');
+                        dropdownStartSharingSceneItem.addClass("collapse");
+                        dropdownStopSharingSceneItem.removeClass("collapse");
+
+                        // Toggle URL
+                        $("#dropdownSessionUrlItem").removeClass("collapse");
+                        $("#sessionUrl").val(result.url);
+                        $("#sharedSessionUrl").modal();
+
+                        // Notification
+                        $("#applicationStatus").text("Sharing scene.");
+                    }
+                    else {
+                        $("#applicationStatus").text("Something went wrong while trying to share the scene. Status: " + result.status + ".");
+                    }
+                });
+            });
+
+            // Close the session (Subscriber viewpoint)
+            dropdownCloseSessionItem.bind("click", sessionUnsubscribeEvent);
+            //endregion
+        }
+
+        function sessionUnsubscribeEvent() {
+            sessionUnsubscribe();
+
+            $("#dropdownCloseSessionItem").addClass("collapse");
+            $("#dropdownStartSharingSceneItem").removeClass("collapse");
+            sessionState = SESSION_STATE.NOT_SHARED;
+
+            $(".warning-active-subscription").css("display", "none");
+        }
+
+        function getUrlParameters() {
+            var query;
+
+            var pos = location.href.indexOf("?");
+            if(pos==-1) return [];
+            query = location.href.substr(pos+1);
+
+            var result = {};
+            query.split("&").forEach(function(part) {
+                if(!part) return;
+                part = part.split("+").join(" "); // replace every + with space, regexp-free version
+                var eq = part.indexOf("=");
+                var key = eq>-1 ? part.substr(0,eq) : part;
+                var val = eq>-1 ? decodeURIComponent(part.substr(eq+1)) : "";
+                var from = key.indexOf("[");
+                if(from==-1) result[decodeURIComponent(key)] = val;
+                else {
+                    var to = key.indexOf("]");
+                    var index = decodeURIComponent(key.substring(from+1,to));
+                    key = decodeURIComponent(key.substring(0,from));
+                    if(!result[key]) result[key] = [];
+                    if(!index) result[key].push(val);
+                    else result[key][index] = val;
+                }
+            });
+            return result;
         }
 
         $(document).ready(function(){
+            new Clipboard(".clipboard");
+
             $(".hover-div").stop().fadeTo("slow", 0.5);
 
             $(".hover-div").hover(function(){
@@ -723,7 +924,10 @@
                 $(this).stop().fadeTo( "fast" , 0.5);
             });
 
+            $('[data-toggle="tooltip"]').tooltip();
+
             $('[data-toggle="popover"]').popover();
+
             $(".floating-window").draggable({
                 handle: ".modal-header"
             });

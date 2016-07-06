@@ -352,8 +352,8 @@ M3D.MeshRenderer = class {
             }
         }
         // Scene is only an abstract representation
-        else if (!(object instanceof M3D.Scene)) {
-            //console.log("MeshRenderer: Received unsupported object type")
+        else if (!(object instanceof M3D.Scene) && !(object instanceof M3D.Group)) {
+            console.log("MeshRenderer: Received unsupported object type")
         }
 
         // Recursively descend through children and project them
@@ -464,4 +464,8 @@ M3D.MeshRenderer = class {
      * @param url Full url to the shader server directory
      */
     addShaderLoaderUrls (...urls) { this._shaderLoader.addUrls(urls); }
+
+    clearCache() {
+        this._glManager.clearAttributeBuffers();
+    }
 };

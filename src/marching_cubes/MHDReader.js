@@ -50,6 +50,7 @@ M3D.MHDReader = class {
         var self = this;
 
         var rawParser = function(event) {
+            var status = {code: 0, msg: ""};
             var rez = {};
             var data;
             try {
@@ -90,21 +91,23 @@ M3D.MHDReader = class {
                 }
 
                 if (this.result.byteLength !== requiredByteLength) {
-                    self._warnings.push("WARNING: Invalid data byte count.");
+                    status.code = 3;
+                    status.msg = "Data length does not match specified dimensions in MHD";
                 }
-                rez = {meta: self._mhdMeta, data: data, errorMsg: "", warnings: self._warnings};
+
             }
             catch (err) {
-                rez = {errorMsg: "ERROR: Could not correctly parse the RAW file!", warnings: self._warnings};
+                status.code = 4;
+                status.msg = "Failed while parsing the RAW file!";
             }
 
             // Return the result and toggle the loading flag.
-            self._onLoad(rez);
+            self._onLoad({meta: self._mhdMeta, data: data, status: status, warnings: self._warnings});
         };
 
 
         var mhdParser = function(event) {
-            var errorMsg = "";
+            var status = {code: 0, msg: ""};
             try {
                 var mhdData = this.result;
 
@@ -119,20 +122,22 @@ M3D.MHDReader = class {
 
                 // Check if the file RAW name matches the one specified in the MHD file
                 if (self._rawFile.name !== dataFileName) {
-                    self._warnings.push("RAW name does not match the one specified in the MHD file.")
+                    self._warnings.push({code: 1, msg: "RAW name does not match the one specified in the MHD file."})
                 }
                 // Check if this is indeed 3 dimensional data
                 if (nDims !== 3) {
-                    errorMsg = "Invalid data dimensions (" + nDims + ")";
+                    status.code = 1;
+                    status.msg = "Invalid data dimensions (" + nDims + "), required 3.";
                 }
 
             } catch (err) {
-                errorMsg = "ERROR: Could not correctly parse the MHD file!";
+                status.code = 2;
+                status.msg = "Failed while parsing the MHD file!";
             }
 
             // Check if there has been an error while parsing the meta data
-            if (errorMsg !== "") {
-                self._onLoad({error: errorMsg});
+            if (status.code !== 0) {
+                self._onLoad({status: status});
                 self._loadingInProgress = false;
 
                 return;

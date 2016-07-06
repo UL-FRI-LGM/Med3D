@@ -28,6 +28,7 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/core/GLAttributeManager.js"></script>
 <script src="../src/core/GLManager.js"></script>
 <script src="../src/core/Object3D.js"></script>
+<script src="../src/objects/Group.js"></script>
 <script src="../src/core/Scene.js"></script>
 
 <!-- CAMERA -->
@@ -68,7 +69,9 @@ FPS: <span id="fps">N/A</span>
     // Set path to shader files
     renderer.addShaderLoaderUrls("../src/shaders");
 
+    var group = new M3D.Group();
     var scene = new M3D.Scene();
+    scene.add(group);
 
     // Initialize lights and add them to the scene
     var aLight = new M3D.AmbientLight(new THREE.Color("#222222"), 1);
@@ -243,14 +246,14 @@ FPS: <span id="fps">N/A</span>
             pLight.color = new THREE.Color("#" + Math.random().toString(16).slice(2, 8));
         } else if (event.keyCode === 78) {
             if (objI < objects.length) {
-                scene.add(objects[objI]);
+                group.add(objects[objI]);
                 objI++;
                 console.log(objI);
             }
         } else if (event.keyCode === 77) {
             if (objI > 0) {
                 objI--;
-                scene.remove(objects[objI]);
+                group.remove(objects[objI]);
                 console.log(objI);
             }
         }

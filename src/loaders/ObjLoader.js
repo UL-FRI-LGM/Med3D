@@ -34,6 +34,26 @@ M3D.ObjLoader = class {
     }
 
     /**
+     * Loads the .obj file via FileReader, parses the received file and calls onLoad function with parsed objects loaded from .obj file as a parameter.
+     * @param {Blob} file .obj file Blob
+     * @param {function} onLoad Will be called when the .obj file finishes loading. Function will be called with parsed objects as parameters
+     * @param {function} onProgress Will forward the progress calls of XHRLoader
+     * @param {function} onError Will forward the error calls of XHRLoader
+     */
+    loadFile(file, onLoad, onProgress, onError) {
+        var scope = this;
+        var fileReader = new FileReader();
+
+        fileReader.onerror = onError;
+        fileReader.onprogress = onProgress;
+        fileReader.onload = function (event) {
+            onLoad(scope.parse(this.result));
+        };
+
+        fileReader.readAsText(file);
+    }
+
+    /**
      * This should be called to set the .obj file PATH/URL in advance
      * @param {string} path Request path
      */

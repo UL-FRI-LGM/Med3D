@@ -313,34 +313,56 @@ lerp = function(vec1, vec2, alpha) {
     return rez;
 };
 
+var msgCount = 0;
+var meta;
+var dimensions;
+var voxelDim;
+var isoLevel;
+var offset;
+var refreshRate;
+
+var valuesType;
+var values;
+
+// Vertice buffer 36MB big must be divisible with 9
+let BUFFER_SIZE = 9000000;
+
 onmessage = function(msg) {
+    // First message should specify the meta data
+    if (msgCount <= 0) {
+        var meta = msg.data;
+        dimensions = meta.dimensions;
+        voxelDim = meta.voxelDimensions;
+        isoLevel = meta.isoLevel;
+        // If parallelized take correctly offset z axis
+        offset = (meta.dimensions.offset) ? meta.dimensions.offset : 0;
+        valuesType = meta.valuesType;
+        refreshRate = Math.round(dimensions.z / 20);
 
-    var start = new Date();
-    console.log("Start time: " + start.toString());
-
-    // Retrieve data from the message
-    var meta = msg.data[0];
-    var dimensions = meta.dimensions;
-
-    var voxelDim = meta.voxelDimensions;
-    var isoLevel = meta.isoLevel;
-
-    // If parallelized take correctly offset z axis
-    var offset = (meta.dimensions.offset) ? meta.dimensions.offset : 0;
-
-    // Voxel intensities
-    var values = msg.data[1];
+        msgCount++;
+        return;
+    }
+    else if (msgCount === 1) {
+        values = eval("new " + valuesType + "(msg.data);");
+    }
 
     // Actual position along edge weighted according to function values.
     var vlist = new Array(12);
-    var vertices = [];
+    var vertices = new Float32Array(BUFFER_SIZE);
 
-    var maxX = voxelDim.x * (dimensions.x -1);
-    var maxY = voxelDim.y * (dimensions.y -1);
-    var maxZ = voxelDim.z * (((dimensions.zFull) ? dimensions.zFull : dimensions.z) -1);
+    var maxX = voxelDim.x * (dimensions.x - 1);
+    var maxY = voxelDim.y * (dimensions.y - 1);
+    var maxZ = voxelDim.z * (((dimensions.zFull) ? dimensions.zFull : dimensions.z) - 1);
     var maxAxisVal = Math.max(maxX, maxY, maxZ);
 
+    var idx = 0;
     for (var z = 0; z < dimensions.z - 1; z++) {
+
+        // Send updates about the progress to the controlling object
+        if (z > 0 && z % refreshRate === 0) {
+            postMessage({type: "progress", zCount: z});
+        }
+
         for (var y = 0; y < dimensions.y - 1; y++) {
             for (var x = 0; x < dimensions.x - 1; x++) {
 
@@ -464,24 +486,36 @@ onmessage = function(msg) {
                     var index3 = MC_TRI_TABLE[cubeindex + i + 2];
 
                     // Add triangles vertices normalized with the maximal possible value
-                    vertices.push(vlist[index1][0]/maxAxisVal - 0.5);  // x
-                    vertices.push(vlist[index1][1]/maxAxisVal - 0.5);  // y
-                    vertices.push(vlist[index1][2]/maxAxisVal - 0.5);  // z
-                    vertices.push(vlist[index2][0]/maxAxisVal - 0.5);  // x
-                    vertices.push(vlist[index2][1]/maxAxisVal - 0.5);  // y
-                    vertices.push(vlist[index2][2]/maxAxisVal - 0.5);  // z
-                    vertices.push(vlist[index3][0]/maxAxisVal - 0.5);  // x
-                    vertices.push(vlist[index3][1]/maxAxisVal - 0.5);  // y
-                    vertices.push(vlist[index3][2]/maxAxisVal - 0.5);  // z
+                    vertices[idx++] = (vlist[index3][0] / maxAxisVal - 0.5);  // x
+                    vertices[idx++] = (vlist[index3][1] / maxAxisVal - 0.5);  // y
+                    vertices[idx++] = (vlist[index3][2] / maxAxisVal - 0.5);  // z
+                    vertices[idx++] = (vlist[index2][0] / maxAxisVal - 0.5);  // x
+                    vertices[idx++] = (vlist[index2][1] / maxAxisVal - 0.5);  // y
+                    vertices[idx++] = (vlist[index2][2] / maxAxisVal - 0.5);  // z
+                    vertices[idx++] = (vlist[index1][0] / maxAxisVal - 0.5);  // x
+                    vertices[idx++] = (vlist[index1][1] / maxAxisVal - 0.5);  // y
+                    vertices[idx++] = (vlist[index1][2] / maxAxisVal - 0.5);  // z
 
                     i += 3;
+
+                    if (idx >= BUFFER_SIZE) {
+                        // Transfer buffer to main thread
+                        postMessage(vertices.buffer, [vertices.buffer]);
+                        vertices = new Float32Array(BUFFER_SIZE);
+                        // Notify triangle count
+                        postMessage({type: "triangleCount", count: idx / 9});
+                        idx = 0;
+                    }
                 }
             }
         }
     }
-
-    var end = new Date();
-    console.log("Processing time: " + (end - start)/1000);
-    console.log(vertices.length);
-    postMessage(vertices);
+    // Last 100% progress update
+    postMessage({type: "progress", zCount: dimensions.z});
+    // Return last vertice buffer
+    postMessage(vertices.buffer, [vertices.buffer]);
+    // Notify triangle count
+    postMessage({type: "triangleCount", count: idx / 9});
+    // Return last vertice buffer size
+    postMessage({type: "finished", lastLength: idx});
 };

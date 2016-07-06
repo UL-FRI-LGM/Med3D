@@ -18,9 +18,9 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 
 		this.type = "PerspectiveCamera";
 
-		this._fov = fov || 1;
+		this._fov = fov || 50;
 		this._aspect = aspect || 1;
-		this._near = near || 1;
+		this._near = near || 0.1;
 		this._far = far || 1000;
 		this.updateProjectionMatrix();
 	}
@@ -29,7 +29,16 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 	* Updates projection matrix based on current values of properties.
 	*/
 	updateProjectionMatrix() {
-		this._projectionMatrix.makePerspective(this._fov, this._aspect, this._near, this._far);
+
+			var top = this._near * Math.tan((Math.PI/180) * 0.5 * this._fov),
+				height = 2 * top,
+				width = this._aspect * height,
+				left = - 0.5 * width;
+
+			this.projectionMatrix.makeFrustum(left, left + width, top - height, top, this._near, this._far );
+
+
+		//this._projectionMatrix.makePerspective(this._fov, this._aspect, this._near, this._far);
 	}
 
 	get fov() { return this._fov; }
@@ -56,12 +65,6 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
             this._aspect = val;
 
             this.updateProjectionMatrix();
-
-            // Notify onChange subscriber
-            if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {aspect: this._aspect}};
-                this._onChangeListener.objectUpdate(update)
-            }
         }
 	}
 
@@ -98,15 +101,14 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 
 		// Add Perspective camera parameters
 		obj.fov = this._fov;
-		obj.aspect = this._aspect;
 		obj.near = this._near;
 		obj.far = this._far;
 
 		return obj;
 	}
 
-	static fromJson(data) {
-		var camera = new M3D.PerspectiveCamera(data.fov, data.aspect, data.near, data.far);
+	static fromJson(data, aspect) {
+		var camera = new M3D.PerspectiveCamera(data.fov, aspect, data.near, data.far);
 
 		return super.fromJson(data, camera);
 	}
@@ -120,11 +122,6 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 				case "fov":
 					this._fov = data.fov;
 					delete data.fov;
-					modified = true;
-					break;
-				case "aspect":
-					this._aspect = data.aspect;
-					delete data.aspect;
 					modified = true;
 					break;
 				case "near":

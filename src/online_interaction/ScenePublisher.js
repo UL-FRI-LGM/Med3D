@@ -4,18 +4,13 @@
 
 M3D.ScenePublisher = class {
     
-    constructor(scene, camera, updateInterval) {
+    constructor(scene, camera, onConnectionChange) {
 
         var self = this;
 
-        this._socket = io();
-
-        this._socket.on('connect', function() {
-            console.log(self._socket.id);
-        });
-
         this._scene = scene;
         this._camera = camera;
+        this._updateInProgress = false;
 
         // Scheduled updates
         this._scheduledObjectsUpdates = {};
@@ -25,8 +20,13 @@ M3D.ScenePublisher = class {
         this._newObjects = {objects: {}, geometries: {}, materials: {}};
         this._synchronizedObjects = new Set();
 
+        //TODO: Set update interval based on the server/publisher latency
+        this._updateInterval = 16; // Allow update 10 times a second
+        this._lastUpdate = null;
+        this._dirty = false;
 
         var onObjectUpdate = function(update) {
+            self._dirty = true;
             // Update previous update entry
             var changes = update.changes;
 
@@ -44,11 +44,13 @@ M3D.ScenePublisher = class {
         };
 
         var onHierarchyUpdate = function(update) {
+            self._dirty = true;
+
             var changes = update.changes;
             var object = changes.objectRef;
 
             if (object === undefined || self._synchronizedObjects.has(update.uuid)) {
-                // No object reference was given (Object was removed from hierarchy)
+                // No object reference was given (Object was removed in the hierarchy)
                 delete changes.objectRef;
 
                 // Schedule parent change update
@@ -63,7 +65,6 @@ M3D.ScenePublisher = class {
                 self._newObjects.objects[object._uuid] = object.toJson();
                 self._synchronizedObjects.add(object._uuid);
 
-                // TODO: If hierarchy is added import whole hierarchy not just the given object
                 // Start listening for changes on this object
                 object.addOnChangeListener(this, false);
 
@@ -78,10 +79,17 @@ M3D.ScenePublisher = class {
                         self._synchronizedObjects.add(object.material._uuid);
                     }
                 }
+
+                // Add whole hierarchy
+                for (var i = 0; i < object.children.length; i++) {
+                    onHierarchyUpdate({uuid: object.children[i]._uuid, changes: {parentUuid: object._uuid, objectRef: object.children[i]}})
+                }
             }
         };
 
         var onMaterialUpdate = function(update) {
+            self._dirty = true;
+
             var entry = self._scheduledMaterialsUpdates[update.uuid];
 
             if (entry !== undefined) {
@@ -99,6 +107,8 @@ M3D.ScenePublisher = class {
         };
 
         var onGeometryUpdate = function(update) {
+            self._dirty = true;
+
             var entry = self._scheduledGeometriesUpdates[update.uuid];
 
             if (entry !== undefined) {
@@ -116,10 +126,52 @@ M3D.ScenePublisher = class {
         };
 
         this._changeListener = new M3D.UpdateListener(onObjectUpdate, onHierarchyUpdate, onMaterialUpdate, onGeometryUpdate);
+
+        this._onConnectionChange = onConnectionChange;
+        this._socket = null;
     }
 
-    startPublishing() {
-        var data = {objects: {}, geometries: {}, materials: {}, camera: {}};
+    startPublishing(updateInterval) {
+        if (updateInterval) {
+            this._updateInterval = updateInterval;
+        }
+        this._lastUpdate = new Date();
+
+        let self = this;
+
+        // Init socket
+        this._socket = io();
+
+        // Notify subscriber on connect and upload the scene to the server.
+        this._socket.on('connect', function() {
+            self._updateInProgress = true;
+
+            var serverCallback = function() {
+                self._updateInProgress = false;
+                self._onConnectionChange({status: 0, session_uuid: self._socket.id});
+            };
+
+            self._uploadScene(serverCallback);
+        });
+    }
+
+    stopPublishing() {
+        this._socket.disconnect();
+
+        // Destroy scene changes listener
+        this._changeListener = null;
+
+        // Clear any cached data
+        this._scheduledObjectsUpdates = {};
+        this._scheduledMaterialsUpdates = {};
+        this._scheduledGeometriesUpdates = {};
+
+        this._newObjects = {objects: {}, geometries: {}, materials: {}};
+        this._synchronizedObjects = new Set();
+    }
+
+    _uploadScene(serverCallback) {
+        var data = {objects: {}, geometries: {}, materials: {}};
 
         // Recursively the shared scene
         this._scene.exportHierarchyToJson(data);
@@ -130,15 +182,15 @@ M3D.ScenePublisher = class {
 
         // Form the request and forward it to server via socket.io
         var request = {type: "create", data: data};
-        this._socket.emit("session", request);
+
+        this._socket.emit("session", request, serverCallback);
 
         // Add change listeners to the given scene and camera
         this._scene.addOnChangeListener(this._changeListener, true);
         this._camera.addOnChangeListener(this._changeListener, false);
     }
 
-
-    publishUpdates() {
+    _publishUpdates(serverCallback) {
         var updateData = {updates: {}, newObjects: {}};
 
         var updateEmpty = true;
@@ -182,12 +234,31 @@ M3D.ScenePublisher = class {
         }
 
         // Forward the request to the server
-        this._socket.emit("sessionUpdate", updateData);
+        this._socket.emit("sessionUpdate", updateData, serverCallback);
 
         // Reset scheduled updates
         this._scheduledObjectsUpdates = {};
         this._scheduledMaterialsUpdates = {};
         this._scheduledGeometriesUpdates = {};
         this._newObjects = {objects: {}, geometries: {}, materials: {}, camera: {}};
+        this._dirty = false;
+    }
+
+    update() {
+        var currentTime = new Date();
+
+        if (!this._dirty || currentTime - this._lastUpdate < this._updateInterval || this._updateInProgress) {
+            return;
+        }
+
+        this._lastUpdate = currentTime;
+        this._updateInProgress = true;
+
+        var self = this;
+
+        // Implement timeout mechanism
+        this._publishUpdates(function() {
+            self._updateInProgress = false;
+        });
     }
 };

@@ -3,8 +3,9 @@
  */
 
 M3D.SceneSubscriberListener = class {
-    constructor(onConnected) {
+    constructor(onConnected, onTerminated) {
         this.onConnected = (onConnected) ? onConnected : function() {};
+        this.onTerminated = (onTerminated) ? onTerminated : function() {};
     }
 };
 
@@ -21,10 +22,7 @@ M3D.SceneSubscriber = class {
         this._scenes = [];
         this._cameras = [];
 
-        this._scheduledUpdates = [];
-
         this._updateListener = updateListener;
-
         //region SOCKET.IO
         this._socket.on("connectResponse", function(response) {
             if (response && response.status === 0) {
@@ -199,12 +197,25 @@ M3D.SceneSubscriber = class {
                 }
             }
         });
+
+        this._socket.on("sessionTerminated", function() {
+            self._updateListener.onTerminated();
+        });
         //endregion
     }
 
-    subscribeTo(sessionId) {
+    subscribe(sessionId) {
         this._socket.emit("session", {type: "join", sessionId: sessionId});
     }
 
-    get isDirty() { return this._scheduledUpdates.length != 0; }
+    unsubscribe() {
+        this._socket.disconnect();
+
+        this._objects = {};
+        this._geometries = {};
+        this._materials = {};
+
+        this._scenes = [];
+        this._cameras = [];
+    }
 };

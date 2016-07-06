@@ -120,6 +120,10 @@ M3D.GLManager = class {
         return this._attributeManager.getCachedBuffer(attribute);
     }
 
+    clearAttributeBuffers() {
+        this._attributeManager.clearBuffers();
+    }
+
 
     //region CANVAS CLEARING FUNCTIONS
     /**

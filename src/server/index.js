@@ -23,7 +23,7 @@ var sessionManager = new SessionManager();
 io.sockets.on('connection', function(socket) {
     console.log("Client connected");
 
-    socket.on('session', function(request) {
+    socket.on('session', function(request, callback) {
         if (request.type === "create") {
             console.log("Create session request");
             // Check data
@@ -41,6 +41,8 @@ io.sockets.on('connection', function(socket) {
             }
 
             socket.join(session.host);
+
+            callback();
         }
         else if (request.type === "join") {
             console.log("Join session request");
@@ -58,16 +60,22 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('sessionUpdate', function(request) {
+    socket.on('sessionUpdate', function(request, callback) {
         var hostId = socket.id.substring(2);
         if (sessionManager.updateSession(hostId, request)) {
             socket.broadcast.to(hostId).emit('sessionUpdate', request);
         }
+        
+        callback();
     });
 
     socket.on('disconnect', function() {
-        console.log("Client disconnected... Destroying session if exists.");
-        sessionManager.deleteSession(socket.id.substring(2))
+        var hostId = socket.id.substring(2);
+
+        if (sessionManager.fetchSession(hostId)) {
+            socket.broadcast.to(hostId).emit('sessionTerminated');
+            sessionManager.deleteSession(hostId);
+        }
     });
 });
 

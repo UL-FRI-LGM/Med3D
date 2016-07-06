@@ -203,8 +203,8 @@ M3D.Object3D = class {
 			this._matrixWorldNeedsUpdate = false;
 		}
 
-		for (var i = 0; i < this.children.length; i++) {
-			this.children[i].updateMatrixWorld();
+		for (var i = 0; i < this._children.length; i++) {
+			this._children[i].updateMatrixWorld();
 		}
 	}
     //endregion
@@ -293,7 +293,7 @@ M3D.Object3D = class {
 
 		// Recurse
 		for (var i = 0; i < this.children.length; i++) {
-			this.children[i].exportHierarchyToJson(result);
+			this._children[i].exportHierarchyToJson(result);
 		}
 	}
 
