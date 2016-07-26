@@ -10,6 +10,7 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         this.type = "MeshBasicMaterial";
 
         this._color = new THREE.Color(0x33bb33); // emissive
+        this._map = null;
 
         this._program = "basic";
     }
@@ -24,7 +25,12 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         }
     }
 
+    set map(val) {
+        this._map = val;
+    }
+
     get color() { return this._color; }
+    get map() { return this._map; }
 
     toJson() {
         var obj = super.toJson();

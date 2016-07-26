@@ -196,6 +196,13 @@ M3D.GLProgramManager = class {
                         self._gl.uniform1f(location, value);
                     };
                     break;
+                case self._gl.SAMPLER_2D:
+                    uniformSetter[info.name]['set'] = function (texture, index) {
+                        self._gl.activeTexture(self._gl.TEXTURE0 + index);
+                        self._gl.bindTexture(self._gl.TEXTURE_2D, texture);
+                        self._gl.uniform1i(location, self._gl.TEXTURE0 + index);
+                    };
+                    break;
             }
         }
 

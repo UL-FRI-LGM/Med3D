@@ -1,0 +1,132 @@
+<div id="aboutModal" class="modal face" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <!-- Modal content-->
+        <div class="modal-content med3d-modal">
+            <div class="modal-header med3d-modal-header">
+                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                <h5 class="modal-title">About </h5>
+            </div>
+            <div class="modal-body">
+                <p>The project is being developed at Laboratory for Computer Graphics and Multimedia, Faculty of Computer and Information Science, University of Ljubljana. Project is developed mostly as work of students as part of their seminar work, thesis work and summer internship work. Project Website <a href="https://ul-fri-lgm.github.io/Med3D/" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>.</p>
+
+                <p>The project is lead and coordinated by <strong>Ciril Bohak</strong>.</p>
+
+                <h5>Development history:</h5>
+
+                <p>The original application was developed by <strong>Simon Žagar</strong> (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=25723&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science. He developed 3D visualisation environment and navigation, loading OBJ files and interlaced stereoscopic display.</p>
+
+                <p>Afterwards the application was extended and adapted by several authors as stated below:</p>
+
+                <ul>
+                    <li><strong>Matevž Ropret</strong> - contributed integration of several separately developed methods into the application. He also implemented new design into the application.</li>
+
+                    <li><strong>Matjaž Krmelj, Pia Jerkič, Ciril Bohak</strong> - put together design of the application and website.</li>
+
+                    <li><strong>Žiga Lesar</strong> - contributed implementation of raycasting method for direct visualisation of volumetric data. (Thesis - in Slovenian  <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29459&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) </li>
+
+                    <li><strong>Boštjan Čotar</strong> - contributed implementation of subdivision of volumetric data approximation for better conversion to 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29535&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                    <li><strong>Miloš Lukić</strong> - contributed implementation of Multiple Partitions of Unity Implicits (MPUI) algorithm - an alternative to MC - for transforming volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29488&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                    <li><strong>Peter Škrlj</strong> - contributed integration of 3D mouse support (<a href="http://www.3dconnexion.eu/" target="_blank">3D Connexion</a>) for navigation, integration of <a href="https://www.leapmotion.com/" target="_blank">Leap Motion</a> controller. He also conducted an usability study on using different input devices for interaction. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=68822&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+
+                    <li><strong>Anže Sodja</strong> - contributed code refactoring, implementation of MHD reader for reading raw volumetric data, implementation of Marching Cube (MC) algorithm in Java and integration of MC algorithm in OpenCL for transformation of volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=26240&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
+                </ul>
+
+                <h5>Publications:</h5>
+
+                <p><strong>Ciril Bohak, Simon Žagar, Anže Sodja, Peter Škrlj, Uroš Mitrović, Franjo Pernuš, Matija Marolt,</strong> <em>"Neck veins : an interactive 3D visualization of head veins"</em>, In: <em>Proceedings of the 4th International Conference World Usability Day Slovenia 2013</em>, Ljubljana, Slovenia, 25th November 2013, (International series on information systems and management in creative media), Tampere, IugYmedia, 2013, p. 64-66. <a href="http://lit.fe.uni-lj.si/pubobtain.php?lang=eng&pub=287" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
+<pre>@inproceedings{Bohak2013,
+    author = {  Bohak, Ciril and
+                \v{Z}agar, Simon and
+                Sodja, An\v{z}e and
+                \v{S}krlj, Peter and
+                Mitrovi\'{c}, Uro\v{s} and
+                Pernu\v{s}, Franjo and
+                Marolt, Matija },
+    title = {Neck veins: an interactive 3{D} visualization
+            of head veins},
+    booktitle = {Proceedings of the 4th International Conference
+                World Usability Day Slovenia 2013, 25 Nov,
+                Ljubljana, Slovenia, E. Stojmenova (Ed.)},
+    pages = {64--66},
+    year = {2013}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                <p><strong>Ciril Bohak, Anže Sodja, Matija Marolt, Uroš Mitrović, Franjo Pernuš,</strong> <em>"Fast segmentation, conversion and rendering of volumetric data using GPU"</em>, In: <em>IWSSIP 2014 : proceedings, (International Conference on Systems, Signals, and Image Processing (Print))</em>, Zagreb, Faculty of Electrical Engineering and Computing, Department of Wireless Communications, cop. 2014, p. 239-242. <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6837675&tag=1" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
+<pre>@inproceedings{Bohak2014a,
+    author = {  Bohak, Ciril and
+                Sodja, An\v{z}e and
+                Marolt, Matija and
+                Mitrovi\'{c}, Uro\v{s} and
+                Pernu\v{s}, Franjo },
+    booktitle={IWSSIP 2014 Proceedings},
+    title = {Fast segmentation, conversion and rendering of
+            volumetric data using GPU},
+    year = {2014},
+    pages = {239-242},
+    ISSN = {2157-8672},
+    month = {May}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                <p><strong>Peter Škrlj, Jože Guna, Ciril Bohak, Matija Marolt,</strong> <em>"Usability evaluation of input devices for navigation and interaction in 3D visualisation"</em>, In: <em>Proceedings of the 7th International Workshop on Semantic Ambient Media Experience (SAME 2014) - Ambient Media Usability, Interaction, and Smart Media Technologies : Helsinki, Finland</em>, 26th October 2014, (International series on information systems and management in creative emedia, no. 2014/1), Tampere, iAMEA, 2014, p. 19-23. <a href="http://www.ambientmediaassociation.org/Journal/index.php/series/article/view/222" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Bohak2014b,
+    author = {  \v{S}krlj, Peter and
+                Bohak, Ciril and
+                Guna, Jo\v{z}e and
+                Marolt Matija },
+    booktitle = {Proceedings of the 7th International Workshop
+                on Semantic Ambient Media Experience (SAME 2014)
+                - Ambient Media Usability, Interaction, and
+                Smart Media Technologies : Helsinki, Finland,
+                26th October 2014, (International series on
+                information systems and management in creative
+                emedia, no. 2014/1)},
+    title = {Usability evaluation of input devices for
+            navigation and interaction in 3D visualisation},
+    year = {2014},
+    pages = {19-23}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                <p><strong>Žiga Lesar,</strong> <em>"Real-time ray casting of volumetric data"</em>, In: <em>Proceedings of ERK 2014, Portorož, Slovenija, IEEE Region 8, Slovenska sekcija IEEE</em>, 2014, p. 199-200. <a href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7313802" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Lesar2015a,
+    author = {Lesar, \v{Z}iga},
+    booktitle = {EUROCON 2015 - International Conference on
+                Computer as a Tool (EUROCON), IEEE},
+    title = {Real-time ray casting of volumetric data},
+    year = {2015},
+    pages = {1-6},
+    doi = {10.1109/EUROCON.2015.7313802},
+    month = {Sept}
+}</pre>
+                    ">[BIB]</a>.</p>
+
+                <p><strong>Žiga Lesar, Ciril Bohak, Matija Marolt,</strong> <em>"Evaluation of angiogram visualization methods for fast and reliable aneurysm diagnosis"</em>, In: <em>Medical imaging 2015 : image perception, observer performance, and technology assessment : 25-26 February 2015</em>, Orlando, Florida, United States, (Progress in biomedical optics and imaging, vol. 16, no. 44), (Proceedings of SPIE, the International Society for Optical Engineering, vol. 9416), Claudia R. Mello-Thoms, ur., Matthew A. Kupinski, ur., Bellingham (Washington), SPIE, cop. 2015, str. [1-8]. <a href="http://spie.org/Publications/Proceedings/Paper/10.1117/12.2082179" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
+<pre>@inproceedings{Lesar2015a,
+    author = {  Lesar, \v{Z}iga and
+                Bohak, Ciril and
+                Marotl, Matija },
+    booktitle = {Medical imaging 2015 : image perception,
+                observer performance, and technology
+                assessment : 25-26 February 2015, Orlando,
+                Florida, United States, (Progress in
+                biomedical optics and imaging, vol. 16,
+                no. 44), (Proceedings of SPIE, the
+                International Society for Optical Engineering,
+                vol. 9416), Bellingham (Washington), SPIE},
+    title = {Evaluation of angiogram visualization methods
+            for fast and reliable aneurysm diagnosis},
+    year = {2015},
+    pages = {1-8},
+    doi = {10.1117/12.2082179},
+    month = {March}
+}</pre>
+                    ">[BIB]</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>

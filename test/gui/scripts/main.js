@@ -7,7 +7,6 @@ var canvas;
 var animationRequestId;
 
 var scene;
-var objects = [];
 var camera;
 var pLight;
 
@@ -133,6 +132,8 @@ function stopSharingScene() {
 }
 //endregion
 
+
+
 var prevTime = -1, currTime;
 
 // Main loop
@@ -194,6 +195,7 @@ function resizeCanvas() {
     }
 }
 
+
 //region Group management (all new objects should be added to the scene via groups)
 function sceneAddGroup(group) {
     scene.add(group);
@@ -222,6 +224,9 @@ function stopAnimation() {
     }
 }
 //endregion
+
+
+
 
 // Obj loading
 function loadObjFromFile(file) {

@@ -84,6 +84,10 @@ M3D.MHDReader = class {
                         data = new Uint32Array(this.result);
                         requiredByteLength = dataLength * 4;
                         break;
+                    case "MET_FLOAT":
+                        data = new Float32Array(this.result);
+                        requiredByteLength = dataLength * 4;
+                        break;
                     case "MET_DOUBLE":
                         data = new Float64Array(this.result);
                         requiredByteLength = dataLength * 8;
@@ -104,7 +108,6 @@ M3D.MHDReader = class {
             // Return the result and toggle the loading flag.
             self._onLoad({meta: self._mhdMeta, data: data, status: status, warnings: self._warnings});
         };
-
 
         var mhdParser = function(event) {
             var status = {code: 0, msg: ""};

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1920" height="1080"></canvas>
+
+<script src="../libraries/three-math.min.js"></script>
+<script src="../src/Med3D.js"></script>
+
+<!-- LOADERS -->
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/loaders/ImageLoader.js"></script>
+
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLUniformManager.js"></script>
+<script src="../src/core/GLManager.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
+
+<!-- MATERIALS -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+
+<!-- OBJECTS -->
+<script src="../src/objects/Geometry.js"></script>
+<script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Quad.js"></script>
+
+<!-- PROGRAM MANAGEMENT -->
+<script src="../src/renderers/GLProgram.js"></script>
+<script src="../src/renderers/GLProgramManager.js"></script>
+
+<!-- RENDERS -->
+<script src="../src/renderers/Renderer.js"></script>
+<script src="../src/renderers/MeshRenderer.js"></script>
+
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<script src="../src/marching_cubes/MHDReader.js"></script>
+<script src="../src/controls/KeyboardInput.js"></script>
+
+<script>
+    var manager = new M3D.LoadingManager();
+    var loader = new M3D.ObjLoader(manager);
+
+    var object = [];
+
+    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    renderer.addShaderLoaderUrls("../src/shaders");
+
+    var sceneRtt = new M3D.Scene();
+
+    // Lights
+    var ambient = new M3D.AmbientLight(new THREE.Color("#555555"), 1);
+    var directional = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
+    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
+    directional.position = new THREE.Vector3(0, 0.3, 0.7);
+
+    sceneRtt.add(ambient);
+    sceneRtt.add(directional);
+    sceneRtt.add(pLight);
+
+    // Background quad
+    var quadRtt = new M3D.Quad(new THREE.Vector2(-408, 230), new THREE.Vector2(410, -230), new M3D.MeshPhongMaterial());
+    quadRtt.position.z = -400;
+    sceneRtt.add(quadRtt);
+
+    var imgLoader = new M3D.ImageLoader();
+
+    imgLoader.load("./textures/cookie.png", function (image) {
+        quadRtt.material.map = new M3D.Texture(image);
+    });
+
+    // Camera
+    var cameraRtt = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
+    cameraRtt.position.x = 1;
+    // RTT
+    var renderTarget = new M3D.RenderTarget(1920, 1080);
+
+    // Output texture rendering
+    var sceneOut = new M3D.Scene();
+
+    sceneOut.add(new M3D.AmbientLight(new THREE.Color("#ffffff"), 1));
+    var quadOut = new M3D.Quad(new THREE.Vector2(-5, 5), new THREE.Vector2(5, -5), new M3D.MeshPhongMaterial());
+    sceneOut.add(quadOut);
+
+    // RTT texture binding
+    quadOut.material.map = renderTarget.texture;
+    quadOut.position.z = -10;
+
+    var cameraOut = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
+
+    // Setup keyboard
+    var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
+    var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
+
+    var keyboardInput = M3D.KeyboardInput.instance;
+    keyboardInput.addListener(function (pressedKeys) {
+        // ROTATIONS
+        if (pressedKeys[65]) {  // A
+            keyboardRotation.y = 1;
+        }
+
+        if (pressedKeys[68]) {  // D
+            keyboardRotation.y = -1;
+        }
+
+        if (pressedKeys[87]) {  // W
+            keyboardRotation.x = 1;
+        }
+
+        if (pressedKeys[83]) {  // S
+            keyboardRotation.x = -1;
+        }
+
+        if (pressedKeys[81]) {  // Q
+            keyboardRotation.z = 1;
+        }
+
+        if (pressedKeys[69]) {  // R
+            keyboardRotation.z = -1;
+        }
+
+
+        // TRANSLATIONS
+        if (pressedKeys[39]) {  // RIGHT - Right
+            keyboardTranslation.x = 1;
+        }
+
+        if (pressedKeys[37]) {  // LEFT - Left
+            keyboardTranslation.x = -1;
+        }
+
+        if (pressedKeys[40]) {  // DOWN - Backward
+            keyboardTranslation.z = 1;
+        }
+
+        if (pressedKeys[38]) {  // UP - Forward
+            keyboardTranslation.z = -1;
+        }
+
+        if (pressedKeys[82]) {  // Q - Upward
+            keyboardTranslation.y = 1;
+        }
+
+        if (pressedKeys[70]) {  // F - Downward
+            keyboardTranslation.y = -1;
+        }
+    });
+
+
+    // Load objects
+    loader.load("models/untitled3.obj", function ( obj ) {
+
+        objects = obj;
+        for (var i = 0; i < obj.length; i++) {
+            obj[i].position.z = -5;
+            obj[i].material = new M3D.MeshPhongMaterial();
+            obj[i].material.specular = new THREE.Color("#999999");
+            obj[i].geometry.drawWireframe = false;
+            sceneRtt.add(obj[i]);
+        }
+        objects[0].position.x = 2;
+
+        animate();
+    });
+
+    var prevTime = -1, currTime, dt;
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Calculate delta time and update timestamps
+        currTime = new Date();
+        dt = (prevTime !== -1) ? currTime - prevTime : 0;
+        prevTime = currTime;
+
+        keyboardTranslation.reset();
+        keyboardRotation.reset();
+        keyboardInput.update();
+
+        objects[0].rotateY(-dt * 0.001);
+        objects[0].rotateZ(-dt * 0.002);
+        objects[1].rotateY(dt * 0.002);
+        objects[2].rotateY(dt * 0.002);
+        objects[1].rotateZ(dt * 0.002);
+        objects[2].rotateZ(dt * 0.002);
+
+        cameraOut.translateX(keyboardTranslation.x * dt * 0.01);
+        cameraOut.translateY(keyboardTranslation.y * dt * 0.01);
+        cameraOut.translateZ(keyboardTranslation.z * dt * 0.01);
+
+        cameraOut.rotateX(keyboardRotation.x * dt * 0.001);
+        cameraOut.rotateY(keyboardRotation.y  * dt * 0.001);
+        cameraOut.rotateZ(keyboardRotation.z * dt * 0.001);
+
+        pLight.position = cameraRtt.position;
+
+        renderer.render(sceneRtt, cameraRtt, renderTarget);
+        renderer.render(sceneOut, cameraOut);
+    }
+
+</script>
+
+
+<!--<script>
+
+
+</script>-->
+
+</body>
+</html>

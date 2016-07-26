@@ -10,13 +10,46 @@
 
     <!-- Bootstrap -->
     <!-- build:css styles/main.css -->
-    <link href="styles/bootstrap.min.css" rel="stylesheet">
-    <link href="styles/bootstrap-theme.min.css" rel="stylesheet">
-    <link href="styles/font-awesome.min.css" rel="stylesheet">
-    <link href="styles/bootstrap-social.css" rel="stylesheet">
-    <link href="styles/mystyles.css" rel="stylesheet">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-social.css" rel="stylesheet">
+    <link href="assets/css/mystyles.css" rel="stylesheet">
     <!-- endbuild -->
 
+    <!-- build:js scripts/main.js -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="assets/lib/jquery.min.js"></script>
+    <script src="assets/lib/jquery-ui.min.js"></script>
+    <script src="assets/lib/bootstrap.min.js"></script>
+    <script src="assets/lib/angular.min.js"></script>
+    <script src="assets/lib/bootstrap-filestyle.min.js"></script>
+    <script src="assets/lib/clipboard.min.js"></script>
+    <!-- endbuild -->
+
+    <!-- Project -->
+    <script src="app/app.js"></script>
+
+    <!-- Services -->
+    <script src="app/components/settings/settingsService.js"></script>
+    <script src="app/components/input/inputService.js"></script>
+    <script src="app/components/taskManagerService.js"></script>
+
+    <!-- Controllers -->
+    <script src="app/components/input/navigatorController.js"></script>
+    <script src="app/components/modals/settings/settingsModalController.js"></script>
+    <script src="app/components/rendering/renderingController.js"></script>
+    <script src="app/components/modals/objLoading/objLoaderController.js"></script>
+    <script src="app/components/modals/marchingCubes/marchingCubesController.js"></script>
+
+    <!-- Directives -->
+    <script src="app/components/modals/marchingCubes/marchingCubesDirective.js"></script>
+    <script src="app/components/modals/objLoading/objLoaderDirective.js"></script>
+    <script src="app/components/rendering/canvasDirective.js"></script>
+    <script src="app/components/modals/settings/display/displaySettingsModalDirective.js"></script>
+    <script src="app/components/modals/settings/input/inputSettingsModalDirective.js"></script>
+    <script src="app/components/modals/misc/basicModalDirective.js"></script>
+    <script src="app/components/input/navigatorDirective.js"></script>
     <!-- DEBUG INCLUDE -->
     <script src="../../libraries/three-math.min.js"></script>
     <script src="../../src/Med3D.js"></script>
@@ -35,6 +68,7 @@
     <!-- CORE -->
     <script src="../../src/core/BufferAttribute.js"></script>
     <script src="../../src/core/GLAttributeManager.js"></script>
+    <script src="../../src/core/GLUniformManager.js"></script>
     <script src="../../src/core/GLManager.js"></script>
     <script src="../../src/core/Object3D.js"></script>
     <script src="../../src/core/Scene.js"></script>
@@ -69,7 +103,7 @@
 
     <script src="../../libraries/socket.io-1.4.5.js"></script>
     <script src="../../src/controls/KeyboardInput.js"></script>
-    <script src="scripts/Input.js"></script>
+   <!-- <script src="scripts/Input.js"></script>-->
 
     <script src="../../src/marching_cubes/MarchingCubes.js"></script>
 
@@ -81,7 +115,7 @@
     <!-- DEBUG INCLUDE -->
 </head>
 
-<body>
+<body ng-app="med3d">
 
     <nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
         <div class="navbar-header">
@@ -91,7 +125,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#"><img class="navbar-image" src="images/med3D-icon.png" width="24" height="24"></a>
+            <a class="navbar-brand" href="#"><img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24"></a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
@@ -107,7 +141,7 @@
                         <li class="dropdown-submenu">
                             <a class="dropdown-submenu-anchor">Open / Upload</a>
                             <ul class="dropdown-menu">
-                                <li><a data-toggle="modal" data-target="#wavefrontObjOpenModal">Wavefront (.obj)</a></li>
+                                <li><a data-toggle="modal" data-target="#objLoaderModal">Wavefront (.obj)</a></li>
                                 <li><a data-toggle="modal" data-target="#volumeOpenModal">Volume (.mhd)</a></li>
                             </ul>
                         </li>
@@ -121,8 +155,8 @@
                         Options <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a data-toggle="modal" data-target="#optionsInputModal">Inputs</a></li>
-                        <li><a data-toggle="modal" data-target="#optionsDisplayModal">Display Settings</a></li>
+                        <li><a data-toggle="modal" data-target="#inputSettingsModal">Inputs</a></li>
+                        <li><a data-toggle="modal" data-target="#displaySettingsModal">Display Settings</a></li>
                     </ul>
                 </li>
 
@@ -174,279 +208,39 @@
         </div>
     </nav>
 
-    <canvas id="med3d-canvas" width="1280px" height="720px"></canvas>
+    <!-- CANVAS -->
+    <m3d-canvas ng-controller="RenderingController" shaderPath="../../src/shaders"></m3d-canvas>
 
-    <div id="wavefrontObjOpenModal" class="modal fade floating-window">
-        <div class="modal-dialog">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Wavefront (.obj)</h4>
-                </div>
-                <div class="modal-body">
-                    <h4 style="padding-left: 0">Select .obj file from your computer</h4>
-                    <div class="form-group"></div> <!-- To prevent weird Chrome bug -->
-                    <label>Select .obj file:</label>
-                    <input id="objFileInput" type="file" accept=".obj" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
-                    <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
-                </div>
+    <!-- OBJ LOADER -->
+    <obj-loader-modal ng-controller="ObjLoaderController"></obj-loader-modal>
 
-                <div class="modal-footer med3d-modal-footer">
-                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
-                    <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the .obj file." style="display: inline-block">
-                        <button id="objFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Open</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- MARCHING CUBES -->
+    <marching-cubes-modal ng-controller="MarchingCubesController"></marching-cubes-modal>
+
+    <!-- SETTINGS -->
+    <div ng-controller="SettingsController">
+        <display-setting-modal></display-setting-modal>
+        <input-settings-modal navigator-toggle="navigatorToggle"></input-settings-modal>
     </div>
 
-    <div id="volumeOpenModal" class="modal fade floating-window">
-        <div class="modal-dialog">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Wavefront (.obj)</h4>
-                </div>
-                <div class="modal-body">
-                    <h4 style="padding-left: 0">Select .mhd and its corresponding .raw file from your computer</h4>
-                    <div class="form-group"></div> <!-- To prevent weird Chrome bug -->
-                    <label>Select mhd file:</label>
-                    <input id="volumeMhdFileInput" type="file" accept=".mhd" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
-                    <label style="margin-top: 10px;">Select raw file:</label>
-                    <input id="volumeRawFileInput" type="file" accept=".raw" class="filestyle" data-size="sm" data-buttonName="btn-danger" data-buttonText="&nbspChoose file">
-                    <label style="margin-top: 10px;">ISO value:</label>
-                    <input id="volumeIsoValueInput" type="number" value="0" class="form-control" style="width: 25%; height: 30px" required>
-                    <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
-                </div>
+    <!-- NON-FUNCTIONAL MODALS -->
+    <basic-modal type="about"></basic-modal>
+    <basic-modal type="licence"></basic-modal>
 
-                <div class="modal-footer med3d-modal-footer">
-                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
-
-                    <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the volume files and enter the iso value." style="display: inline-block">
-                        <button id="volumeFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Open</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- NAVIGATORS -->
+    <div ng-controller="NavigatorController">
+        <navigator navigator-toggle="navigatorToggle" translation-values="translationValues" ng-show="navigatorToggle.translation" type="translation"></navigator>
+        <navigator navigator-toggle="navigatorToggle" rotation-values="rotationValues" ng-show="navigatorToggle.rotation" type="rotation"></navigator>
     </div>
-
-
-
-    <div id="optionsInputModal" class="modal face" role="dialog">
-        <div class="modal-dialog modal-lg">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Options - Inputs </h4>
-                </div>
-                <div class="modal-body">
-                    <h5>Navigation widgets:</h5>
-                    <ul class="med3d-ul">
-                        <li>
-                            <input id="optionsTNavigatorCheckbox" class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true"><span style="width: 10px;">&nbspTranslation widget</span>
-                        </li>
-                        <li>
-                            <input id="optionsRNavigatorCheckbox" class="med3d-checkbox" type="checkbox" name="navigation-widget" checked="true"><span style="width: 10px;">&nbspRotation widget</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="optionsDisplayModal" class="modal face" role="dialog">
-        <div class="modal-dialog modal-lg">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Options - Display </h4>
-                </div>
-                <div class="modal-body">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="aboutModal" class="modal face" role="dialog">
-        <div class="modal-dialog modal-lg">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h5 class="modal-title">About </h5>
-                </div>
-                <div class="modal-body">
-                    <p>The project is being developed at Laboratory for Computer Graphics and Multimedia, Faculty of Computer and Information Science, University of Ljubljana. Project is developed mostly as work of students as part of their seminar work, thesis work and summer internship work. Project Website <a href="https://ul-fri-lgm.github.io/Med3D/" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>.</p>
-
-                    <p>The project is lead and coordinated by <strong>Ciril Bohak</strong>.</p>
-
-                    <h5>Development history:</h5>
-
-                    <p>The original application was developed by <strong>Simon Žagar</strong> (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=25723&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science. He developed 3D visualisation environment and navigation, loading OBJ files and interlaced stereoscopic display.</p>
-
-                    <p>Afterwards the application was extended and adapted by several authors as stated below:</p>
-
-                    <ul>
-                        <li><strong>Matevž Ropret</strong> - contributed integration of several separately developed methods into the application. He also implemented new design into the application.</li>
-
-                        <li><strong>Matjaž Krmelj, Pia Jerkič, Ciril Bohak</strong> - put together design of the application and website.</li>
-
-                        <li><strong>Žiga Lesar</strong> - contributed implementation of raycasting method for direct visualisation of volumetric data. (Thesis - in Slovenian  <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29459&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> ) </li>
-
-                        <li><strong>Boštjan Čotar</strong> - contributed implementation of subdivision of volumetric data approximation for better conversion to 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29535&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
-
-                        <li><strong>Miloš Lukić</strong> - contributed implementation of Multiple Partitions of Unity Implicits (MPUI) algorithm - an alternative to MC - for transforming volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=29488&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
-
-                        <li><strong>Peter Škrlj</strong> - contributed integration of 3D mouse support (<a href="http://www.3dconnexion.eu/" target="_blank">3D Connexion</a>) for navigation, integration of <a href="https://www.leapmotion.com/" target="_blank">Leap Motion</a> controller. He also conducted an usability study on using different input devices for interaction. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=68822&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
-
-                        <li><strong>Anže Sodja</strong> - contributed code refactoring, implementation of MHD reader for reading raw volumetric data, implementation of Marching Cube (MC) algorithm in Java and integration of MC algorithm in OpenCL for transformation of volumetric data into 3D mesh model. (Thesis - in Slovenian <a href="https://repozitorij.uni-lj.si/IzpisGradiva.php?id=26240&lang=eng" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a> )</li>
-                    </ul>
-
-                    <h5>Publications:</h5>
-
-                    <p><strong>Ciril Bohak, Simon Žagar, Anže Sodja, Peter Škrlj, Uroš Mitrović, Franjo Pernuš, Matija Marolt,</strong> <em>"Neck veins : an interactive 3D visualization of head veins"</em>, In: <em>Proceedings of the 4th International Conference World Usability Day Slovenia 2013</em>, Ljubljana, Slovenia, 25th November 2013, (International series on information systems and management in creative media), Tampere, IugYmedia, 2013, p. 64-66. <a href="http://lit.fe.uni-lj.si/pubobtain.php?lang=eng&pub=287" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
-<pre>@inproceedings{Bohak2013,
-    author = {  Bohak, Ciril and
-                \v{Z}agar, Simon and
-                Sodja, An\v{z}e and
-                \v{S}krlj, Peter and
-                Mitrovi\'{c}, Uro\v{s} and
-                Pernu\v{s}, Franjo and
-                Marolt, Matija },
-    title = {Neck veins: an interactive 3{D} visualization
-            of head veins},
-    booktitle = {Proceedings of the 4th International Conference
-                World Usability Day Slovenia 2013, 25 Nov, 
-                Ljubljana, Slovenia, E. Stojmenova (Ed.)},
-    pages = {64--66},
-    year = {2013}
-}</pre>
-                    ">[BIB]</a>.</p>
-
-                    <p><strong>Ciril Bohak, Anže Sodja, Matija Marolt, Uroš Mitrović, Franjo Pernuš,</strong> <em>"Fast segmentation, conversion and rendering of volumetric data using GPU"</em>, In: <em>IWSSIP 2014 : proceedings, (International Conference on Systems, Signals, and Image Processing (Print))</em>, Zagreb, Faculty of Electrical Engineering and Computing, Department of Wireless Communications, cop. 2014, p. 239-242. <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6837675&tag=1" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="bottom" data-html="true" data-content="
-<pre>@inproceedings{Bohak2014a, 
-    author = {  Bohak, Ciril and
-                Sodja, An\v{z}e and
-                Marolt, Matija and
-                Mitrovi\'{c}, Uro\v{s} and
-                Pernu\v{s}, Franjo }, 
-    booktitle={IWSSIP 2014 Proceedings},
-    title = {Fast segmentation, conversion and rendering of
-            volumetric data using GPU}, 
-    year = {2014}, 
-    pages = {239-242},
-    ISSN = {2157-8672},
-    month = {May}
-}</pre>
-                    ">[BIB]</a>.</p>
-
-                    <p><strong>Peter Škrlj, Jože Guna, Ciril Bohak, Matija Marolt,</strong> <em>"Usability evaluation of input devices for navigation and interaction in 3D visualisation"</em>, In: <em>Proceedings of the 7th International Workshop on Semantic Ambient Media Experience (SAME 2014) - Ambient Media Usability, Interaction, and Smart Media Technologies : Helsinki, Finland</em>, 26th October 2014, (International series on information systems and management in creative emedia, no. 2014/1), Tampere, iAMEA, 2014, p. 19-23. <a href="http://www.ambientmediaassociation.org/Journal/index.php/series/article/view/222" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
-<pre>@inproceedings{Bohak2014b, 
-    author = {  \v{S}krlj, Peter and
-                Bohak, Ciril and
-                Guna, Jo\v{z}e and
-                Marolt Matija }, 
-    booktitle = {Proceedings of the 7th International Workshop
-                on Semantic Ambient Media Experience (SAME 2014)
-                - Ambient Media Usability, Interaction, and
-                Smart Media Technologies : Helsinki, Finland,
-                26th October 2014, (International series on
-                information systems and management in creative
-                emedia, no. 2014/1)},
-    title = {Usability evaluation of input devices for
-            navigation and interaction in 3D visualisation}, 
-    year = {2014}, 
-    pages = {19-23}
-}</pre>
-                    ">[BIB]</a>.</p>
-
-                    <p><strong>Žiga Lesar,</strong> <em>"Real-time ray casting of volumetric data"</em>, In: <em>Proceedings of ERK 2014, Portorož, Slovenija, IEEE Region 8, Slovenska sekcija IEEE</em>, 2014, p. 199-200. <a href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7313802" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
-<pre>@inproceedings{Lesar2015a, 
-    author = {Lesar, \v{Z}iga}, 
-    booktitle = {EUROCON 2015 - International Conference on
-                Computer as a Tool (EUROCON), IEEE}, 
-    title = {Real-time ray casting of volumetric data}, 
-    year = {2015}, 
-    pages = {1-6}, 
-    doi = {10.1109/EUROCON.2015.7313802}, 
-    month = {Sept}
-}</pre>
-                    ">[BIB]</a>.</p>
-
-                    <p><strong>Žiga Lesar, Ciril Bohak, Matija Marolt,</strong> <em>"Evaluation of angiogram visualization methods for fast and reliable aneurysm diagnosis"</em>, In: <em>Medical imaging 2015 : image perception, observer performance, and technology assessment : 25-26 February 2015</em>, Orlando, Florida, United States, (Progress in biomedical optics and imaging, vol. 16, no. 44), (Proceedings of SPIE, the International Society for Optical Engineering, vol. 9416), Claudia R. Mello-Thoms, ur., Matthew A. Kupinski, ur., Bellingham (Washington), SPIE, cop. 2015, str. [1-8]. <a href="http://spie.org/Publications/Proceedings/Paper/10.1117/12.2082179" target="_blank"><i class="fa fa-external-link" aria-hidden="true"></i></a>, <a href="#" data-toggle="popover" title="BibTex" data-placement="top" data-html="true" data-content="
-<pre>@inproceedings{Lesar2015a, 
-    author = {  Lesar, \v{Z}iga and
-                Bohak, Ciril and
-                Marotl, Matija }, 
-    booktitle = {Medical imaging 2015 : image perception, 
-                observer performance, and technology 
-                assessment : 25-26 February 2015, Orlando, 
-                Florida, United States, (Progress in 
-                biomedical optics and imaging, vol. 16, 
-                no. 44), (Proceedings of SPIE, the 
-                International Society for Optical Engineering, 
-                vol. 9416), Bellingham (Washington), SPIE}, 
-    title = {Evaluation of angiogram visualization methods 
-            for fast and reliable aneurysm diagnosis}, 
-    year = {2015}, 
-    pages = {1-8}, 
-    doi = {10.1117/12.2082179}, 
-    month = {March}
-}</pre>
-                    ">[BIB]</a>.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="licenceModal" class="modal face" role="dialog">
-        <div class="modal-dialog">
-            <!-- Modal content-->
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Licence </h4>
-                </div>
-                <div class="modal-body">
-                    <p>The original application was developed by <strong>Simon Žagar</strong> in 2012 as part of his BSc Thesis work at University of Ljubljana, Faculty of Computer and Information Science.</p>
-
-                    <p>The application was later adapted and extended by <strong>Anže Sodja</strong>, <strong>Peter Škrlj</strong>, <strong>Miloš Lukić</strong>, <strong>Boštjan Čotar</strong>, <strong>Žiga Lesar</strong>, <strong>Matevž Ropret</strong> and <strong>Ciril Bohak</strong></p>
-
-                    <p>This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a copy of this license, visit <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/">http://creativecommons.org/licenses/by-nc-sa/3.0/</a> or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.</p>
-
-                    <p>Licences of used Libraries can be foun in code and on above mentioned web sites.</p>
-
-                    <br />
-                    <br />
-                    <p style="text-align: center; font-size: x-small;"><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/80x15.png" /></a>
-                        <br />
-                        This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
 
     <div id="floatingWindow" class="modal fade floating-window">
         <div class="modal-dialog">
             <div class="modal-content med3d-modal">
                 <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
                     <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                     <h4 class="modal-title">Example window</h4>
+                    <h4 class="modal-title">Example window</h4>
 
                 </div>
                 <div class="modal-body">
@@ -465,7 +259,7 @@
             <div class="modal-content med3d-modal-widget hover-div" style="width: 500px">
                 <div class="modal-header med3d-modal-widget-header">
                     <button type="button" class="med3d-modal-widget-close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                     <p class="modal-title">Example Widget</p>
+                    <p class="modal-title">Example Widget</p>
 
                 </div>
                 <div class="modal-widget-body">
@@ -479,7 +273,7 @@
         <div class="modal-dialog">
             <div class="modal-content med3d-modal">
                 <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="images/med3D-icon.png" width="24" height="24">
+                    <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
                     <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title">Session url</h4>
 
@@ -492,7 +286,7 @@
 
                         <!-- Trigger -->
                         <button class="btn clipboard" data-clipboard-target="#sessionUrl" style="border-top-left-radius: 0; border-bottom-left-radius: 0; display: table-cell; height: 35px; border: 1px solid #ccc;">
-                            <img class="clippy" src="images/clippy.svg" alt="Copy to clipboard" style="height: 16px">
+                            <img class="clippy" src="assets/img/clippy.svg" alt="Copy to clipboard" style="height: 16px">
                         </button>
                     </div>
                 </div>
@@ -501,418 +295,12 @@
         </div>
     </div>
 
-    <div id="navigatorTranslation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 50px;  -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none; cursor:default;">
-        <svg x="0px" y="0px"
-             width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
-             xml:space="preserve">
-        <symbol  id="NAVIGACIJA" class="drag-handle" viewBox="-39.687 -39.687 79.374 79.374">
-            <g>
-                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-8.374,30.581 -0.258,38.697 
-                    7.856,30.581        " style="pointer-events:none;"/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-0.258" y1="38.697" x2="-0.258" y2="20.064" style="pointer-events:none;"/>
-            </g>
-            <g>
-                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="-30.581,-8.374 -38.697,-0.258 
-                    -30.581,7.856       " style="pointer-events:none;"/>
-                
-                    <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="-38.697" y1="-0.258" x2="-20.064" y2="-0.258" style="pointer-events:none;"/>
-            </g>
-            <g>
-                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="8.374,-30.581 0.258,-38.697 
-                    -7.856,-30.581      " style="pointer-events:none;"/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="0.258" y1="-38.697" x2="0.258" y2="-20.064" style="pointer-events:none;"/>
-            </g>
-            <g>
-                <polyline fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" points="30.581,8.374 38.697,0.258 
-                    30.581,-7.856       " style="pointer-events:none;"/>
-                <line fill="none" stroke="#FDFDFE" stroke-width="1.4" stroke-miterlimit="10" x1="38.697" y1="0.258" x2="20.064" y2="0.258" style="pointer-events:none;"/>
-            </g>
-        </symbol>
-        <g>
-            <g>
-                <circle class="drag-handle" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
-            </g>
-            <g>
-                <circle class="navigator-btn-close" circle fill="#FFFFFF" cx="109.962" cy="19.692" r="19.691"/>
-            </g>
-            <circle class="navigator-circ-right" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle class="navigator-circ-left" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
-            <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0376" x2="124.5459" y2="56.0376">
-                <stop  offset="0" style="stop-color:#3B3F44"/>
-                <stop  offset="0.5" style="stop-color:#4D4B50"/>
-                <stop  offset="1" style="stop-color:#393E42"/>
-            </linearGradient>
-            <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.037" r="51.385"/>
-            <circle class="navigator-btn-circ-nav" fill="#424143" cx="73.161" cy="56.037" r="51.385"/>
-            <g>
-                <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0376" x2="109.7109" y2="56.0376">
-                    <stop  offset="0.1" style="stop-color:#C0282D"/>
-                    <stop  offset="0.5153" style="stop-color:#676690"/>
-                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
-                </linearGradient>
-                <polygon fill="url(#SVGID_2_)" points="109.278,92.589 36.61,19.919 37.042,19.486 109.711,92.156         "/>
-                <linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0376" x2="109.7109" y2="56.0376">
-                    <stop  offset="0.1" style="stop-color:#C0282D"/>
-                    <stop  offset="0.5153" style="stop-color:#676690"/>
-                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
-                </linearGradient>
-                <polygon fill="url(#SVGID_3_)" points="37.042,92.589 36.61,92.156 109.278,19.486 109.711,19.919         "/>
-            </g>
-            <g class="drag-handle" >
-                <g>
-                    <g>
-                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.086" x2="116.181" y2="98.499"/>
-                    </g>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="114.208,98.502 116.181,98.502 116.179,100.473             "/>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="111.565,105.088 109.594,105.086 109.595,103.116           "/>
-                </g>
-                <g>
-                    <g>
-                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.595" y1="98.499" x2="116.182" y2="105.086"/>
-                    </g>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="116.179,103.114 116.179,105.084 114.207,105.083           "/>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.472 109.595,98.499 111.565,98.5           "/>
-                </g>
-            </g>
-            <g class="navigator-btn-close">
-                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
-                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
-            </g>
-            <g>
-                <g>
-                    <text transform="matrix(1 0 0 1 128.626 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">R</text>
-                </g>
-                <g>
-                    <text transform="matrix(1 0 0 1 7.0303 62.2881)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">F</text>
-                </g>
-            </g>
-            
-                <use xlink:href="#NAVIGACIJA"  width="79.374" height="79.374" x="-39.687" y="-39.687" transform="matrix(1 0 0 -1 72.5586 56.0371)" overflow="visible"/>
-        </g>
-        </svg>
-    </div>
-
-    <div id="navigatorRotation" class="hover-div" style="background-color: rgba(255, 255, 255, 0.0); position: absolute; right: 20px; top: 175px; -moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none; cursor:default;">
-        <svg x="0px" y="0px"
-         width="145.931px" height="112.12px" viewBox="0 0 145.931 112.12" enable-background="new 0 0 145.931 112.12"
-         xml:space="preserve">
-        <g>
-            <g>
-                <circle class="drag-handle" fill="#637195" cx="109.962" cy="92.43" r="19.691"/>
-            </g>
-            <g>
-                <circle class="navigator-btn-close" fill="#FFFFFF" cx="109.962" cy="19.691" r="19.691"/>
-            </g>
-            <circle class="navigator-circ-right" fill="#4CB2B2" cx="109.245" cy="56.037" r="36.686"/>
-            <circle class="navigator-circ-left" fill="#C0282D" cx="36.686" cy="56.037" r="36.686"/>
-            <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.7754" y1="56.0371" x2="124.5459" y2="56.0371">
-                <stop  offset="0" style="stop-color:#3B3F44"/>
-                <stop  offset="0.5" style="stop-color:#4D4B50"/>
-                <stop  offset="1" style="stop-color:#393E42"/>
-            </linearGradient>
-            <circle fill="url(#SVGID_1_)" cx="73.161" cy="56.036" r="51.385"/>
-            <circle class="navigator-btn-circ-nav" fill="#424143" cx="73.161" cy="56.036" r="51.385"/>
-            <g>
-                <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0371" x2="109.7109" y2="56.0371">
-                    <stop  offset="0.1" style="stop-color:#C0282D"/>
-                    <stop  offset="0.5153" style="stop-color:#676690"/>
-                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
-                </linearGradient>
-                <polygon fill="url(#SVGID_2_)" points="109.278,92.588 36.61,19.919 37.042,19.486 109.711,92.155         "/>
-                <linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="36.6104" y1="56.0371" x2="109.7109" y2="56.0371">
-                    <stop  offset="0.1" style="stop-color:#C0282D"/>
-                    <stop  offset="0.5153" style="stop-color:#676690"/>
-                    <stop  offset="0.9" style="stop-color:#4CB2B2"/>
-                </linearGradient>
-                <polygon fill="url(#SVGID_3_)" points="37.042,92.588 36.61,92.155 109.278,19.486 109.711,19.919         "/>
-            </g>
-            <g class="drag-handle" >
-                <g>
-                    <g>
-                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.594" y1="105.085" x2="116.181" y2="98.499"/>
-                    </g>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="114.208,98.502 116.181,98.502 116.179,100.473             "/>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="111.565,105.088 109.594,105.085 109.595,103.116           "/>
-                </g>
-                <g>
-                    <g>
-                        <line fill="none" stroke="#FFFFFF" stroke-miterlimit="10" x1="109.595" y1="98.499" x2="116.182" y2="105.085"/>
-                    </g>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="116.179,103.113 116.179,105.084 114.207,105.083           "/>
-                    <polyline fill="none" stroke="#FFFFFF" stroke-miterlimit="10" points="109.594,100.471 109.595,98.499 111.565,98.501             "/>
-                </g>
-            </g>
-            <g class="navigator-btn-close">
-                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="115.946" y1="14.618" x2="109.831" y2="8.504"/>
-                <line fill="none" stroke="#424143" stroke-miterlimit="10" x1="109.831" y1="14.618" x2="115.946" y2="8.504"/>
-            </g>
-            <g>
-                <text transform="matrix(1 0 0 1 63.9385 32.5542)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">W</text>
-                <text transform="matrix(1 0 0 1 67.6084 92.3916)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">S</text>
-                <text transform="matrix(1 0 0 1 97.9521 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">D</text>
-                <g>
-                    <text transform="matrix(1 0 0 1 128.626 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">E</text>
-                </g>
-                <text transform="matrix(1 0 0 1 36.5225 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">A</text>
-                <g>
-                    <text transform="matrix(1 0 0 1 5.1982 62.2871)" fill="#FFFFFF" font-family="'SegoeUI-Semilight'" font-size="18.8786" style="pointer-events:none;">Q</text>
-                </g>
-            </g>
-        </g>
-        </svg>
-    </div>
-
 
     <footer class="footer hover-div">
         <p><span class="glyphicon glyphicon-console"></span>&nbsp&nbsp<span id="applicationStatus">Application status.</span></p>
     </footer>
 
-
-<!-- build:js scripts/main.js -->
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="scripts/jquery.min.js"></script>
-    <script src="scripts/jquery-ui.min.js"></script>
-    <script src="scripts/bootstrap.min.js"></script>
-    <script src="scripts/angular.min.js"></script>
-    <script src="scripts/bootstrap-filestyle.min.js"></script>
-    <script src="scripts/clipboard.min.js"></script>
-<!-- endbuild -->
     <script>
-        var SESSION_STATE = Object.freeze({NOT_SHARED: 0, HOSTING: 1, SUBSCRIBED: 2});
-        var sessionState = SESSION_STATE.NOT_SHARED;
-
-        function init() {
-            registerClickListeners();
-            initNavigators();
-
-            var canvas = document.getElementById("med3d-canvas");
-
-            window.onresize = function(){
-                resizeCanvas();
-            };
-
-            initializeRenderer(canvas);
-
-            var urlParams = getUrlParameters();
-
-            // Check if the session uuid was given
-            if (urlParams.sessionUuid) {
-                createSessionSubscriberScene(urlParams.sessionUuid, function (success) {
-                    if (success) {
-                        // Successfully subscribed
-                        $("#dropdownCloseSessionItem").removeClass("collapse");
-                        $(".warning-active-subscription").css("display", "block");
-                        sessionState = SESSION_STATE.SUBSCRIBED;
-                    }
-                    else {
-                        // Something went wrong
-                        $("#dropdownStartSharingSceneItem").removeClass("collapse");
-                        createDefaultEmptyScene();
-                    }
-                    resizeCanvas();
-                });
-            }
-            else {
-                $("#dropdownStartSharingSceneItem").removeClass("collapse");
-                createDefaultEmptyScene();
-                resizeCanvas();
-            }
-        }
-
-        function initNavigators() {
-            Input.instance.initNavigators($("#navigatorRotation"), $("#navigatorTranslation"));
-
-            // OPTIONS - Navigator toggling
-            var rotationCheckbox = $('#optionsRNavigatorCheckbox');
-            var translationCheckbox = $('#optionsTNavigatorCheckbox');
-
-            $('#optionsInputModal').on('shown.bs.modal', function() {
-                rotationCheckbox.prop('checked', Input.instance.rotationNavigatorAttached);
-                translationCheckbox.prop('checked', Input.instance.translationNavigatorAttached);
-            });
-
-            rotationCheckbox.change(function() {
-                if ($(this).is(':checked')){
-                    Input.instance.attachNavigator("rotationNavigator");
-                } else {
-                    Input.instance.detachNavigator("rotationNavigator");
-                }
-            });
-
-            translationCheckbox.change(function() {
-                if ($(this).is(':checked')){
-                    Input.instance.attachNavigator("translationNavigator");
-                } else {
-                    Input.instance.detachNavigator("translationNavigator");
-                }
-            });
-        }
-
-        function registerClickListeners() {
-            // Do not close on sub-dropdown click
-            $('.dropdown-submenu-anchor').bind('click', function (e) {
-                e.stopPropagation()
-            });
-
-            //region Wavefront OBJ opening modal
-            var objFileOpenButton = $("#objFileOpenButton");
-            var objButtonTooltipWrapper = objFileOpenButton.closest(".tooltip-wrapper");
-            var objFileInput = $("#objFileInput");
-            var wavefrontObjOpenModal = $('#wavefrontObjOpenModal');
-
-            objFileInput.change(function(event) {
-                if (objFileInput.val() === "") {
-                    objFileOpenButton.prop('disabled', true);
-                    objButtonTooltipWrapper.tooltip('enable');
-                }
-                else {
-                    objFileOpenButton.prop('disabled', false);
-                    objButtonTooltipWrapper.tooltip('disable');
-                }
-            });
-
-            objFileOpenButton.click(function() {
-                if (sessionState === SESSION_STATE.SUBSCRIBED) {
-                    sessionUnsubscribeEvent();
-                }
-
-                var objFile = objFileInput.prop('files')[0];
-                loadObjFromFile(objFile);
-                wavefrontObjOpenModal.modal('hide');
-            });
-            //endregion
-
-            //region Volume MHD opening modal
-            var volumeMhdFileInput = $("#volumeMhdFileInput");
-            var volumeRawFileInput = $("#volumeRawFileInput");
-            var volumeIsoValueInput = $("#volumeIsoValueInput");
-            var volumeFileOpenButton = $("#volumeFileOpenButton");
-            var volumeButtonTooltipWrapper = volumeFileOpenButton.closest(".tooltip-wrapper");
-            var volumeOpenModal = $("#volumeOpenModal");
-
-            var volOpenUnlocker = function() {
-                if (volumeMhdFileInput.val() === "" || volumeRawFileInput.val() === "" || volumeIsoValueInput.val() === "") {
-                    volumeFileOpenButton.prop('disabled', true);
-                    volumeButtonTooltipWrapper.tooltip('enable');
-                }
-                else {
-                    volumeFileOpenButton.prop('disabled', false);
-                    volumeButtonTooltipWrapper.tooltip('disable');
-                }
-            };
-
-            volumeMhdFileInput.change(volOpenUnlocker);
-            volumeRawFileInput.change(volOpenUnlocker);
-            volumeIsoValueInput.change(volOpenUnlocker);
-
-            volumeFileOpenButton.click(function() {
-                if (sessionState === SESSION_STATE.SUBSCRIBED) {
-                    sessionUnsubscribeEvent();
-                }
-
-                var mhdFile = volumeMhdFileInput.prop('files')[0];
-                var rawFile = volumeRawFileInput.prop('files')[0];
-                var isoval = parseFloat(volumeIsoValueInput.val());
-                loadMhdVolumeFromFile(mhdFile, rawFile, isoval);
-
-                volumeOpenModal.modal('hide');
-            });
-            //endregion
-
-            //region Scene sharing
-            var dropdownStartSharingSceneItem = $("#dropdownStartSharingSceneItem");
-            var dropdownStopSharingSceneItem = $("#dropdownStopSharingSceneItem");
-            var dropdownCloseSessionItem = $("#dropdownCloseSessionItem");
-
-            // Stop sharing scene event
-            dropdownStopSharingSceneItem.bind("click", function() {
-                stopSharingScene();
-
-                sessionState = SESSION_STATE.NOT_SHARED;
-
-                // Toggle start sharing button
-                dropdownStopSharingSceneItem.addClass("collapse");
-                dropdownStartSharingSceneItem.removeClass("collapse");
-
-                // Toggle URL
-                $("#dropdownSessionUrlItem").addClass("collapse");
-
-                $("#applicationStatus").text("Stopped scene sharing.");
-            });
-
-            // Start sharing scene event
-            dropdownStartSharingSceneItem.bind("click", function() {
-                // Disable scene sharing button
-                dropdownStartSharingSceneItem.addClass('disabled');
-                $("#applicationStatus").text("Uploading the scene to the server.");
-
-                startSharingScene(function (result) {
-                    // Scene was shared successfully
-                    if (result.status === 0) {
-                        sessionState = SESSION_STATE.HOSTING;
-
-                        // Toggle stop sharing button
-                        dropdownStartSharingSceneItem.removeClass('disabled');
-                        dropdownStartSharingSceneItem.addClass("collapse");
-                        dropdownStopSharingSceneItem.removeClass("collapse");
-
-                        // Toggle URL
-                        $("#dropdownSessionUrlItem").removeClass("collapse");
-                        $("#sessionUrl").val(result.url);
-                        $("#sharedSessionUrl").modal();
-
-                        // Notification
-                        $("#applicationStatus").text("Sharing scene.");
-                    }
-                    else {
-                        $("#applicationStatus").text("Something went wrong while trying to share the scene. Status: " + result.status + ".");
-                    }
-                });
-            });
-
-            // Close the session (Subscriber viewpoint)
-            dropdownCloseSessionItem.bind("click", sessionUnsubscribeEvent);
-            //endregion
-        }
-
-        function sessionUnsubscribeEvent() {
-            sessionUnsubscribe();
-
-            $("#dropdownCloseSessionItem").addClass("collapse");
-            $("#dropdownStartSharingSceneItem").removeClass("collapse");
-            sessionState = SESSION_STATE.NOT_SHARED;
-
-            $(".warning-active-subscription").css("display", "none");
-        }
-
-        function getUrlParameters() {
-            var query;
-
-            var pos = location.href.indexOf("?");
-            if(pos==-1) return [];
-            query = location.href.substr(pos+1);
-
-            var result = {};
-            query.split("&").forEach(function(part) {
-                if(!part) return;
-                part = part.split("+").join(" "); // replace every + with space, regexp-free version
-                var eq = part.indexOf("=");
-                var key = eq>-1 ? part.substr(0,eq) : part;
-                var val = eq>-1 ? decodeURIComponent(part.substr(eq+1)) : "";
-                var from = key.indexOf("[");
-                if(from==-1) result[decodeURIComponent(key)] = val;
-                else {
-                    var to = key.indexOf("]");
-                    var index = decodeURIComponent(key.substring(from+1,to));
-                    key = decodeURIComponent(key.substring(0,from));
-                    if(!result[key]) result[key] = [];
-                    if(!index) result[key].push(val);
-                    else result[key][index] = val;
-                }
-            });
-            return result;
-        }
-
         $(document).ready(function(){
             new Clipboard(".clipboard");
 
@@ -924,15 +312,14 @@
                 $(this).stop().fadeTo( "fast" , 0.5);
             });
 
-            $('[data-toggle="tooltip"]').tooltip();
-
-            $('[data-toggle="popover"]').popover();
-
             $(".floating-window").draggable({
                 handle: ".modal-header"
             });
 
-            init();
+            // Do not close on sub-dropdown click
+            $('.dropdown-submenu-anchor').bind('click', function (e) {
+                e.stopPropagation()
+            });
         });
 
     </script>

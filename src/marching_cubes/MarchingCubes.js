@@ -8,7 +8,7 @@ M3D.MarchingCubes = class {
         this._jobQueue = [];
         this._isRunning = false;
 
-        this._MAX_TRIANGLES = 10000000; // If this threshold is reached.. The marching cubes will be aborted.
+        this._MAX_TRIANGLES = 35000000; // If this threshold is reached.. The marching cubes will be aborted.
     }
 
     extractMesh (meta, values, nThreads, onLoad, onProgress, onError) {
@@ -78,7 +78,7 @@ M3D.MarchingCubes = class {
                     }
                 }
                 else if (result.data.type === "finished") {
-
+                    console.log("Num triangles: " + triangleCounter);
                     // Last (finish) message contains length of the last buffer
                     var lastLength = result.data.lastLength;
                     var lastBuffer = verticeBuffers[verticeBuffers.length - 1];
@@ -148,8 +148,6 @@ M3D.MarchingCubes = class {
 
             // Error management
             var workers = [];
-            // TODO: Change this hack
-            var maxBatches = Math.max(self._MAX_BATCHES, nThreads);
 
             for (let i = 0; i < nThreads && !errorEncountered; i++) {
                 // Correctly distribute the remainder
@@ -230,6 +228,7 @@ M3D.MarchingCubes = class {
 
                         // When the last worker finishes.. return the combined result via callback
                         if (finishedCounter === nThreads) {
+                            console.log("Num triangles: " + triangleCounter);
                             var combinedResult = [].concat.apply([], localResults);
 
                             stop = new Date();

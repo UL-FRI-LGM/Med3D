@@ -12,6 +12,7 @@ M3D.Geometry = class {
         this._vertices = null;
         this._normals = null;
         this._vertColor = null;
+        this._uv = null;
         this._wireframeIndices = null;
 
         this._onChangeListener = null;
@@ -152,6 +153,7 @@ M3D.Geometry = class {
     get vertices() { return this._vertices; }
     get normals() { return this._normals; }
     get verticesColor() { return this._vertColor; }
+    get uv() { return this._uv; }
     get wireframeIndices() { return this._wireframeIndices; }
     get drawWireframe() { return this._drawWireframe; }
 
@@ -195,6 +197,8 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
+
+    set uv(values) { this._uv = values; }
 
     set wireframeIndices(values) { this._wireframeIndices = values; }
     set drawWireframe(val) { this._drawWireframe = val; }

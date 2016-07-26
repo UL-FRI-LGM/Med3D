@@ -10,12 +10,24 @@ M3D.ImageLoader = class {
 	}
 
 	load(url, onLoad, onProgress, onError) {
-		if ( this.path !== undefined ) url = this.path + url;
+
+		// Self reference
 		var scope = this;
+
+		// Check if root path is set
+		if (this.path !== undefined) {
+			url = this.path + url;
+		}
+
+		// Notify img started loading
+		this.manager.itemStart(url);
+
+		// Check if the image is already cached
 		var cached = M3D.Cache.get(url);
+
 		if (cached !== undefined) {
-			scope.manager.itemStart(url);
 			if (onLoad) {
+				// Async
 				setTimeout(function() {
 					onLoad(cached);
 					scope.manager.itemEnd(url);
@@ -23,31 +35,46 @@ M3D.ImageLoader = class {
 			} else {
 				scope.manager.itemEnd(url);
 			}
+
 			return cached;
 		}
 
+		// Create new image
 		var image = new Image();
-		image.addEventListener('load', function(event) {
-			M3D.Cache.add(url, this);
-			if (onLoad) onLoad(this);
-			scope.manager.itemEnd(url);
-		}, false);
-
-		if (onProgress !== undefined) {
-			image.addEventListener('progress', function(event) {
-				onProgress(event);
-			}, false);
-		}
-
-		image.addEventListener('error', function(event) {
-			if (onError) onError(event);
-			scope.manager.itemError(url);
-		}, false);
-
-		if (this.crossOrigin !== undefined) image.crossOrigin = this.crossOrigin;
-		scope.manager.itemStart(url);
 		image.src = url;
-		return image;
+
+		// onLoad listener
+		image.addEventListener('load', function(event) {
+			scope.manager.itemEnd(url);
+
+			// Cache loaded image
+			M3D.Cache.add(url, this);
+
+			// Return the loaded image
+			if (onLoad !== undefined) {
+				onLoad(image);
+			}
+		});
+
+		// onProgress listener
+		image.addEventListener('progress', function(event) {
+			if (onProgress !== undefined) {
+				onProgress(event);
+			}
+		});
+
+		// onError listener
+		image.addEventListener('error', function(event) {
+			if (onError) {
+				onError(event);
+			}
+
+			scope.manager.itemError(url);
+		});
+
+		if (this.crossOrigin !== undefined) {
+			image.crossOrigin = this.crossOrigin;
+		}
 	}
 
 	setCrossOrigin(value) {
@@ -58,4 +85,4 @@ M3D.ImageLoader = class {
 		this.path = value;
 	}
 
-}
+};

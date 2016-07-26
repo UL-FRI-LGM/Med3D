@@ -7,6 +7,7 @@ M3D.MeshRenderer = class {
     constructor(canvas, gl_version) {
         // Create new gl manager with appropriate version
         this._glManager = new M3D.GLManager(canvas, gl_version);
+        this._canvas = canvas;
 
         // Retrieve context from gl manager
         this._gl = this._glManager.context;
@@ -22,6 +23,8 @@ M3D.MeshRenderer = class {
         this._glProgramManager = new M3D.GLProgramManager(this._gl);
 
 
+        this._rttFamebuffer = null;
+
         //region Current frame render arrays
         this._requiredPrograms = new Set();
         this._compiledPrograms = new Map();
@@ -34,14 +37,12 @@ M3D.MeshRenderer = class {
             directional: [],
             point: []
         };
+        this._currentRenderTarget = null;
         // endregion
 
         //region Execution values
         this._autoClear = true;
         //endregion
-
-        // Initialize default GL state
-        this._gl.viewport(0, 0, canvas.width, canvas.height);
 
         // Enable depth testing (disable depth testing with gl.ALWAYS)
         this._gl.enable(this._gl.DEPTH_TEST);
@@ -51,13 +52,15 @@ M3D.MeshRenderer = class {
     }
 
 
-    render(scene, camera) {
+    render(scene, camera, renderTarget) {
 
         // Check if correct object instance was passed as camera
         if (camera instanceof M3D.Camera === false) {
             console.error(LOGTAG + "Given camera is not an instance of M3D.Camera");
             return;
         }
+
+        this._setupRenderTarget(renderTarget);
 
         // Update scene graph and camera matrices
         if (scene.autoUpdate === true)
@@ -92,6 +95,12 @@ M3D.MeshRenderer = class {
 
         // Render opaque objects
         this._renderObjects(this._opaqueObjects, camera);
+
+        if (this._currentRenderTarget) {
+            this._gl.bindTexture(this._gl.TEXTURE_2D, this._glManager.getUniform(this._currentRenderTarget._texture));
+            this._gl.generateMipmap(this._gl.TEXTURE_2D);
+            this._gl.bindTexture(this._gl.TEXTURE_2D, null);
+        }
     }
 
     _loadPrograms() {
@@ -159,6 +168,11 @@ M3D.MeshRenderer = class {
                 this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
                 this._gl.drawElements(this._gl.LINES, objects[i].geometry.wireframeIndices.count(), this._gl.UNSIGNED_INT, 0)
             }
+            else if (objects[i].geometry.indices) {
+                var buffer = this._glManager.getBuffer(objects[i].geometry.indices);
+                this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
+                this._gl.drawElements(this._gl.TRIANGLES, objects[i].geometry.indices.count(), this._gl.UNSIGNED_INT, 0)
+            }
             else {
                 this._gl.drawArrays(this._gl.TRIANGLES, 0, vertices.count());
             }
@@ -172,17 +186,23 @@ M3D.MeshRenderer = class {
 
         var attributes = Object.getOwnPropertyNames(attributeSetter);
 
+        var buffer;
         // Set all of the properties
         for (var i = 0; i < attributes.length; i++) {
             switch (attributes[i]) {
                 case "VPos":
-                    var buffer = this._glManager.getBuffer(vertices);
+                    buffer = this._glManager.getBuffer(vertices);
                     attributeSetter["VPos"].set(buffer, 3);
                     break;
                 case "VNorm":
                     var normals = object.geometry.normals;
-                    var buffer = this._glManager.getBuffer(normals);
+                    buffer = this._glManager.getBuffer(normals);
                     attributeSetter["VNorm"].set(buffer, 3);
+                    break;
+                case "uv":
+                    var uv = object.geometry.uv;
+                    buffer = this._glManager.getBuffer(uv);
+                    attributeSetter["uv"].set(buffer, 2);
                     break;
                 default:
                     console.error("Unknown Attribute!");
@@ -213,6 +233,9 @@ M3D.MeshRenderer = class {
     }
 
     _setup_material_uniforms(material, uniformSetter) {
+
+        var textureIdx = 0;
+
         const prefix = "material";
         if (material instanceof M3D.MeshPhongMaterial) {
             const diffuse = prefix + ".diffuse";
@@ -230,6 +253,10 @@ M3D.MeshRenderer = class {
                 uniformSetter[shininess].set(material.shininess);
             }
 
+            const texture = prefix + ".texture";
+            if (uniformSetter[texture] !== undefined) {
+                uniformSetter[texture].set(this._glManager.getUniform(material.map), textureIdx++);
+            }
         }
     }
 
@@ -336,7 +363,7 @@ M3D.MeshRenderer = class {
 
             if (object.material.visible === true) {
                 // Updates or derives attributes from the WebGL geometry
-                this._glManager.updateObjectData(object);
+                this._glManager.updateObjectData(object, this._currentRenderTarget);
 
                 // Derive mv and normal matrices
                 object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
@@ -362,6 +389,31 @@ M3D.MeshRenderer = class {
         // Recurse through the children
         for (var i = 0, l = children.length; i < l; i++) {
             this._projectObject(children[i], camera);
+        }
+    }
+
+    _setupRenderTarget(renderTarget) {
+        if (renderTarget) {
+            // Check if the render target is specified
+            this._currentRenderTarget = renderTarget;
+            var rttViewport = renderTarget._viewport;
+
+            // Setup viewport
+            this._gl.viewport(rttViewport.x, rttViewport.y, rttViewport.z, rttViewport.w);
+
+            if (this._rttFamebuffer === null) {
+                this._rttFamebuffer = this._gl.createFramebuffer();
+            }
+
+            this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._rttFamebuffer);
+
+            this._glManager.updateRTTTexture(renderTarget);
+        }
+        else {
+            this._currentRenderTarget = null;
+            this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+
+            this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, null);
         }
     }
 
@@ -455,8 +507,8 @@ M3D.MeshRenderer = class {
         }
     }
 
-    updateViewport() {
-        this._gl.viewport(0, 0, canvas.width, canvas.height);
+    updateViewport(width, height) {
+        this._gl.viewport(0, 0, width, height);
     }
 
     /**

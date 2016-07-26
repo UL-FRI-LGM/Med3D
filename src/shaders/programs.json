@@ -21,5 +21,13 @@
             "vertex": "gl2_phong.vert",
             "fragment": "gl2_phong.frag"
         }
+    },
+
+    "gl2_phong_texture": {
+        "description": "Phong shader program... ...",
+        "shaders": {
+            "vertex": "gl2_phong_texture.vert",
+            "fragment": "gl2_phong_texture.frag"
+        }
     }
 }

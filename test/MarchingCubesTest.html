@@ -69,7 +69,6 @@
 <script src="../src/renderers/Renderer.js"></script>
 <script src="../src/renderers/MeshRenderer.js"></script>
 
-<script src="../src/marching_cubes/MarchingCubesTables.js"></script>
 <script src="../src/marching_cubes/MarchingCubesWorker.js"></script>
 <script src="../src/marching_cubes/MarchingCubes.js"></script>
 
@@ -113,7 +112,7 @@
     var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
     var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
-    var keyboardInput = new M3D.KeyboardInput();
+    var keyboardInput = M3D.KeyboardInput.instance;
     keyboardInput.addListener(function (pressedKeys) {
         // ROTATIONS
         if (pressedKeys[65]) {  // A

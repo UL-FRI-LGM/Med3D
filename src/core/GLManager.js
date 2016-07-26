@@ -38,6 +38,7 @@ M3D.GLManager = class {
             throw 'ERROR: Failed to retrieve GL Context.'
         }
 
+        this._uniformManager = new M3D.GLUnifromManager(this._gl);
         this._attributeManager = new M3D.GLAttributeManager(this._gl);
 
         //region Clear values
@@ -51,35 +52,6 @@ M3D.GLManager = class {
         this.setClearDepth(1);
         this.setClearStencil(0);
         //endregion
-    }
-
-    /**
-     * Fetches GL program using the given vertex and fragment shader
-     * @param vtx_shader
-     * @param frag_shader
-     * @returns {*}
-     */
-    fetchProgram (vtx_shader, frag_shader) {
-        if (vtx_shader.hasOwnProperty('source') && frag_shader.hasOwnProperty('source')) {
-            return this._programs.retrieveProgram(vtx_shader, frag_shader);
-        }
-        else {
-            console.error("Given shaders have no source. Are you loading the shaders correctly?");
-            return null;
-        }
-    }
-
-    //TODO: Document this
-    setupProgram (programTemplate) {
-        var vtx_shader = programTemplate.vertexShader;
-        var frag_shader = programTemplate.fragmentShader;
-
-        if (vtx_shader.hasOwnProperty('source') && frag_shader.hasOwnProperty('source')) {
-            programTemplate['program'] =  this._programs.retrieveProgram(vtx_shader, frag_shader);
-        }
-        else {
-            throw "Given shaders have no source. Are you loading the shaders correctly?";
-        }
     }
 
     /**
@@ -114,6 +86,28 @@ M3D.GLManager = class {
         if (geometry._vertColor != null) {
             this._attributeManager.updateAttribute(geometry._vertColor, this._gl.ARRAY_BUFFER);
         }
+
+        if (geometry._uv != null) {
+            this._attributeManager.updateAttribute(geometry._uv, this._gl.ARRAY_BUFFER);
+        }
+        
+        // Material
+        var material = object.material;
+
+        // Update texture
+        var texture = material.map;
+
+        if (texture) {
+            this._uniformManager.updateTexture(texture);
+        }
+    }
+
+    updateRTTTexture(renderTarget) {
+        this._uniformManager.updateTexture(renderTarget.texture, renderTarget);
+    }
+
+    getUniform(reference) {
+        return this._uniformManager.getUniform(reference);
     }
 
     getBuffer (attribute) {
@@ -124,8 +118,12 @@ M3D.GLManager = class {
         this._attributeManager.clearBuffers();
     }
 
+    clearUniforms() {
+        this._uniformManager.clearUnforms();
+    }
 
-    //region CANVAS CLEARING FUNCTIONS
+
+    //region CLEARING FUNCTIONS
     /**
      * Clears the selected gl buffers with their preset value
      * @param {boolean} color true if clear, false if not
