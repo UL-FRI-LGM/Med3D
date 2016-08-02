@@ -23,7 +23,13 @@ M3D.MeshRenderer = class {
         this._glProgramManager = new M3D.GLProgramManager(this._gl);
 
 
+        // Framebuffer
         this._rttFamebuffer = null;
+
+        // Frustum
+        this._projScreenMatrix = new THREE.Matrix4();
+        this._sphere = new THREE.Sphere();
+        this._frustum = new THREE.Frustum();
 
         //region Current frame render arrays
         this._requiredPrograms = new Set();
@@ -71,6 +77,9 @@ M3D.MeshRenderer = class {
             camera.updateMatrixWorld();
 
         camera.matrixWorldInverse.getInverse(camera.matrixWorld);
+
+        this._projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        this._frustum.setFromMatrix(this._projScreenMatrix);
 
         // Clear the render arrays
         this._opaqueObjects.length = 0;
@@ -199,6 +208,11 @@ M3D.MeshRenderer = class {
                     buffer = this._glManager.getBuffer(normals);
                     attributeSetter["VNorm"].set(buffer, 3);
                     break;
+                case "VColor":
+                    var vertColors = object.geometry.vertColors;
+                    buffer = this._glManager.getBuffer(vertColors);
+                    attributeSetter["VColor"].set(buffer, 3);
+                    break;
                 case "uv":
                     var uv = object.geometry.uv;
                     buffer = this._glManager.getBuffer(uv);
@@ -237,27 +251,27 @@ M3D.MeshRenderer = class {
         var textureIdx = 0;
 
         const prefix = "material";
-        if (material instanceof M3D.MeshPhongMaterial) {
-            const diffuse = prefix + ".diffuse";
-            if (uniformSetter[diffuse] !== undefined) {
-                uniformSetter[diffuse].set(material.color.toArray());
-            }
 
-            const specular = prefix + ".specular";
-            if (uniformSetter[specular] !== undefined) {
-                uniformSetter[specular].set(material.specular.toArray());
-            }
-
-            const shininess = prefix + ".shininess";
-            if (uniformSetter[shininess] !== undefined) {
-                uniformSetter[shininess].set(material.shininess);
-            }
-
-            const texture = prefix + ".texture";
-            if (uniformSetter[texture] !== undefined) {
-                uniformSetter[texture].set(this._glManager.getUniform(material.map), textureIdx++);
-            }
+        const diffuse = prefix + ".diffuse";
+        if (uniformSetter[diffuse] !== undefined) {
+            uniformSetter[diffuse].set(material.color.toArray());
         }
+
+        const specular = prefix + ".specular";
+        if (uniformSetter[specular] !== undefined) {
+            uniformSetter[specular].set(material.specular.toArray());
+        }
+
+        const shininess = prefix + ".shininess";
+        if (uniformSetter[shininess] !== undefined) {
+            uniformSetter[shininess].set(material.shininess);
+        }
+
+        const texture = prefix + ".texture";
+        if (uniformSetter[texture] !== undefined) {
+            uniformSetter[texture].set(this._glManager.getUniform(material.map), textureIdx++);
+        }
+
     }
 
     _setup_material_settings(material) {
@@ -320,9 +334,15 @@ M3D.MeshRenderer = class {
             prefix = "lights[" + index + "]";
             light = this._lightsCombined.directional[i];
 
-            uniformSetter[prefix + ".position"].set(light.direction.toArray());
-            uniformSetter[prefix + ".color"].set(light.color.toArray());
-            uniformSetter[prefix + ".directional"].set(1);
+            if (uniformSetter[prefix + ".position"]) {
+                uniformSetter[prefix + ".position"].set(light.direction.toArray());
+            }
+            if (uniformSetter[prefix + ".color"]) {
+                uniformSetter[prefix + ".color"].set(light.color.toArray());
+            }
+            if (uniformSetter[prefix + ".directional"]) {
+                uniformSetter[prefix + ".directional"].set(1);
+            }
 
             index++;
         }
@@ -332,9 +352,15 @@ M3D.MeshRenderer = class {
             prefix = "lights[" + index + "]";
             light = this._lightsCombined.point[i];
 
-            uniformSetter[prefix + ".position"].set(light.position.toArray());
-            uniformSetter[prefix + ".color"].set(light.color.toArray());
-            uniformSetter[prefix + ".directional"].set(0);
+            if (uniformSetter[prefix + ".position"]) {
+                uniformSetter[prefix + ".position"].set(light.position.toArray());
+            }
+            if (uniformSetter[prefix + ".color"]) {
+                uniformSetter[prefix + ".color"].set(light.color.toArray());
+            }
+            if (uniformSetter[prefix + ".directional"]) {
+                uniformSetter[prefix + ".directional"].set(0);
+            }
 
             index++;
         }
@@ -342,7 +368,15 @@ M3D.MeshRenderer = class {
         // REMAINING
         for (var i = index; i < MAX_LIGHTS; i++) {
             prefix = "lights[" + i + "]";
-            uniformSetter[prefix + ".color"].set([0, 0, 0]);
+            if (uniformSetter[prefix + ".position"]) {
+                uniformSetter[prefix + ".position"].set([0, 0, 0]);
+            }
+            if (uniformSetter[prefix + ".color"]) {
+                uniformSetter[prefix + ".color"].set([0, 0, 0]);
+            }
+            if (uniformSetter[prefix + ".directional"]) {
+                uniformSetter[prefix + ".directional"].set(0);
+            }
         }
     }
 
@@ -358,23 +392,27 @@ M3D.MeshRenderer = class {
         }
         // If the object is mesh and it's visible. Update it's attributes.
         else if (object instanceof M3D.Mesh) {
-            // Adds required program to set
-            this._requiredPrograms.add(object.material.program);
 
-            if (object.material.visible === true) {
-                // Updates or derives attributes from the WebGL geometry
-                this._glManager.updateObjectData(object, this._currentRenderTarget);
+            // Frustum culling
+            if (this._isObjectVisible(object)) {
+                // Adds required program to set
+                this._requiredPrograms.add(object.material.program);
 
-                // Derive mv and normal matrices
-                object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
-                object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
+                if (object.visible === true) {
+                    // Updates or derives attributes from the WebGL geometry
+                    this._glManager.updateObjectData(object, this._currentRenderTarget);
 
-                // Add object to correct render array
-                if (object.material.transparent) {
-                    this._transparentObjects.push(object);
-                }
-                else {
-                    this._opaqueObjects.push(object);
+                    // Derive mv and normal matrices
+                    object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
+                    object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
+
+                    // Add object to correct render array
+                    if (object.material.transparent) {
+                        this._transparentObjects.push(object);
+                    }
+                    else {
+                        this._opaqueObjects.push(object);
+                    }
                 }
             }
         }
@@ -487,6 +525,20 @@ M3D.MeshRenderer = class {
         this._lightsCombined.ambient[2] = b;
     }
 
+    _isObjectVisible(object) {
+        var geometry = object.geometry;
+
+        // Check if the bounding sphere is calculated
+        if (geometry.boundingSphere === null) {
+            geometry.computeBoundingSphere();
+        }
+
+        // Translate sphere
+        this._sphere.copy(geometry.boundingSphere).applyMatrix4(object.matrixWorld);
+
+        // Check if the frustum intersects the sphere
+        return this._frustum.intersectsSphere(this._sphere)
+    }
 
     /**
      * SETTERS / GETTERS

@@ -8,6 +8,7 @@ M3D.Geometry = class {
         this._uuid = THREE.Math.generateUUID();
         this.type = "Geometry";
 
+        // Buffers
         this._indices = null;
         this._vertices = null;
         this._normals = null;
@@ -15,6 +16,11 @@ M3D.Geometry = class {
         this._uv = null;
         this._wireframeIndices = null;
 
+        // Bounding
+        this.boundingBox = null;
+        this.boundingSphere = null;
+
+        // Parameter on change listener
         this._onChangeListener = null;
 
         // If this is set to true.. wireframe will be rendered instead of planes
@@ -149,6 +155,63 @@ M3D.Geometry = class {
         }
     }
 
+
+    computeBoundingBox() {
+
+        // Check if the bounding box already exist
+        if ( this.boundingBox === null ) {
+            this.boundingBox = new THREE.Box3();
+        }
+
+        // Create new bounding box using the vertices
+        if (this._vertices) {
+            this.boundingBox.setFromArray(this._vertices.array);
+        }
+        else {
+            this.boundingBox.makeEmpty();
+        }
+
+        if ( isNaN( this.boundingBox.min.x ) || isNaN( this.boundingBox.min.y ) || isNaN( this.boundingBox.min.z ) ) {
+            console.error('Geometry error: One or more of bounding box axis min is NaN.');
+        }
+    }
+
+    computeBoundingSphere() {
+        var box = new THREE.Box3();
+        var vector = new THREE.Vector3();
+
+        // Check if the sphere already exists
+        if ( this.boundingSphere === null ) {
+            this.boundingSphere = new THREE.Sphere();
+        }
+
+        if (this._vertices) {
+
+            var array = this._vertices.array;
+            var center = this.boundingSphere.center;
+
+            // Set initial bounding sphere based on the bounding box
+            box.setFromArray(array);
+            box.center(center);
+
+            // Optimize sphere radius
+            var maxRadiusSq = 0;
+
+            for ( var i = 0, il = array.length; i < il; i += 3 ) {
+                vector.fromArray(array, i);
+                maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
+            }
+
+            this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+
+            if (isNaN(this.boundingSphere.radius)) {
+                console.error('Geometry error: Bounding sphere radius is NaN.');
+            }
+
+        }
+    }
+
+    // region GETTERS
     get indices() { return this._indices; }
     get vertices() { return this._vertices; }
     get normals() { return this._normals; }
@@ -156,8 +219,9 @@ M3D.Geometry = class {
     get uv() { return this._uv; }
     get wireframeIndices() { return this._wireframeIndices; }
     get drawWireframe() { return this._drawWireframe; }
+    // endregion
 
-
+    // region SETTERS
     set indices(values) {
         this._indices = values;
 
@@ -167,7 +231,6 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
-
     set vertices(values) {
         this._vertices = values;
 
@@ -177,7 +240,6 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
-
     set normals(values) {
         this._normals = values;
 
@@ -187,7 +249,6 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
-
     set verticesColor(values) {
         this._vertColor = values;
 
@@ -197,12 +258,11 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
-
     set uv(values) { this._uv = values; }
-
     set wireframeIndices(values) { this._wireframeIndices = values; }
     set drawWireframe(val) { this._drawWireframe = val; }
     set onChangeListener(listener) { this._onChangeListener = listener; }
+    // endregion
 
     toJson() {
         var obj = {};

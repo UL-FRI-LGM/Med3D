@@ -34,7 +34,7 @@ onmessage = function(msg) {
 
 
 
-    var rezPoint = Module.ccall('marchingCubes',
+    var rezPoint = Module.ccall('volumeLoading',
         'number', ['number', 'number', 'number', 'number', 'number', 'number'],
         [size.x, size.y, size.z, 0, posHeapAlloc.byteOffset, valHeapAlloc.byteOffset]);
 

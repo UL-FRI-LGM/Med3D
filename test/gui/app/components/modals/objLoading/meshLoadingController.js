@@ -2,7 +2,7 @@
  * Created by Primoz on 20.7.2016.
  */
 
-var objLoaderController = function($scope, TaskManagerService) {
+var meshLoadingController = function($scope, TaskManagerService) {
 
     $scope.loadObj = function (file) {
         // Create task
@@ -53,4 +53,4 @@ var objLoaderController = function($scope, TaskManagerService) {
     }
 };
 
-app.controller('ObjLoaderController', objLoaderController);
+app.controller('MeshLoadingController', meshLoadingController);

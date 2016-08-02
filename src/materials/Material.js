@@ -26,8 +26,6 @@ M3D.Material = class {
         // 0.0f fully transparent 1.0f if fully opaque
         this._opacity = 1;
 
-        this._visible = true;
-
         // Program used for rendering
         this._program = "basic";
     }
@@ -116,18 +114,6 @@ M3D.Material = class {
         }
     }
 
-    set visible(val) {
-        if (val !== this._visible) {
-            this._visible = val;
-
-            // Notify onChange subscriber
-            if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {visible: this._visible}};
-                this._onChangeListener.materialUpdate(update)
-            }
-        }
-    }
-
     set program(val) {
         if (val !== this._program) {
             this._program = val;
@@ -150,7 +136,7 @@ M3D.Material = class {
     get transparent() { return this._transparent; }
     get opacity() { return this._opacity; }
     get visible() { return this._visible; }
-    get program() { return this._program; }
+    get program() { return this._program.join(''); }
 
     toJson() {
         var obj = {};

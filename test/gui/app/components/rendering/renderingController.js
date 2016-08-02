@@ -145,8 +145,8 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
         $scope.startAnimation();
     };
 
-    TaskManagerService.addResultSubscriber("ObjLoader", groupResultFun);
-    TaskManagerService.addResultSubscriber("MHDLoader", groupResultFun);
+    TaskManagerService.addResultCallback("ObjLoader", groupResultFun);
+    TaskManagerService.addResultCallback("MHDLoader", groupResultFun);
     // endregion
 };
 

@@ -3,6 +3,7 @@
  */
 
 var settingController = function($scope, SettingsService) {
+
     // Pass through navigation toggles
     $scope.navigatorToggle = SettingsService.navigatorToggle;
 };

@@ -30,20 +30,24 @@
     <!-- Project -->
     <script src="app/app.js"></script>
 
+    <script src="app/components/filters/filters.js"></script>
+
     <!-- Services -->
     <script src="app/components/settings/settingsService.js"></script>
     <script src="app/components/input/inputService.js"></script>
-    <script src="app/components/taskManagerService.js"></script>
+    <script src="app/components/task_manager/taskManagerService.js"></script>
 
     <!-- Controllers -->
     <script src="app/components/input/navigatorController.js"></script>
     <script src="app/components/modals/settings/settingsModalController.js"></script>
     <script src="app/components/rendering/renderingController.js"></script>
-    <script src="app/components/modals/objLoading/objLoaderController.js"></script>
-    <script src="app/components/modals/marchingCubes/marchingCubesController.js"></script>
+    <script src="app/components/modals/objLoading/meshLoadingController.js"></script>
+    <script src="app/components/modals/volumeLoading/volumeLoadingController.js"></script>
+    <script src="app/components/task_manager/taskManagerController.js"></script>
 
     <!-- Directives -->
-    <script src="app/components/modals/marchingCubes/marchingCubesDirective.js"></script>
+    <script src="app/components/task_manager/taskProgressDirective.js"></script>
+    <script src="app/components/modals/volumeLoading/marchingCubesDirective.js"></script>
     <script src="app/components/modals/objLoading/objLoaderDirective.js"></script>
     <script src="app/components/rendering/canvasDirective.js"></script>
     <script src="app/components/modals/settings/display/displaySettingsModalDirective.js"></script>
@@ -137,7 +141,7 @@
                     </a>
 
                     <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
-                        <li><a>Save</a></li>
+                        <li><a data-toggle="modal" data-target="#taskProgressModal">Save</a></li>
                         <li class="dropdown-submenu">
                             <a class="dropdown-submenu-anchor">Open / Upload</a>
                             <ul class="dropdown-menu">
@@ -212,10 +216,10 @@
     <m3d-canvas ng-controller="RenderingController" shaderPath="../../src/shaders"></m3d-canvas>
 
     <!-- OBJ LOADER -->
-    <obj-loader-modal ng-controller="ObjLoaderController"></obj-loader-modal>
+    <obj-loader-modal ng-controller="MeshLoadingController"></obj-loader-modal>
 
     <!-- MARCHING CUBES -->
-    <marching-cubes-modal ng-controller="MarchingCubesController"></marching-cubes-modal>
+    <marching-cubes-modal ng-controller="VolumeLoadingController"></marching-cubes-modal>
 
     <!-- SETTINGS -->
     <div ng-controller="SettingsController">
@@ -233,6 +237,9 @@
         <navigator navigator-toggle="navigatorToggle" rotation-values="rotationValues" ng-show="navigatorToggle.rotation" type="rotation"></navigator>
     </div>
 
+    <span ng-controller="TaskManagerController">
+        <task-progress-directive current-task="currentTask"></task-progress-directive>
+    </span>
 
     <div id="floatingWindow" class="modal fade floating-window">
         <div class="modal-dialog">

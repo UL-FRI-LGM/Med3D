@@ -9,8 +9,8 @@ M3D.PointLight = class extends M3D.Light {
 
         this.type = "PointLight";
 
-        this._distance = ( distance !== undefined ) ? distance : 0;
-        this._decay = ( decay !== undefined ) ? decay : 1;
+        this._distance = (distance !== undefined) ? distance : 0;
+        this._decay = (decay !== undefined) ? decay : 1;
     }
 
     set distance(dist) {

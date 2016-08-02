@@ -7,6 +7,11 @@ app.directive("objLoaderModal", function () {
         replace: true,
         scope: false,
         link: function (scope, modal, attributes) {
+            // Make modal draggable
+            modal.draggable({
+                handle: ".modal-header"
+            });
+
             // File input styling
             $(":file").filestyle({buttonName: "btn-danger", buttonText: "&nbspChoose file", size: "sm"});
 

@@ -1,7 +1,7 @@
 /**
  * Created by Primoz on 26. 07. 2016.
  */
-var marchingCubesController = function($scope, TaskManagerService) {
+var volumeLoadingController = function($scope, TaskManagerService) {
 
     $scope.execMarchingCubes = function (mhdFile, rawFile, isoValue) {
 
@@ -56,7 +56,7 @@ var marchingCubesController = function($scope, TaskManagerService) {
             uuid: THREE.Math.generateUUID(),
             meta: {
                 name: "Marching cubes",
-                description: "Executing Marching cubes on the specified volume files.",
+                description: "Executing Marching cubes algorithm on the selected volume.",
                 icon: "no/icon/atm"
             },
             synchronous: true,
@@ -70,4 +70,4 @@ var marchingCubesController = function($scope, TaskManagerService) {
     }
 };
 
-app.controller('MarchingCubesController', marchingCubesController);
+app.controller('VolumeLoadingController', volumeLoadingController);

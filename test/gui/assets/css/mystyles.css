@@ -256,6 +256,23 @@ a.disabled { color:gray; }
   font-weight: 200;
 }
 
+.med3d-progress {
+  height: 25px;
+  margin-bottom: 0px;
+}
+
+.med3d-progress-bar {
+  background-image: none;
+  background-color: #565A5F;
+  font-size: 14px;
+  line-height: 25px;
+  -webkit-transition: none;
+  -moz-transition: none;
+  -ms-transition: none;
+  -o-transition: none;
+  transition: none;
+}
+
 .med3d-ul {
   list-style-type: none;
   padding-left: 10px;
@@ -351,4 +368,24 @@ body {
 
 .warning-text {
   color: #D8000C;
+}
+
+
+.modal {
+  text-align: center;
+  padding: 0!important;
+}
+
+.modal:before {
+  content: '';
+  display: inline-block;
+  height: 70%;
+  vertical-align: middle;
+  margin-right: -4px; /* Adjusts for spacing */
+}
+
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
 }

@@ -11,24 +11,6 @@ M3D.GLAttributeManager = class {
     }
 
 
-    updateAttributes (object) {
-
-        // BufferedGeometry
-        var geometry = object.geometry;
-
-        // Add geometry indices if it specifies them
-        if (geometry.indices !== null) {
-            this.updateAttribute(geometry.indices, this._gl.ELEMENT_ARRAY_BUFFER);
-        }
-
-        // Add all of the geometry attributes
-        for (var name in geometry.attributes) {
-            this.updateAttribute(geometry.attributes[name], this._gl.ARRAY_BUFFER);
-        }
-
-        return geometry;
-    }
-
     /**
      * Checks if the given attribute is already tracked in the global properties and has its WebGL buffer set (if not it creates a new buffer).
      * If the properties attribute and object attribute versions mismatch, it updates the properties attribute with object attribute.

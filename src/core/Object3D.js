@@ -21,6 +21,8 @@ M3D.Object3D = class {
 		this._quaternion = new THREE.Quaternion();
 		this._scale = new THREE.Vector3(1, 1, 1);
 
+        this._visible = true;
+
 		function onRotationChange() {
 			self.quaternion.setFromEuler(self.rotation, false);
 		}
@@ -57,13 +59,13 @@ M3D.Object3D = class {
     //region GETTERS
     get parent() { return this._parent; }
     get children() { return this._children; }
-
     get position() { return this._position; }
     get rotation() { return this._rotation; }
     get quaternion() { return this._quaternion; }
     get scale() { return this._scale; }
     get matrixAutoUpdate() { return this._matrixAutoUpdate; }
     get matrixWorld() { return this._matrixWorld; }
+    get visible() { return this._visible; }
     //endregion
 
     //region SETTERS
@@ -250,6 +252,10 @@ M3D.Object3D = class {
 		}
 	}
     //endregion
+
+    // region RAYCASTING
+    raycast() {}
+    // endregion
 
     //region EXPORT/IMPORT JSON FUNCTIONS
 	toJson() {
@@ -493,7 +499,7 @@ var lookAt = (function () {
     var q = new THREE.Quaternion();
 
     return function(vector, up) {
-        m.lookAt(this._position, vector, up);
+        m.lookAt(vector, this._position, up);
         q.setFromRotationMatrix(m);
 
         if (!q.equals(this._quaternion)) {

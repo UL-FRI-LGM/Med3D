@@ -1,33 +1,49 @@
 {
-    "gl1_basic": {
-        "description": "Default WebGl 1 program used for testing.",
-        "shaders": {
-            "vertex": "gl1_basic.vert",
-            "fragment": "gl1_basic.frag"
-        }
-    },
-
     "gl2_basic": {
         "description": "Default gl2 program used for testing.",
         "shaders": {
-            "vertex": "gl2_basic.vert",
-            "fragment": "gl2_basic.frag"
+            "vertex": "basic/gl2_basic.vert",
+            "fragment": "basic/gl2_basic.frag"
+        }
+    },
+
+    "gl2_basic_texture": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "basic/gl2_basic_texture.vert",
+            "fragment": "basic/gl2_basic_texture.frag"
+        }
+    },
+
+    "gl2_basic_lights": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "basic/gl2_basic_lights.vert",
+            "fragment": "basic/gl2_basic_lights.frag"
+        }
+    },
+
+    "gl2_basic_lights_texture": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "basic/gl2_basic_lights_texture.vert",
+            "fragment": "basic/gl2_basic_lights_texture.frag"
         }
     },
 
     "gl2_phong": {
         "description": "Phong shader program... ...",
         "shaders": {
-            "vertex": "gl2_phong.vert",
-            "fragment": "gl2_phong.frag"
+            "vertex": "phong/gl2_phong.vert",
+            "fragment": "phong/gl2_phong.frag"
         }
     },
 
     "gl2_phong_texture": {
         "description": "Phong shader program... ...",
         "shaders": {
-            "vertex": "gl2_phong_texture.vert",
-            "fragment": "gl2_phong_texture.frag"
+            "vertex": "phong/gl2_phong_texture.vert",
+            "fragment": "phong/gl2_phong_texture.frag"
         }
     }
 }

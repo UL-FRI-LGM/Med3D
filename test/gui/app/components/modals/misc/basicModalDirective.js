@@ -8,7 +8,10 @@ app.directive("basicModal", function() {
         replace: true,
         scope: false,
         link: function (scope, element, attributes) {
-
+            // Make modal draggable
+            element.draggable({
+                handle: ".modal-header"
+            });
         },
         templateUrl: function(element, attributes) {
             return 'app/components/modals/misc/' + attributes.type + 'Modal.html';

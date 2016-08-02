@@ -12,7 +12,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         this._shininess = 16;
         this._map = null;
 
-        this._program = "phong";
+        this._program = ["phong", ""];
     }
 
     set color(val) {
@@ -49,7 +49,10 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         this._map = val;
 
         if (this._map !== null) {
-            this._program = "phong_texture";
+            this._program[1] = "_texture";
+        }
+        else {
+            this._program[1] = "";
         }
     }
 

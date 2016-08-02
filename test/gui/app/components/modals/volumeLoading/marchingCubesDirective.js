@@ -8,6 +8,11 @@ app.directive("marchingCubesModal", function () {
         replace: true,
         scope: false,
         link: function (scope, volumeModal, attributes) {
+            // Make modal draggable
+            volumeModal.draggable({
+                handle: ".modal-header"
+            });
+
             // File input styling
             $(":file").filestyle({buttonName: "btn-danger", buttonText: "&nbspChoose file", size: "sm"});
 
@@ -51,6 +56,6 @@ app.directive("marchingCubesModal", function () {
             });
 
         },
-        templateUrl: "app/components/modals/marchingCubes/marchingCubesModal.html"
+        templateUrl: "app/components/modals/volumeLoading/marchingCubesModal.html"
     }
 });

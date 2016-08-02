@@ -49,6 +49,9 @@
 <script src="../src/objects/Geometry.js"></script>
 <script src="../src/objects/Mesh.js"></script>
 <script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+
+<script src="../src/core/Raycaster.js"></script>
 
 <!-- PROGRAM MANAGEMENT -->
 <script src="../src/renderers/GLProgram.js"></script>
@@ -64,57 +67,51 @@
 <script src="../src/controls/KeyboardInput.js"></script>
 
 <script>
+    var canvas = document.getElementById("canvas");
+
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
+    var raycaster = new M3D.Raycaster();
 
-    var object = [];
-
-    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    // Init renderer
+    var renderer = new M3D.MeshRenderer(canvas, M3D.WEBGL2);
     renderer.addShaderLoaderUrls("../src/shaders");
 
-    var sceneRtt = new M3D.Scene();
+    // Camera
+    var camera = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
 
-    // Lights
+    // Scene
+    var scene = new M3D.Scene();
+    var objects;
+
+    var contour = new M3D.Contour(new THREE.Vector2(-0.08, 0.08), new THREE.Vector2(0.08, -0.08), 0.015);
+    contour.position.z = -4;
+    contour.visible = false;
+    scene.add(contour);
+
+    // region Lights
     var ambient = new M3D.AmbientLight(new THREE.Color("#555555"), 1);
     var directional = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
     var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
     directional.position = new THREE.Vector3(0, 0.3, 0.7);
 
-    sceneRtt.add(ambient);
-    sceneRtt.add(directional);
-    sceneRtt.add(pLight);
+    scene.add(ambient);
+    scene.add(directional);
+    scene.add(pLight);
+    // endregion
 
-    // Background quad
-    var quadRtt = new M3D.Quad(new THREE.Vector2(-408, 230), new THREE.Vector2(410, -230), new M3D.MeshPhongMaterial());
-    quadRtt.position.z = -400;
-    sceneRtt.add(quadRtt);
+    // region Canvas resizing
+    var resizeCanvas = function onWindowResize(){
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        camera.aspect = window.innerWidth / window.innerHeight;
+    };
+    window.addEventListener('resize', resizeCanvas, false);
 
-    var imgLoader = new M3D.ImageLoader();
+    resizeCanvas();
+    // endregion
 
-    imgLoader.load("./textures/cookie.png", function (image) {
-        quadRtt.material.map = new M3D.Texture(image);
-    });
-
-    // Camera
-    var cameraRtt = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
-    cameraRtt.position.x = 1;
-    // RTT
-    var renderTarget = new M3D.RenderTarget(1920, 1080);
-
-    // Output texture rendering
-    var sceneOut = new M3D.Scene();
-
-    sceneOut.add(new M3D.AmbientLight(new THREE.Color("#ffffff"), 1));
-    var quadOut = new M3D.Quad(new THREE.Vector2(-5, 5), new THREE.Vector2(5, -5), new M3D.MeshBasicMaterial());
-    sceneOut.add(quadOut);
-
-    // RTT texture binding
-    quadOut.material.map = renderTarget.texture;
-    quadOut.position.z = -10;
-
-    var cameraOut = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
-
-    // Setup keyboard
+    // region User input
     var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
     var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
@@ -172,8 +169,77 @@
         }
     });
 
+    // Setup mouse
+    var mouse = new THREE.Vector2();
 
-    // Load objects
+    var mouseDown = false;
+    var startLocation = {x: 0, y: 0};
+    window.addEventListener("mousedown", function () {
+        mouseDown = true;
+        startLocation = {x: (event.clientX / window.innerWidth) * 2 - 1, y: -(event.clientY / window.innerHeight) * 2 + 1};
+        contour.visible = true;
+        contour.quaternion = camera.quaternion.clone();
+        contour.position = new THREE.Vector3(0, 0, -2);
+    });
+
+    window.addEventListener("mouseup", function () {
+        mouseDown = false;
+        mouse.x = Infinity;
+        mouse.y = Infinity;
+
+        /*
+
+
+        for (var i = 0; i < objects.length; i++) {
+            objects[i].material.color = new THREE.Color(0xffffff);
+        }
+
+        if (intersects.length > 0) {
+            intersects[0].object.material.color = new THREE.Color(0xff0000);
+
+
+
+
+            contour.position.set(0, 0, 0);
+            contour.lookAt(helperVec, new THREE.Vector3(0, 0, 1));
+
+            contour.position = intersects[0].point.add(helperVec.multiplyScalar(0.08));
+        }
+        */
+    });
+
+    function onMouseMove( event ) {
+        // calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components
+        if (mouseDown) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            var width = mouse.x - startLocation.x;
+            var height = mouse.y - startLocation.y;
+
+            raycaster.setFromCamera(new THREE.Vector2(mouse.x - width/2, mouse.y - height/2), camera);
+
+            // calculate objects intersecting the picking ray
+            var intersects = raycaster.intersectObjects(scene.children);
+
+            if (intersects.length > 0) {
+                var temp = (new THREE.Vector3()).subVectors(camera.position, intersects[0].point);
+                contour.position = intersects[0].point.add(temp.multiplyScalar(0.08));
+            }
+
+
+            var bottomRight = (new THREE.Vector3()).set(mouse.x, mouse.y, 0.5).unproject(camera);
+
+            var topLeft = (new THREE.Vector3(startLocation.x, startLocation.y, (new THREE.Vector3()).subVectors(camera.position, contour.position).z)).applyMatrix4(new THREE.Matrix4().getInverse(contour.matrixWorld)).applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix));
+            contour.updateParameters(new THREE.Vector2(topLeft.x, topLeft.y), new THREE.Vector2(bottomRight.x, bottomRight.y), 0.015);
+        }
+    }
+
+    window.addEventListener( 'mousemove', onMouseMove, false );
+    // endregion
+
+    // region Object loading
     loader.load("models/untitled3.obj", function ( obj ) {
 
         objects = obj;
@@ -182,13 +248,14 @@
             obj[i].material = new M3D.MeshPhongMaterial();
             obj[i].material.specular = new THREE.Color("#999999");
             obj[i].geometry.drawWireframe = false;
-            sceneRtt.add(obj[i]);
+            scene.add(obj[i]);
         }
-        objects[0].position.x = 2;
 
         animate();
     });
+    // endregion
 
+    var helperVec = new THREE.Vector3();
     var prevTime = -1, currTime, dt;
     function animate() {
         requestAnimationFrame(animate);
@@ -202,25 +269,19 @@
         keyboardRotation.reset();
         keyboardInput.update();
 
-        objects[0].rotateY(-dt * 0.001);
-        objects[0].rotateZ(-dt * 0.002);
-        objects[1].rotateY(dt * 0.002);
-        objects[2].rotateY(dt * 0.002);
-        objects[1].rotateZ(dt * 0.002);
-        objects[2].rotateZ(dt * 0.002);
+        camera.translateX(keyboardTranslation.x * dt * 0.01);
+        camera.translateY(keyboardTranslation.y * dt * 0.01);
+        camera.translateZ(keyboardTranslation.z * dt * 0.01);
 
-        cameraOut.translateX(keyboardTranslation.x * dt * 0.01);
-        cameraOut.translateY(keyboardTranslation.y * dt * 0.01);
-        cameraOut.translateZ(keyboardTranslation.z * dt * 0.01);
+        camera.rotateX(keyboardRotation.x * dt * 0.001);
+        camera.rotateY(keyboardRotation.y  * dt * 0.001);
+        camera.rotateZ(keyboardRotation.z * dt * 0.001);
 
-        cameraOut.rotateX(keyboardRotation.x * dt * 0.001);
-        cameraOut.rotateY(keyboardRotation.y  * dt * 0.001);
-        cameraOut.rotateZ(keyboardRotation.z * dt * 0.001);
+        pLight.position = camera.position;
 
-        pLight.position = cameraRtt.position;
 
-        renderer.render(sceneRtt, cameraRtt, renderTarget);
-        renderer.render(sceneOut, cameraOut);
+
+        renderer.render(scene, camera);
     }
 
 </script>

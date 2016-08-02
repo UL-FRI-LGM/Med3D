@@ -5,9 +5,7 @@
     <title>Title</title>
 </head>
 <body>
-<canvas id="canvas" width="1280" height="720"></canvas>
-<br>
-FPS: <span id="fps">N/A</span>
+<canvas id="canvas" width="1920" height="1080"></canvas>
 
 <script src="../libraries/three-math.min.js"></script>
 <script src="../src/Med3D.js"></script>
@@ -18,13 +16,12 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/loaders/XHRLoader.js"></script>
 <script src="../src/loaders/ShaderLoader.js"></script>
 <script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/loaders/ImageLoader.js"></script>
 
-<!-- ONLINE INTERACTION -->
-<script src="../src/online_interaction/UpdateListener.js"></script>
-<script src="../src/online_interaction/ScenePublisher.js"></script>
 <!-- CORE -->
 <script src="../src/core/BufferAttribute.js"></script>
 <script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLUniformManager.js"></script>
 <script src="../src/core/GLManager.js"></script>
 <script src="../src/core/Object3D.js"></script>
 <script src="../src/core/Scene.js"></script>
@@ -32,12 +29,16 @@ FPS: <span id="fps">N/A</span>
 <!-- CAMERA -->
 <script src="../src/cameras/Camera.js"></script>
 <script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
 
 <!-- LIGHTS -->
 <script src="../src/lights/Light.js"></script>
 <script src="../src/lights/AmbientLight.js"></script>
 <script src="../src/lights/DirectionalLight.js"></script>
 <script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
 
 <!-- MATERIALS -->
 <script src="../src/materials/Material.js"></script>
@@ -47,6 +48,10 @@ FPS: <span id="fps">N/A</span>
 <!-- OBJECTS -->
 <script src="../src/objects/Geometry.js"></script>
 <script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+
+<script src="../src/core/Raycaster.js"></script>
 
 <!-- PROGRAM MANAGEMENT -->
 <script src="../src/renderers/GLProgram.js"></script>
@@ -56,45 +61,60 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/renderers/Renderer.js"></script>
 <script src="../src/renderers/MeshRenderer.js"></script>
 
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<script src="../src/marching_cubes/MHDReader.js"></script>
 <script src="../src/controls/KeyboardInput.js"></script>
 
 <script>
-    var objects;
+    var canvas = document.getElementById("canvas");
 
-    // Initialize renderer
-    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
-
-    var scene = new M3D.Scene();
-
-    // Initialize lights and add them to the scene
-    var aLight = new M3D.AmbientLight(new THREE.Color("#222222"), 1);
-    var dLight = new M3D.DirectionalLight(new THREE.Color("#00FF00"), 1);
-    var dLight2 = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
-    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
-
-    pLight.position = new THREE.Vector3(0, 0, 200);
-    dLight.position = new THREE.Vector3(-1, 0, 0);
-    dLight2.position = new THREE.Vector3(1, 0, 0);
-
-    scene.add(aLight);
-    scene.add(dLight);
-    scene.add(dLight2);
-    scene.add(pLight);
-
-    // Camera initialization
-    var camera = new M3D.PerspectiveCamera(1.483, 16/9, 10, 10000);
-    camera.position = new THREE.Vector3(0, 0, 20);
-
-    // Set path to shader files
-    renderer.addShaderLoaderUrls("../src/shaders");
-
-    // Initialize object loader and load the objects
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
+    var raycaster = new M3D.Raycaster();
+
+    // Init renderer
+    var renderer = new M3D.MeshRenderer(canvas, M3D.WEBGL2);
+    renderer.addShaderLoaderUrls("../src/shaders");
+
+    // Camera
+    var camera = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
+
+    // Scene
+    var scene = new M3D.Scene();
+    var objects;
+
+    var contour = new M3D.Contour(new THREE.Vector2(-0.08, 0.08), new THREE.Vector2(0.08, -0.08), 0.015);
+    contour.position.z = -4;
+    scene.add(contour);
+
+    // region Lights
+    var ambient = new M3D.AmbientLight(new THREE.Color("#555555"), 1);
+    var directional = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
+    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
+    directional.position = new THREE.Vector3(0, 0.3, 0.7);
+
+    scene.add(ambient);
+    scene.add(directional);
+    scene.add(pLight);
+    // endregion
+
+    // region Canvas resizing
+    var resizeCanvas = function onWindowResize(){
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        camera.aspect = window.innerWidth / window.innerHeight;
+    };
+    window.addEventListener('resize', resizeCanvas, false);
+
+    resizeCanvas();
+    // endregion
+
+    // region User input
     var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
     var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
-    var keyboardInput = new M3D.KeyboardInput();
+    var keyboardInput = M3D.KeyboardInput.instance;
     keyboardInput.addListener(function (pressedKeys) {
         // ROTATIONS
         if (pressedKeys[65]) {  // A
@@ -148,24 +168,52 @@ FPS: <span id="fps">N/A</span>
         }
     });
 
-    loader.load("models/untitled4.obj", function ( obj ) {
+    // Setup mouse
+    var mouse = new THREE.Vector2();
+
+    var mouseDown = false;
+    window.addEventListener("mousedown", function () {
+        mouseDown = true;
+    });
+
+    window.addEventListener("mouseup", function () {
+        mouseDown = false;
+        mouse.x = Infinity;
+        mouse.y = Infinity;
+    });
+
+    function onMouseMove( event ) {
+        // calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components
+        if (mouseDown) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+    }
+
+    window.addEventListener( 'mousemove', onMouseMove, false );
+    // endregion
+
+    // region Object loading
+    loader.load("models/untitled3.obj", function ( obj ) {
+
         objects = obj;
         for (var i = 0; i < obj.length; i++) {
-            obj[i].position.z = 0;
+            obj[i].position.z = -5;
             obj[i].material = new M3D.MeshPhongMaterial();
             obj[i].material.specular = new THREE.Color("#999999");
             obj[i].geometry.drawWireframe = false;
             scene.add(obj[i]);
         }
 
-        // Start rendering
         animate();
     });
+    // endregion
 
+    var helperVec = new THREE.Vector3();
     var prevTime = -1, currTime, dt;
     function animate() {
         requestAnimationFrame(animate);
-        calculateFps();
 
         // Calculate delta time and update timestamps
         currTime = new Date();
@@ -178,36 +226,47 @@ FPS: <span id="fps">N/A</span>
 
         camera.translateX(keyboardTranslation.x * dt * 0.01);
         camera.translateY(keyboardTranslation.y * dt * 0.01);
-        camera.translateZ(keyboardTranslation.z * dt * 0.1);
+        camera.translateZ(keyboardTranslation.z * dt * 0.01);
 
-        camera.rotateX(keyboardRotation.x * dt * 0.0001);
-        camera.rotateY(keyboardRotation.y  * dt * 0.0001);
+        camera.rotateX(keyboardRotation.x * dt * 0.001);
+        camera.rotateY(keyboardRotation.y  * dt * 0.001);
         camera.rotateZ(keyboardRotation.z * dt * 0.001);
 
-        //camera.lookAt(objects[0].position, new THREE.Vector3(0, 1, 0));
         pLight.position = camera.position;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        // calculate objects intersecting the picking ray
+        var intersects = raycaster.intersectObjects(scene.children);
+
+        for (var i = 0; i < objects.length; i++) {
+            objects[i].material.color = new THREE.Color(0xffffff);
+        }
+
+        if (intersects.length > 0) {
+            intersects[0].object.material.color = new THREE.Color(0xff0000);
+
+            helperVec = helperVec.crossVectors((new THREE.Vector3()).subVectors(intersects[0].triangle[1], intersects[0].triangle[0]), (new THREE.Vector3()).subVectors(intersects[0].triangle[2], intersects[0].triangle[0]));
+            helperVec = helperVec.normalize();
+
+
+            contour.position.set(0, 0, 0);
+
+            contour.lookAt(helperVec, new THREE.Vector3(0, 0, 1));
+            contour.rotation.z = camera.rotation.z;
+            contour.position = intersects[0].point.add(helperVec.multiplyScalar(0.08));
+        }
 
         renderer.render(scene, camera);
     }
 
-    // FPS calculation
-    var timeNow = 0, timeLast = 0, fps = 0;
-    function calculateFps() {
-        timeNow = new Date();
-        fps++;
-
-        if (timeNow - timeLast >= 1000) {
-            //Write value in HTML
-            //multiply with 1000.0 / (timeNow - timeLast) for accuracy
-            document.getElementById("fps").innerHTML = Number(fps * 1000.0 / (timeNow - timeLast)).toPrecision( 5 );
-
-            //reset
-            timeLast = timeNow;
-            fps = 0;
-        }
-    }
-
 </script>
+
+
+<!--<script>
+
+
+</script>-->
 
 </body>
 </html>

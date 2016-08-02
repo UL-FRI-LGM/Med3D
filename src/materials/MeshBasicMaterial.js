@@ -9,10 +9,13 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
 
         this.type = "MeshBasicMaterial";
 
-        this._color = new THREE.Color(0x33bb33); // emissive
+        this._color = new THREE.Color(0xffffff); // emissive
         this._map = null;
 
-        this._program = "basic";
+        this._lights = true;
+        this._useVertexColors = false;
+
+        this._program = ["basic", "_lights", "", ""];
     }
 
     set color(val) {
@@ -27,10 +30,41 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
 
     set map(val) {
         this._map = val;
+
+        if (this._map !== null) {
+            this._program[2] = "_texture";
+        }
+        else {
+            this._program[2] = "";
+        }
+    }
+
+    set lights(val) {
+        this._lights = val;
+
+        if (this._lights) {
+            this._program[1] = "_lights";
+        }
+        else {
+            this._program[1] = "";
+        }
+    }
+
+    set useVertexColors(val) {
+        this._useVertexColors = val;
+
+        if (this._lights) {
+            this._program[3] = "_colors";
+        }
+        else {
+            this._program[3] = "";
+        }
     }
 
     get color() { return this._color; }
     get map() { return this._map; }
+    get lights() { return this._lights; }
+    get useVertexColors() { return this._useVertexColors; }
 
     toJson() {
         var obj = super.toJson();
