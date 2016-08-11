@@ -16,6 +16,8 @@ M3D.KeyboardInput = class {
         this._listeners = [];
         
         document.addEventListener("keydown", function (event) {
+            if ( $('input:focus, textarea:focus').length > 0 ) {  return; }
+
             self._pressedKeys[event.keyCode] = true;
             // Disable arrow key default behavior
             if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {

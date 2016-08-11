@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Med3D - Medical Web Visualisation Framework</title>
+
+    <!-- Bootstrap -->
+    <!-- build:css styles/main.css -->
+    <link href="assets/css/jquery-ui.min.css" rel="stylesheet">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-social.css" rel="stylesheet">
+    <link href="assets/css/mystyles.css" rel="stylesheet">
+    <link href="assets/css/sidebar.css" rel="stylesheet">
+    <!-- endbuild -->
+
+    <!-- build:js scripts/main.js -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="assets/lib/jquery.min.js"></script>
+    <script src="assets/lib/jquery-ui.min.js"></script>
+    <script src="assets/lib/bootstrap.min.js"></script>
+    <script src="assets/lib/angular.min.js"></script>
+    <script src="assets/lib/bootstrap-filestyle.min.js"></script>
+    <script src="assets/lib/clipboard.min.js"></script>
+    <script src="assets/lib/sidebar.js"></script>
+    <!-- endbuild -->
+
+    <!-- Project -->
+    <script src="app/app.js"></script>
+
+    <script src="app/components/filters/filters.js"></script>
+
+    <!-- Services -->
+    <script src="app/components/settings/settingsService.js"></script>
+    <script src="app/components/input/inputService.js"></script>
+    <script src="app/components/task_manager/taskManagerService.js"></script>
+
+    <!-- Controllers -->
+    <script src="app/components/input/navigatorController.js"></script>
+    <script src="app/components/modals/settings/settingsModalController.js"></script>
+    <script src="app/components/rendering/renderingController.js"></script>
+    <script src="app/components/modals/objLoading/meshLoadingController.js"></script>
+    <script src="app/components/modals/volumeLoading/volumeLoadingController.js"></script>
+    <script src="app/components/task_manager/taskManagerController.js"></script>
+    <script src="app/components/annotations/annotationsSidebarController.js"></script>
+    <script src="app/components/annotations/annotationsWidgetController.js"></script>
+
+    <!-- Directives -->
+    <script src="app/components/task_manager/taskProgressDirective.js"></script>
+    <script src="app/components/modals/volumeLoading/marchingCubesDirective.js"></script>
+    <script src="app/components/modals/objLoading/objLoaderDirective.js"></script>
+    <script src="app/components/rendering/canvasDirective.js"></script>
+    <script src="app/components/modals/settings/display/displaySettingsModalDirective.js"></script>
+    <script src="app/components/modals/settings/input/inputSettingsModalDirective.js"></script>
+    <script src="app/components/modals/misc/basicModalDirective.js"></script>
+    <script src="app/components/input/navigatorDirective.js"></script>
+    <script src="app/components/annotations/annotationsSidebarDirective.js"></script>
+    <script src="app/components/annotations/annotationWidgetDirective.js"></script>
+    <script src="app/components/annotations/newAnnotationWidgetDirective.js"></script>
+    <!-- DEBUG INCLUDE -->
+    <script src="../libraries/three-math.min.js"></script>
+    <script src="../src/Med3D.js"></script>
+
+    <!-- LOADERS -->
+    <script src="../src/loaders/Cache.js"></script>
+    <script src="../src/loaders/LoadingManager.js"></script>
+    <script src="../src/loaders/XHRLoader.js"></script>
+    <script src="../src/loaders/ShaderLoader.js"></script>
+    <script src="../src/loaders/ObjLoader.js"></script>
+    <script src="../src/marching_cubes/MHDReader.js"></script>
+
+    <!-- ONLINE INTERACTION -->
+    <script src="../src/online_interaction/UpdateListener.js"></script>
+    <script src="../src/online_interaction/ScenePublisher.js"></script>
+    <!-- CORE -->
+    <script src="../src/core/BufferAttribute.js"></script>
+    <script src="../src/core/GLAttributeManager.js"></script>
+    <script src="../src/core/GLUniformManager.js"></script>
+    <script src="../src/core/GLManager.js"></script>
+    <script src="../src/core/Object3D.js"></script>
+    <script src="../src/core/Scene.js"></script>
+
+    <!-- CAMERA -->
+    <script src="../src/cameras/Camera.js"></script>
+    <script src="../src/cameras/PerspectiveCamera.js"></script>
+
+    <!-- LIGHTS -->
+    <script src="../src/lights/Light.js"></script>
+    <script src="../src/lights/AmbientLight.js"></script>
+    <script src="../src/lights/DirectionalLight.js"></script>
+    <script src="../src/lights/PointLight.js"></script>
+
+    <script src="../src/textures/Texture.js"></script>
+    <script src="../src/renderers/RenderTarget.js"></script>
+
+    <!-- MATERIALS -->
+    <script src="../src/materials/Material.js"></script>
+    <script src="../src/materials/MeshBasicMaterial.js"></script>
+    <script src="../src/materials/MeshPhongMaterial.js"></script>
+
+    <!-- OBJECTS -->
+    <script src="../src/objects/Geometry.js"></script>
+    <script src="../src/objects/Mesh.js"></script>
+    <script src="../src/objects/Group.js"></script>
+    <script src="../src/objects/Quad.js"></script>
+    <script src="../src/objects/Contour.js"></script>
+    <script src="../src/objects/Circle.js"></script>
+    <script src="../src/objects/Line.js"></script>
+
+    <script src="../src/core/Raycaster.js"></script>
+
+    <!-- PROGRAM MANAGEMENT -->
+    <script src="../src/renderers/GLProgram.js"></script>
+    <script src="../src/renderers/GLProgramManager.js"></script>
+
+    <!-- RENDERS -->
+    <script src="../src/renderers/Renderer.js"></script>
+    <script src="../src/renderers/MeshRenderer.js"></script>
+
+    <script src="../libraries/socket.io-1.4.5.js"></script>
+    <script src="../src/controls/KeyboardInput.js"></script>
+   <!-- <script src="scripts/Input.js"></script>-->
+
+    <script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+    <!-- ONLINE INTERACTION -->
+    <script src="../src/online_interaction/ScenePublisher.js"></script>
+    <script src="../src/online_interaction/SceneSubscriber.js"></script>
+
+    <script src="scripts/main.js"></script>
+    <!-- DEBUG INCLUDE -->
+</head>
+
+<body ng-app="med3d">
+
+    <nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#"><img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24"></a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-file"></span> 
+                        File <span class="caret"></span>
+                    </a>
+
+                    <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
+                        <li><a data-toggle="modal" data-target="#taskProgressModal">Save</a></li>
+                        <li class="dropdown-submenu">
+                            <a class="dropdown-submenu-anchor">Open / Download</a>
+                            <ul class="dropdown-menu">
+                                <li><a data-toggle="modal" data-target="#objLoaderModal">Wavefront (.obj)</a></li>
+                                <li><a data-toggle="modal" data-target="#volumeOpenModal">Volume (.mhd)</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-cog"></span> 
+                        Options <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a data-toggle="modal" data-target="#inputSettingsModal">Inputs</a></li>
+                        <li><a data-toggle="modal" data-target="#displaySettingsModal">Display Settings</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-wrench"></span>
+                        Sharing<span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li id="dropdownCloseSessionItem" class="collapse"><a>Close session</a></li>
+                        <li id="dropdownStartSharingSceneItem" class="collapse"><a>Share scene</a></li>
+                        <li id="dropdownStopSharingSceneItem" class="collapse"><a>Stop sharing</a></li>
+                        <li id="dropdownSessionUrlItem" class="collapse"><a href="#sharedSessionUrl" data-backdrop="false" data-toggle="modal">Session URL</a></li>
+                    </ul>
+                </li>
+
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-question-sign"></span> 
+                        Help <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a data-toggle="modal" data-target="#aboutModal">About</a></li>
+                        <li><a href="https://www.google.com" target="_blank">User Manual <i class="fa fa-external-link" aria-hidden="true" style="float: right;"></i></a></li>
+                        <li><a data-toggle="modal" data-target="#licenceModal">Licence</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-wrench"></span> 
+                        Test <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#floatingWindow" data-backdrop="false" data-toggle="modal">Example Window</a></li>
+                        <li><a href="#widgetExample" data-backdrop="false" data-toggle="modal">Example Widget</a></li>
+                    </ul>
+                </li>
+
+            </ul>
+            <ul class="nav navbar-nav navbar-right-no-margin">
+                <li>
+                    <a data-toggle="modal" data-target="#loginModal">
+                        <span class="glyphicon glyphicon-log-in"></span> Login
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- CANVAS -->
+    <m3d-canvas ng-controller="RenderingController" shaderPath="../src/shaders"></m3d-canvas>
+
+    <div id="wrapper" >
+        <div id="sidebar-wrapper" class="hover-div">
+
+            <div id="sidebar-nav-wrapper">
+                <ul class="sidebar-nav">
+                    <li>
+                        <a href="" data-target="#annotationSidebarContent">
+                            <img class="sidebar-icon" src="assets/img/note.png"/>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="" data-target="#fileSidebarContent">
+                            <img class="sidebar-icon" src="assets/img/file.png"/>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <annotations-sidebar ng-controller="AnnotationsSidebarController" toggle-id="annotationSidebarContent"></annotations-sidebar>
+
+
+
+          <span id="fileSidebarContent">
+              <div class="sidebar-content-title">
+                  Files
+              </div>
+
+              <div class="sidebar-content">
+                <!-- add content here -->
+              </div>
+          </span>
+        </div>
+    </div>
+
+
+    <!-- OBJ LOADER -->
+    <obj-loader-modal ng-controller="MeshLoadingController"></obj-loader-modal>
+
+    <!-- MARCHING CUBES -->
+    <marching-cubes-modal ng-controller="VolumeLoadingController"></marching-cubes-modal>
+
+    <!-- SETTINGS -->
+    <div ng-controller="SettingsController">
+        <display-setting-modal></display-setting-modal>
+        <input-settings-modal navigator-toggle="navigatorToggle"></input-settings-modal>
+    </div>
+
+    <!-- NON-FUNCTIONAL MODALS -->
+    <basic-modal type="about"></basic-modal>
+    <basic-modal type="licence"></basic-modal>
+
+    <!-- NAVIGATORS -->
+    <div ng-controller="NavigatorController">
+        <navigator navigator-toggle="navigatorToggle" translation-values="translationValues" ng-show="navigatorToggle.translation" type="translation"></navigator>
+        <navigator navigator-toggle="navigatorToggle" rotation-values="rotationValues" ng-show="navigatorToggle.rotation" type="rotation"></navigator>
+    </div>
+
+    <span ng-controller="TaskManagerController">
+        <task-progress-directive current-task="currentTask"></task-progress-directive>
+    </span>
+
+    <div id="floatingWindow" class="modal fade floating-window">
+        <div class="modal-dialog">
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Example window</h4>
+
+                </div>
+                <div class="modal-body">
+                    <p>Test</p>
+                </div>
+                <div class="modal-footer med3d-modal-footer">
+                    <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn med3d-btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div ng-controller="AnnotationsWidgetController">
+        <new-annotation-widget></new-annotation-widget>
+
+        <annotation-widget ng-repeat="ann in annotations.list" annotations="annotations" current="ann"></annotation-widget>
+    </div>
+
+
+    <div id="sharedSessionUrl" class="modal fade floating-window">
+        <div class="modal-dialog">
+            <div class="modal-content med3d-modal">
+                <div class="modal-header med3d-modal-header">
+                    <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                    <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Session url</h4>
+
+                </div>
+                <div class="modal-body">
+                    <p><b>Send this link to the person that you want to share your scene with.</b></p>
+                    <div class="input-group" style="width: 100%;">
+                        <!-- Target -->
+                        <input id="sessionUrl" type="text" value="http://localhost:8080/test/gui/index.html?sessionUuid=f0KTPED12sPx_HR6AAAI" class="form-control" style="width: calc(100% - 40px);; height: 35px;">
+
+                        <!-- Trigger -->
+                        <button class="btn clipboard" data-clipboard-target="#sessionUrl" style="border-top-left-radius: 0; border-bottom-left-radius: 0; display: table-cell; height: 35px; border: 1px solid #ccc;">
+                            <img class="clippy" src="assets/img/clippy.svg" alt="Copy to clipboard" style="height: 16px">
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <footer class="footer hover-div">
+        <p><span class="glyphicon glyphicon-console"></span>&nbsp&nbsp<span id="applicationStatus">Application status.</span></p>
+    </footer>
+
+    <script>
+        $(document).ready(function(){
+
+            new Clipboard(".clipboard");
+
+            $(".hover-div").stop().fadeTo("slow", 0.5);
+
+            $(".hover-div").hover(function(){
+                $(this).stop().fadeTo( "fast" , 1.0);
+            }, function(){
+                $(this).stop().fadeTo( "fast" , 0.5);
+            });
+
+            $(".floating-window").draggable({
+                handle: ".modal-header"
+            });
+
+            // Do not close on sub-dropdown click
+            $('.dropdown-submenu-anchor').bind('click', function (e) {
+                e.stopPropagation()
+            });
+
+            $('.modal-content').resizable({
+                maxHeight: 300,
+                minHeight: 115,
+                maxWidth: 300,
+                minWidth: 170
+            });
+
+        });
+
+    </script>
+</body>
+
+</html>

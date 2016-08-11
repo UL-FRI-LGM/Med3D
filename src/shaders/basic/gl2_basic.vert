@@ -1,15 +1,2 @@
 #version 300 es
-precision mediump float;
-
-uniform mat4 MVMat; // Model View Matrix
-uniform mat4 PMat;  // Projection Matrix
-
-in vec3 VPos;       // Vertex position
-
-void main() {
-    // Model view position
-    vec4 VPos4 = MVMat * vec4(VPos, 1.0);
-
-    // Projected position
-    gl_Position = PMat * VPos4;
- }
+precision mediump float;uniform mat4 MVMat;uniform mat4 PMat;in vec3 VPos;void main(){vec4 VPos4 = MVMat*vec4(VPos, 1.0);gl_Position = PMat*VPos4;}

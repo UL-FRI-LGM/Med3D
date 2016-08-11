@@ -1,0 +1,24 @@
+<div id="taskProgressModal" class="modal fade floating-window" data-backdrop="false" >
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content med3d-modal">
+            <div class="modal-header med3d-modal-header">
+                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 id="taskTitle" class="modal-title">{{currentTask.name}}</h4>
+
+            </div>
+            <div class="modal-body">
+                <p id="taskDescription">{{currentTask.description}}</p>
+
+                <div class="progress med3d-progress">
+                    <div class="progress-bar med3d-progress-bar" role="progressbar" aria-valuenow="{{currentTask.progress || 100}}" aria-valuemin="0" aria-valuemax="100" ng-style="{ width: (currentTask.progress | percentage:0)}">
+                        <span style=" text-shadow: 0px 0px 2px #000;">{{(currentTask.progress | percentage:0)}}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer med3d-modal-footer">
+                <button type="button" class="btn med3d-btn-primary center-block" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

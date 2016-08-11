@@ -13,9 +13,6 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         this._map = null;
 
         this._lights = true;
-        this._useVertexColors = false;
-
-        this._program = ["basic", "_lights", "", ""];
     }
 
     set color(val) {
@@ -27,7 +24,6 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
             this._onChangeListener.materialUpdate(update)
         }
     }
-
     set map(val) {
         this._map = val;
 
@@ -38,7 +34,6 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
             this._program[2] = "";
         }
     }
-
     set lights(val) {
         this._lights = val;
 
@@ -50,21 +45,27 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         }
     }
 
-    set useVertexColors(val) {
-        this._useVertexColors = val;
-
-        if (this._lights) {
-            this._program[3] = "_colors";
-        }
-        else {
-            this._program[3] = "";
-        }
-    }
-
     get color() { return this._color; }
     get map() { return this._map; }
     get lights() { return this._lights; }
-    get useVertexColors() { return this._useVertexColors; }
+
+    requiredProgram() {
+        var programName = "basic";
+
+        if (this._lights) {
+            programName += "_lights";
+        }
+
+        if (this._map instanceof M3D.Texture) {
+            programName += "_texture"
+        }
+
+        if (this._useVertexColors) {
+            programName += "_colors"
+        }
+
+        return programName;
+    }
 
     toJson() {
         var obj = super.toJson();

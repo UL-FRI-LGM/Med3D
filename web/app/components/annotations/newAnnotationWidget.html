@@ -1,0 +1,19 @@
+<div class="modal floating-window med3d-annotation-widget" role="dialog" data-backdrop="false" style="z-index: 16777271">
+    <div class="modal-dialog" style="display: block;">
+        <div class="modal-content med3d-modal-widget med3d-annotation-widget-content">
+            <div class="modal-header med3d-modal-widget-header">
+                <button type="button" class="med3d-modal-widget-close" ng-click="closeNewAnnotation()" aria-hidden="true">&times;</button>
+
+                <input class="form-control med3d-annotation-input-title" placeholder="title" input="text" ng-model="annotations.newAnnotation.title">
+            </div>
+
+            <div class="modal-widget-body med3d-annotation-widget-body">
+                <textarea class="form-control med3d-annotation-input-content" ng-model="annotations.newAnnotation.content"></textarea>
+            </div>
+
+            <div class="modal-footer med3d-modal-footer">
+                <button type="button" class="btn med3d-btn-primary med3d-btn-primary-widget" ng-disabled="validateInput()" ng-click="saveAnnotation()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>

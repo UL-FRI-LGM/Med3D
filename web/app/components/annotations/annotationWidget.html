@@ -1,0 +1,19 @@
+<div class="modal fade floating-window med3d-annotation-widget in" role="dialog" data-backdrop="false" ng-style="current.active && {'display': 'block'}">
+    <div class="modal-dialog" style="display: block;">
+        <div class="modal-content med3d-modal-widget med3d-annotation-widget-content">
+            <div class="modal-header med3d-modal-widget-header">
+                <button type="button" class="med3d-modal-widget-minimize" data-dismiss="modal" aria-hidden="true" ng-click="minimize()">
+                    <svg height="10px" width="10px">
+                        <line x1="0" y1="5" x2="10" y2="5"/>
+                    </svg>
+                </button>
+
+                <p class="modal-title" style="font-weight: 600; font-size: 14px;">{{current.title}}</p>
+            </div>
+
+            <div class="modal-widget-body">
+                <p>{{current.content}}</p>
+            </div>
+        </div>
+    </div>
+</div>

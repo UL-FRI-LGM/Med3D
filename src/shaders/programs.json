@@ -23,11 +23,27 @@
         }
     },
 
+    "gl2_basic_lights_colors": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "basic/gl2_basic_lights_colors.vert",
+            "fragment": "basic/gl2_basic_lights_colors.frag"
+        }
+    },
+
     "gl2_basic_lights_texture": {
         "description": "Default gl2 program used for testing.",
         "shaders": {
             "vertex": "basic/gl2_basic_lights_texture.vert",
             "fragment": "basic/gl2_basic_lights_texture.frag"
+        }
+    },
+
+    "gl2_basic_lights_texture_colors": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "basic/gl2_basic_lights_texture_colors.vert",
+            "fragment": "basic/gl2_basic_lights_texture_colors.frag"
         }
     },
 

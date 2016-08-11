@@ -1,0 +1,66 @@
+<div id="volumeOpenModal" class="modal fade floating-window">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content med3d-modal">
+            <div class="modal-header med3d-modal-header">
+                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Volume (.mhd)</h4>
+            </div>
+            <div class="modal-body" style="padding: 5px;">
+
+                <div class="panel with-nav-tabs panel-default" style="margin-bottom: 5px;">
+                    <div class="panel-heading">
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a href="#localMhdTab" data-toggle="tab">Local</a></li>
+                            <li><a href="#serverMhdTab" data-toggle="tab">Server</a></li>
+                        </ul>
+                    </div>
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <!-- LOCAL TAB -->
+
+                            <div class="tab-pane fade in active" id="localMhdTab">
+                                <h4 style="padding-left: 0">Select MHD volume and ISO value.</h4>
+                                <div class="form-group"></div> <!-- To prevent weird Chrome bug -->
+                                <label>Select mhd file:</label>
+                                <input id="volumeMhdFileInput" type="file" accept=".mhd" class="filestyle">
+                                <label style="margin-top: 10px;">Select raw file:</label>
+                                <input id="volumeRawFileInput" type="file" accept=".raw" class="filestyle">
+                                <label style="margin-top: 10px;">ISO value:</label>
+                                <input type="number" value="0" class="form-control volume-loader-iso-input" style="width: 25%; height: 30px" required>
+                                <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
+                            </div>
+
+                            <!-- SERVER TAB -->
+
+                            <div class="tab-pane fade" id="serverMhdTab">
+                                <h4 style="padding-left: 0; font-weight: 500">Select MHD volume and ISO value.</h4>
+
+                                <div style="height: 15px; margin-top: 10px;">
+                                    <div class="col-sm-3">Name</div>
+                                    <div class="col-sm-6" style="padding-left: 40px" >Upload date</div>
+                                    <div class="col-sm-3" style="text-align: right; padding-right: 20px" >Size</div>
+                                </div>
+                                <div id="mhdListGroup" class="list-group med3d-file-list-group" style="margin-bottom: 0; margin-top: 10px">
+
+                                </div>
+                                <label style="margin-top: 10px;">ISO value:</label>
+                                <input type="number" value="0" class="form-control volume-loader-iso-input" style="width: 25%; height: 30px;" required>
+                                <span id="mhdListErrorMsg"> </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer med3d-modal-footer">
+                <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+
+                <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the volume and enter the iso value." style="display: inline-block">
+                    <button id="volumeFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Load</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

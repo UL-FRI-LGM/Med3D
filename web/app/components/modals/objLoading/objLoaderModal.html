@@ -1,0 +1,63 @@
+<div id="objLoaderModal" class="modal fade floating-window">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content med3d-modal">
+
+            <div class="modal-header med3d-modal-header">
+                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
+                <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Wavefront (.obj)</h4>
+            </div>
+
+            <div class="modal-body" style="padding: 5px;">
+                <div class="panel with-nav-tabs panel-default" style="margin-bottom: 5px;">
+                    <div class="panel-heading">
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a href="#localObjTab" data-toggle="tab">Local</a></li>
+                            <li><a href="#serverObjTab" data-toggle="tab">Server</a></li>
+                        </ul>
+                    </div>
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <!-- LOCAL TAB -->
+
+                            <div class="tab-pane fade in active" id="localObjTab">
+                                <h4 style="padding-left: 0; font-weight: 500">Select .obj file from your computer</h4>
+                                <div class="input-group" style="width: 100%; margin-top: 5px;">
+                                    <label>Select .obj file:</label>
+                                    <input id="objFileInput" type="file" accept=".obj" class="filestyle">
+                                </div>
+                                <p class="warning-text warning-active-subscription" style="margin-top: 5px; display:none;"><b>WARNING: Active scene subscription will be terminated!</b></p>
+                            </div>
+
+
+                            <!-- SERVER TAB -->
+
+                            <div class="tab-pane fade" id="serverObjTab">
+                                <h4 style="padding-left: 0; font-weight: 500">Select .obj file that you want to load from server.</h4>
+
+                                <div style="height: 15px; margin-top: 10px;">
+                                    <div class="col-sm-3">Name</div>
+                                    <div class="col-sm-6" style="padding-left: 40px" >Upload date</div>
+                                    <div class="col-sm-3" style="text-align: right; padding-right: 20px" >Size</div>
+                                </div>
+                                <div id="objListGroup" class="list-group med3d-file-list-group" style="margin-bottom: 0; margin-top: 10px">
+
+                                </div>
+                                <span id="objListErrorMsg"> </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="modal-footer med3d-modal-footer">
+                <button type="button" class="btn med3d-btn-default" data-dismiss="modal">Close</button>
+                <div class="tooltip-wrapper disabled" data-toggle="tooltip" title="Please select the file." style="display: inline-block">
+                    <button id="objFileOpenButton" type="button" class="btn med3d-btn-primary" disabled="disabled">Load</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -50,6 +50,8 @@
 <script src="../src/objects/Mesh.js"></script>
 <script src="../src/objects/Quad.js"></script>
 <script src="../src/objects/Contour.js"></script>
+<script src="../src/objects/Circle.js"></script>
+<script src="../src/objects/Line.js"></script>
 
 <script src="../src/core/Raycaster.js"></script>
 
@@ -84,19 +86,33 @@
     var scene = new M3D.Scene();
     var objects;
 
-    var contour = new M3D.Contour(new THREE.Vector2(-0.08, 0.08), new THREE.Vector2(0.08, -0.08), 0.015);
+    var contour = new M3D.Circle(0.05, 40);
+    contour.setVerticesColors(new THREE.Color("#00FF00"), new THREE.Color("#00FF00"), 0.6, 0);
+    contour.material.useVertexColors = true;
+    contour.material.transparent = true;
     contour.position.z = -4;
     scene.add(contour);
+
+    var line = new M3D.Line([-10, 0, -10, 20, 0, -10]);
+    scene.add(line);
+
+    var random = function (min, max) {
+        return Math.random() * (max - min) + min;
+    };
+
+    setInterval(function () {
+        line.setPoints([random(-10, 0), random(-10, 0), random(-10, 0), random(-10, 0), random(-10, 0), random(-10, 0)]);
+    }, 1000);
 
     // region Lights
     var ambient = new M3D.AmbientLight(new THREE.Color("#555555"), 1);
     var directional = new M3D.DirectionalLight(new THREE.Color("#FF0000"), 1);
-    var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
+    //var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
     directional.position = new THREE.Vector3(0, 0.3, 0.7);
 
     scene.add(ambient);
     scene.add(directional);
-    scene.add(pLight);
+    //scene.add(pLight);
     // endregion
 
     // region Canvas resizing
@@ -232,7 +248,7 @@
         camera.rotateY(keyboardRotation.y  * dt * 0.001);
         camera.rotateZ(keyboardRotation.z * dt * 0.001);
 
-        pLight.position = camera.position;
+        //pLight.position = camera.position;
 
         raycaster.setFromCamera(mouse, camera);
 
@@ -254,7 +270,7 @@
 
             contour.lookAt(helperVec, new THREE.Vector3(0, 0, 1));
             contour.rotation.z = camera.rotation.z;
-            contour.position = intersects[0].point.add(helperVec.multiplyScalar(0.08));
+            contour.position = intersects[0].point.add(helperVec.multiplyScalar(0.02));
         }
 
         renderer.render(scene, camera);

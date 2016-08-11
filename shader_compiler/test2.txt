@@ -1,0 +1,14 @@
+#if (VAR1 && VAR2)
+	<VSEBINA 1>
+#else if (VAR1 && (VAR2 || VAR3))
+	<VSEBINA 2>
+#else if (VAR3)
+	<VSEBINA 3>
+	#if (VAR4 || (VAR5 && VAR6))
+		<VSEBINA 4>
+	#else if (VAR5 && (VAR6 || VAR7))
+		<VSEBINA 5>
+	#fi
+#else
+	<VSEBINA 6>
+#fi

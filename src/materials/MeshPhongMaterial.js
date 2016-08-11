@@ -11,8 +11,6 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         this._specular = new THREE.Color(0x111111);
         this._shininess = 16;
         this._map = null;
-
-        this._program = ["phong", ""];
     }
 
     set color(val) {
@@ -24,7 +22,6 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
             this._onChangeListener.materialUpdate(update)
         }
     }
-
     set specular(val) {
         this._specular = val;
 
@@ -34,7 +31,6 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
             this._onChangeListener.materialUpdate(update)
         }
     }
-
     set shininess(val) {
         this._specular = val;
 
@@ -47,19 +43,22 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
 
     set map(val) {
         this._map = val;
-
-        if (this._map !== null) {
-            this._program[1] = "_texture";
-        }
-        else {
-            this._program[1] = "";
-        }
     }
 
     get color() { return this._color; }
     get specular() { return this._specular; }
     get shininess() { return this._shininess; }
     get map() { return this._map; }
+
+    requiredProgram() {
+        var programName = "phong";
+
+        if (this._map instanceof M3D.Texture) {
+            programName += "_texture"
+        }
+
+        return programName;
+    }
 
     toJson() {
         var obj = super.toJson();

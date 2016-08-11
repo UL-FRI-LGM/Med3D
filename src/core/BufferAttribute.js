@@ -5,8 +5,8 @@
 M3D.BufferAttribute = class {
 
 	constructor(array, itemSize) {
-		this.array = array;
-		this.itemSize = itemSize;
+		this._array = array;
+		this._itemSize = itemSize;
 
 		// Tells if local copies are up to date
 		this._dirty = true;
@@ -17,11 +17,24 @@ M3D.BufferAttribute = class {
 	 * @returns {number} Item count
 	 */
 	count() {
-		return this.array.length / this.itemSize;
+		return this._array.length / this._itemSize;
 	}
 
+	set array(val) {
+		this._array = val;
+		this._dirty = true;
+	}
+	set itemSize(val) {
+		this._itemSize = val;
+		this._dirty = true;
+	}
+	set dirty(val) {
+		this._dirty = val;
+	}
+
+	get array() { return this._array; }
+	get itemSize() { return this._itemSize; }
 	get dirty() { return this._dirty; }
-	set dirty(isDirty) { this._dirty = isDirty; }
 };
 
 M3D.Int8Attribute = function(array, itemSize) {

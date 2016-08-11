@@ -38,7 +38,7 @@ M3D.Raycaster = class {
             var children = object.children;
 
             for (var i = 0; i < children.length; i++) {
-                intersectObject(children[i], raycaster, intersects, true);
+                M3D.Raycaster._intersectObject(children[i], raycaster, intersects, true);
             }
         }
     }

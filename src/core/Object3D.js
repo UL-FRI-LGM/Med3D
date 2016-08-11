@@ -22,6 +22,7 @@ M3D.Object3D = class {
 		this._scale = new THREE.Vector3(1, 1, 1);
 
         this._visible = true;
+        this._frustumCulled = true;
 
 		function onRotationChange() {
 			self.quaternion.setFromEuler(self.rotation, false);
@@ -66,9 +67,12 @@ M3D.Object3D = class {
     get matrixAutoUpdate() { return this._matrixAutoUpdate; }
     get matrixWorld() { return this._matrixWorld; }
     get visible() { return this._visible; }
+    get frustumCulled() { return this._frustumCulled; }
     //endregion
 
     //region SETTERS
+    set visible(val) { this._visible = val; }
+
     set position(vec) {
         if (!vec.equals(this._position)) {
             this._position.copy(vec);
@@ -165,6 +169,10 @@ M3D.Object3D = class {
         }
     }
 
+    set frustumCulled(val) {
+        this._frustumCulled = val;
+    }
+
     addOnChangeListener(listener, recurse) {
         this._onChangeListener = listener;
 
@@ -244,6 +252,10 @@ M3D.Object3D = class {
             }
 		}
 	}
+
+	clear() {
+	    this._children = [];
+    }
 
 	traverse(callback) {
 		callback(this);

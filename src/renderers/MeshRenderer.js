@@ -44,6 +44,7 @@ M3D.MeshRenderer = class {
             point: []
         };
         this._currentRenderTarget = null;
+        this._zVector = new THREE.Vector3();
         // endregion
 
         //region Execution values
@@ -103,8 +104,30 @@ M3D.MeshRenderer = class {
         }
 
         // Render opaque objects
-        this._renderObjects(this._opaqueObjects, camera);
+        if (this._opaqueObjects.length > 0) {
+            this._renderObjects(this._opaqueObjects, camera);
+        }
 
+        if (this._transparentObjects.length > 0) {
+            // Sort the objects by Z
+            this._transparentObjects.sort(function(a, b) {
+                return b._z - a._z;
+            });
+
+            // Enable Blending
+            this._gl.enable(this._gl.BLEND);
+
+            // Set up blending equation and params
+            this._gl.blendEquation(this._gl.FUNC_ADD);
+            this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
+
+            // Render transparent objects
+            this._renderObjects(this._transparentObjects, camera);
+
+            // Clean up
+            this._gl.disable(this._gl.BLEND);
+        }
+        
         if (this._currentRenderTarget) {
             this._gl.bindTexture(this._gl.TEXTURE_2D, this._glManager.getUniform(this._currentRenderTarget._texture));
             this._gl.generateMipmap(this._gl.TEXTURE_2D);
@@ -161,7 +184,7 @@ M3D.MeshRenderer = class {
 
         for (var i = 0; i < objects.length; i++) {
 
-            var program = this._compiledPrograms.get(objects[i].material.program);
+            var program = this._compiledPrograms.get(objects[i].material.requiredProgram());
             program.use();
 
             this._setup_uniforms(program, objects[i], camera);
@@ -172,7 +195,10 @@ M3D.MeshRenderer = class {
             this._setup_material_settings(objects[i].material);
 
             // Draw wireframe instead of the planes
-            if (objects[i].geometry.drawWireframe) {
+            if (objects[i] instanceof M3D.Line) {
+                this._gl.drawArrays(this._gl.LINES, 0, vertices.count());
+            }
+            else if (objects[i].geometry.drawWireframe) {
                 var buffer = this._glManager.getBuffer(objects[i].geometry.wireframeIndices);
                 this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
                 this._gl.drawElements(this._gl.LINES, objects[i].geometry.wireframeIndices.count(), this._gl.UNSIGNED_INT, 0)
@@ -209,9 +235,9 @@ M3D.MeshRenderer = class {
                     attributeSetter["VNorm"].set(buffer, 3);
                     break;
                 case "VColor":
-                    var vertColors = object.geometry.vertColors;
-                    buffer = this._glManager.getBuffer(vertColors);
-                    attributeSetter["VColor"].set(buffer, 3);
+                    var vertColor = object.geometry.vertColor;
+                    buffer = this._glManager.getBuffer(vertColor);
+                    attributeSetter["VColor"].set(buffer, 4);
                     break;
                 case "uv":
                     var uv = object.geometry.uv;
@@ -312,7 +338,7 @@ M3D.MeshRenderer = class {
                     break;
             }
         }
-        else if (material.depthTest) {
+        else if (!material.depthTest) {
             this._gl.depthFunc(this._gl.ALWAYS);
         }
 
@@ -394,9 +420,9 @@ M3D.MeshRenderer = class {
         else if (object instanceof M3D.Mesh) {
 
             // Frustum culling
-            if (this._isObjectVisible(object)) {
+            if (object.frustumCulled === false || this._isObjectVisible(object)) {
                 // Adds required program to set
-                this._requiredPrograms.add(object.material.program);
+                this._requiredPrograms.add(object.material.requiredProgram());
 
                 if (object.visible === true) {
                     // Updates or derives attributes from the WebGL geometry
@@ -408,6 +434,9 @@ M3D.MeshRenderer = class {
 
                     // Add object to correct render array
                     if (object.material.transparent) {
+                        this._zVector.setFromMatrixPosition(object.matrixWorld);
+                        this._zVector.applyProjection(this._projScreenMatrix);
+                        object._z = this._zVector.z;
                         this._transparentObjects.push(object);
                     }
                     else {

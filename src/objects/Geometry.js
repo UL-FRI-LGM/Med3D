@@ -215,7 +215,7 @@ M3D.Geometry = class {
     get indices() { return this._indices; }
     get vertices() { return this._vertices; }
     get normals() { return this._normals; }
-    get verticesColor() { return this._vertColor; }
+    get vertColor() { return this._vertColor; }
     get uv() { return this._uv; }
     get wireframeIndices() { return this._wireframeIndices; }
     get drawWireframe() { return this._drawWireframe; }
@@ -249,7 +249,7 @@ M3D.Geometry = class {
             this._onChangeListener.geometryUpdate(update)
         }
     }
-    set verticesColor(values) {
+    set vertColor(values) {
         this._vertColor = values;
 
         // Notify onChange subscriber

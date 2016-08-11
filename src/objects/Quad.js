@@ -5,6 +5,8 @@
 M3D.Quad = class extends M3D.Mesh {
     constructor(xy0, xy1, material) {
 
+
+
         var geometry = new M3D.Geometry();
 
         // Quad vertices
@@ -15,6 +17,15 @@ M3D.Quad = class extends M3D.Mesh {
                 xy0.x,          xy0.y,           0,
                 xy1.x,          xy1.y,           0
             ], 3
+        );
+
+        geometry.vertColor = M3D.Float32Attribute(
+            [
+                1,          1,           1,   1,
+                1,          1,           1,   1,
+                1,          1,           1,   1,
+                1,          1,           1,   1
+            ], 4
         );
 
         geometry.uv = M3D.Float32Attribute(

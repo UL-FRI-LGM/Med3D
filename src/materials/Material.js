@@ -6,6 +6,10 @@ M3D.Material = class {
 
     constructor() {
 
+        if (new.target === M3D.Material) {
+            throw new TypeError("Cannot construct abstract Material class.");
+        }
+
         this._uuid = THREE.Math.generateUUID();
         this.type = "Material";
 
@@ -26,8 +30,8 @@ M3D.Material = class {
         // 0.0f fully transparent 1.0f if fully opaque
         this._opacity = 1;
 
-        // Program used for rendering
-        this._program = "basic";
+        // Should use vertex colors
+        this._useVertexColors = false;
     }
 
     set name(val) {
@@ -114,16 +118,8 @@ M3D.Material = class {
         }
     }
 
-    set program(val) {
-        if (val !== this._program) {
-            this._program = val;
-
-            // Notify onChange subscriber
-            if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {program: this._program}};
-                this._onChangeListener.materialUpdate(update)
-            }
-        }
+    set useVertexColors(val) {
+        this._useVertexColors = val;
     }
 
     set onChangeListener(listener) { this._onChangeListener = listener; }
@@ -135,8 +131,11 @@ M3D.Material = class {
     get depthWrite() { return this._depthWrite; }
     get transparent() { return this._transparent; }
     get opacity() { return this._opacity; }
-    get visible() { return this._visible; }
     get program() { return this._program.join(''); }
+    get useVertexColors() {
+        return this._useVertexColors;
+    }
+
 
     toJson() {
         var obj = {};
