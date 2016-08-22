@@ -17,17 +17,4 @@ M3D.Camera = class extends M3D.Object3D {
 
     get matrixWorldInverse () { return this._matrixWorldInverse; }
     set matrixWorldInverse (inverse) { this._matrixWorldInverse = inverse; }
-
-	toJson() {
-        var obj = super.toJson();
-
-        // Add projection matrix
-        obj.projectionMatrix = this.projectionMatrix;
-
-        return obj;
-    }
-
-    static fromJson(data, camera) {
-        return super.fromJson(data, camera);
-    }
 };

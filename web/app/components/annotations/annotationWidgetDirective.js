@@ -22,16 +22,23 @@ app.directive("annotationWidget", function () {
                 minWidth: 170
             });
 
-            contentElement.resize(function () {
-                scope.current.position.offset = contentElement.offset();
-                scope.current.position.width = contentElement.width();
-                scope.current.position.height = contentElement.height();
-            });
+            var onResize = function () {
+                scope.current.windowPosition.offset = contentElement.offset();
+                scope.current.windowPosition.width = contentElement.width();
+                scope.current.windowPosition.height = contentElement.height();
+            };
+
+            contentElement.resize(onResize);
 
             // Handle dragging
             var onDrag = function () {
-                scope.current.position.offset = contentElement.offset();
+                scope.current.windowPosition.offset = contentElement.offset();
             };
+
+            // Fetch offset when the modal is shown
+            element.on('shown.bs.modal', function () {
+                onResize();
+            });
 
             element.draggable({
                 handle: ".modal-header",
@@ -46,9 +53,10 @@ app.directive("annotationWidget", function () {
                 element.css("z-index", scope.annotations.getMaxZ());
             });
 
-            element.offset(scope.current.modalOffset);
-            contentElement.width(scope.current.position.width);
-            contentElement.height(scope.current.position.height);
+
+            element.offset(scope.current.modalHolderPosition);
+            contentElement.width(scope.current.windowPosition.width);
+            contentElement.height(scope.current.windowPosition.height);
 
             scope.minimize = function () {
                 scope.current.active = false;

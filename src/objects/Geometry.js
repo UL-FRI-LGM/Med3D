@@ -17,8 +17,8 @@ M3D.Geometry = class {
         this._wireframeIndices = null;
 
         // Bounding
-        this.boundingBox = null;
-        this.boundingSphere = null;
+        this._boundingBox = null;
+        this._boundingSphere = null;
 
         // Parameter on change listener
         this._onChangeListener = null;
@@ -159,19 +159,19 @@ M3D.Geometry = class {
     computeBoundingBox() {
 
         // Check if the bounding box already exist
-        if ( this.boundingBox === null ) {
-            this.boundingBox = new THREE.Box3();
+        if ( this._boundingBox === null ) {
+            this._boundingBox = new THREE.Box3();
         }
 
         // Create new bounding box using the vertices
         if (this._vertices) {
-            this.boundingBox.setFromArray(this._vertices.array);
+            this._boundingBox.setFromArray(this._vertices.array);
         }
         else {
-            this.boundingBox.makeEmpty();
+            this._boundingBox.makeEmpty();
         }
 
-        if ( isNaN( this.boundingBox.min.x ) || isNaN( this.boundingBox.min.y ) || isNaN( this.boundingBox.min.z ) ) {
+        if ( isNaN( this._boundingBox.min.x ) || isNaN( this._boundingBox.min.y ) || isNaN( this._boundingBox.min.z ) ) {
             console.error('Geometry error: One or more of bounding box axis min is NaN.');
         }
     }
@@ -181,14 +181,14 @@ M3D.Geometry = class {
         var vector = new THREE.Vector3();
 
         // Check if the sphere already exists
-        if ( this.boundingSphere === null ) {
-            this.boundingSphere = new THREE.Sphere();
+        if ( this._boundingSphere === null ) {
+            this._boundingSphere = new THREE.Sphere();
         }
 
         if (this._vertices) {
 
             var array = this._vertices.array;
-            var center = this.boundingSphere.center;
+            var center = this._boundingSphere.center;
 
             // Set initial bounding sphere based on the bounding box
             box.setFromArray(array);
@@ -202,9 +202,9 @@ M3D.Geometry = class {
                 maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
             }
 
-            this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+            this._boundingSphere.radius = Math.sqrt( maxRadiusSq );
 
-            if (isNaN(this.boundingSphere.radius)) {
+            if (isNaN(this._boundingSphere.radius)) {
                 console.error('Geometry error: Bounding sphere radius is NaN.');
             }
 
@@ -219,6 +219,8 @@ M3D.Geometry = class {
     get uv() { return this._uv; }
     get wireframeIndices() { return this._wireframeIndices; }
     get drawWireframe() { return this._drawWireframe; }
+    get boundingBox() { return this._boundingBox; }
+    get boundingSphere() { return this._boundingSphere; }
     // endregion
 
     // region SETTERS

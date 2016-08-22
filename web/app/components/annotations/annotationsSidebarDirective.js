@@ -8,6 +8,10 @@ app.directive("annotationsSidebar", function () {
         replace: true,
         scope: false,
         link: function (scope, element, attributes) {
+
+            // Add Object.keys functionality to scope
+            scope.getKeys = Object.keys;
+
             // Fetch the id used for sidebar content toggling
             element.attr("id", attributes.toggleId);
 
@@ -33,16 +37,20 @@ app.directive("annotationsSidebar", function () {
 
             // On click modify adding annotation value
             scope.addAnnotation = function () {
-                scope.annotations.newAnnotation = {title: "", content: "", active: true, htmlPosition: {left: 0, top: 0}};
+                scope.annotations.newAnnotation = {title: "", content: "", active: true};
             };
 
             scope.rmAnnotation = function (index) {
-                scope.annotations.list.splice(index, 1);
+                scope.annotations.removeAnnotation(index);
             };
 
             scope.toggleActive = function (index) {
                 scope.annotations.list[index].active = !scope.annotations.list[index].active;
-            }
+            };
+
+            scope.toggleActiveShared = function (user, index) {
+                scope.annotations.sharedList[user][index].active = !scope.annotations.sharedList[user][index].active;
+            };
 
         },
         templateUrl: function(element, attributes) {

@@ -32,7 +32,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         }
     }
     set shininess(val) {
-        this._specular = val;
+        this._shininess = val;
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
@@ -42,6 +42,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
     }
 
     set map(val) {
+        // TODO: Enable texture sharing
         this._map = val;
     }
 
@@ -67,8 +68,6 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         obj.specular = this._specular.getHex();
         obj.shininess = this._shininess;
 
-        obj.program = this._program;
-
         return obj;
     }
 
@@ -76,15 +75,12 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         var material = new M3D.MeshPhongMaterial();
 
         // Material properties
-        var material = super.fromJson(obj, material);
+        material = super.fromJson(obj, material);
 
         // MeshPhongMaterial properties
         material._color = new THREE.Color(obj.color);
         material._specular = new THREE.Color(obj.specular);
         material._shininess = obj.shininess;
-
-
-        material._program = obj.program;
 
         return material;
     }

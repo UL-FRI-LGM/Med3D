@@ -15,12 +15,15 @@ var volumeLoadingController = function($scope, TaskManagerService) {
                     var bufferGeometry = new M3D.Geometry();
                     bufferGeometry.vertices = new M3D.BufferAttribute(data[i], 3);
                     bufferGeometry.computeVertexNormals();
+                    bufferGeometry.computeBoundingSphere();
 
                     var mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
                     mesh.material = new M3D.MeshPhongMaterial();
-                    mesh.material.specular = new THREE.Color("#777777");
-                    mesh.material.color = new THREE.Color("#FF0000");
+                    mesh.material.specular = new THREE.Color("#444444");
+                    mesh.material.color = new THREE.Color("#8A0707");
+                    mesh.material.shininess = 8;
                     mesh.scale = new THREE.Vector3(100, 100, 100);
+                    mesh.position = (new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
 
                     group.add(mesh);
                 }
@@ -70,12 +73,16 @@ var volumeLoadingController = function($scope, TaskManagerService) {
                     var bufferGeometry = new M3D.Geometry();
                     bufferGeometry.vertices = new M3D.BufferAttribute(data[i], 3);
                     bufferGeometry.computeVertexNormals();
+                    bufferGeometry.computeBoundingSphere();
 
                     var mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
                     mesh.material = new M3D.MeshPhongMaterial();
-                    mesh.material.specular = new THREE.Color("#777777");
-                    mesh.material.color = new THREE.Color("#FF0000");
+                    mesh.material.specular = new THREE.Color("#444444");
+                    mesh.material.color = new THREE.Color("#8A0707");
+                    mesh.material.shininess = 8;
                     mesh.scale = new THREE.Vector3(100, 100, 100);
+
+                    mesh.position = (new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
 
                     group.add(mesh);
                 }
@@ -124,8 +131,6 @@ var volumeLoadingController = function($scope, TaskManagerService) {
 
     $scope.serverMhdLoad = function (filename, isoValue) {
         var runnable = function (onLoad, onProgress, onError) {
-            // Init .obj loader
-            var objLoader = new M3D.ObjLoader();
 
             $.ajax({
                 xhr: function () {

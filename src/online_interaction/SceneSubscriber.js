@@ -13,30 +13,32 @@ M3D.SceneSubscriber = class {
 
     constructor(updateListener) {
         this._socket = io();
+        this._sessionID = null;
 
         var self = this;
         this._objects = {};
         this._geometries = {};
         this._materials = {};
 
-        this._scenes = [];
-        this._cameras = [];
+        this._rootObjects = [];
+        this._cameras = {};
 
         this._updateListener = updateListener;
+
         //region SOCKET.IO
         this._socket.on("connectResponse", function(response) {
             if (response && response.status === 0) {
-                var objects = response.initialData.objects;
-                var geometries = response.initialData.geometries;
-                var materials = response.initialData.materials;
+                var objectsJson = response.initialData.objects;
+                var geometriesJson = response.initialData.geometries;
+                var materialsJson = response.initialData.materials;
 
                 // Import the received data, returns reference to all root objects (data may contain more hierarchies or parentless objects)
-                var rootObjects = M3D.Object3D.importHierarchy(objects, geometries, materials);
+                self._rootObjects = M3D.Object3D.importHierarchy(objectsJson, geometriesJson, materialsJson);
 
 
                 // Store reference to all updatable objects in hierarchy for fast access on update
-                for (var i = 0; i < rootObjects.length; i++) {
-                    rootObjects[i].traverse(function (object) {
+                for (var i = 0; i < self._rootObjects.length; i++) {
+                    self._rootObjects[i].traverse(function (object) {
                         self._objects[object._uuid] = object;
 
                         if (object instanceof M3D.Mesh) {
@@ -44,27 +46,55 @@ M3D.SceneSubscriber = class {
                             self._geometries[object.geometry._uuid] = object.geometry;
                             self._materials[object.material._uuid] = object.material;
                         }
-                        else if (object instanceof M3D.Camera) {
-                            // Cameras bookkeeping
-                            self._cameras.push(object);
-                        }
-                        else if (object instanceof M3D.Scene) {
-                            // Scenes bookkeeping
-                            self._scenes.push(object);
-                        }
                     });
                 }
+
+                self._socket.emit("sessionCameras", {type: "fetch", sessionId: self._sessionID}, function(response) {
+                    if (response.status === 0) {
+                        var camerasJson = response.cameras;
+
+                        // Fetch cameras
+                        for (let userId in camerasJson) {
+
+                            var userCameras = camerasJson[userId];
+
+                            // If user does not own the camera array create it
+                            if (!self._cameras[userId]) {
+                                self._cameras[userId] = [];
+                            }
+
+                            // Create cameras
+                            for (let uuid in userCameras) {
+                                self._cameras[userId].push(M3D[userCameras[uuid].type].fromJson(userCameras[uuid]));
+                            }
+                        }
+
+                        // Notify user
+                        if (self._updateListener) {
+                            console.log("Successfully connected");
+                            self._updateListener.onConnected(response.status, self._rootObjects, self._cameras);
+                        }
+                    }
+                    else {
+                        // Notify user
+                        console.log("Camera fetch failed with: " + response.status);
+                        if (self._updateListener) {
+                            self._updateListener.onConnected(response.status, null, null);
+                        }
+                    }
+
+                });
             }
             else {
+                // Notify user
                 console.log("Connect failed with status: " + response.status);
-            }
-
-            if (self._updateListener) {
-                self._updateListener.onConnected(response.status, self._scenes, self._cameras);
+                if (self._updateListener) {
+                    self._updateListener.onConnected(response.status, null, null);
+                }
             }
         });
 
-        this._socket.on("sessionUpdate", function(request) {
+        this._socket.on("sessionDataUpdate", function(request) {
             var object, geometry, material;
             var newObjects = request.newObjects;
             var updates = request.updates;
@@ -113,7 +143,7 @@ M3D.SceneSubscriber = class {
 
                             // Save reference to geometry and material
                             self._geometries[geometry._uuid] = geometry;
-                            self._materials[geometry._uuid] = material;
+                            self._materials[material._uuid] = material;
                         }
                         else {
                             // Standard object rebuilding
@@ -133,11 +163,11 @@ M3D.SceneSubscriber = class {
                             }
                             else {
                                 console.log("Could not find the specified parent! Adding to root objects.")
-                                self._scenes.push(rebuiltObject);
+                                self._rootObjects.push(rebuiltObject);
                             }
                         }
                         else {
-                            self._scenes.push(rebuiltObject);
+                            self._rootObjects.push(rebuiltObject);
                         }
                     }
                 }
@@ -145,12 +175,37 @@ M3D.SceneSubscriber = class {
 
             // Parse updates
             if (updates) {
-
                 if (updates.objects) {
                     for (var uuid in updates.objects) {
                         object = self._objects[uuid];
 
                         if (object) {
+
+                            // Check if object is being removed
+                            if (updates.objects[uuid].remove === true) {
+                                // Remove the object from the hierarchy
+                                var currentParent = object.parent;
+
+                                // Remove the modified object from the current parent children
+                                if (currentParent) {
+                                    currentParent.remove(object);
+                                }
+
+                                // Remove from synchronized objects
+                                delete self._objects[uuid];
+
+                                // If the removed object is in root objects group.. Remove it
+                                for(var i = self._rootObjects.length - 1; i >= 0; i--) {
+                                    if(self._rootObjects[i]._uuid === uuid) {
+                                        self._rootObjects.splice(i,1);
+                                        break;
+                                    }
+                                }
+
+                                continue;
+                            }
+
+                            // Update object
                             object.update(updates.objects[uuid]);
 
                             // Check if hierarchy modification
@@ -181,6 +236,12 @@ M3D.SceneSubscriber = class {
                         geometry = self._geometries[uuid];
 
                         if (geometry) {
+                            // Check if the geometry is being removed
+                            if (updates.geometries[uuid].remove === true) {
+                                delete self._geometries[uuid];
+                                continue
+                            }
+
                             geometry.update(updates.geometries[uuid]);
                         }
                     }
@@ -191,8 +252,28 @@ M3D.SceneSubscriber = class {
                         material = self._materials[uuid];
 
                         if (material) {
+                            // Check if the material is being removed
+                            if (updates.materials[uuid].remove === true) {
+                                delete self._materials[uuid];
+                                continue
+                            }
+
                             material.update(updates.materials[uuid]);
                         }
+                    }
+                }
+            }
+        });
+
+        this._socket.on("sessionCamerasUpdate", function (request) {
+            var userCameras = self._cameras[request.userId];
+
+            if (userCameras) {
+                for (var uuid in request.updates) {
+                    var camera = userCameras.find(cam => cam._uuid === uuid);
+
+                    if (camera) {
+                        camera.update(request.updates[uuid]);
                     }
                 }
             }
@@ -204,8 +285,47 @@ M3D.SceneSubscriber = class {
         //endregion
     }
 
-    subscribe(sessionId) {
-        this._socket.emit("session", {type: "join", sessionId: sessionId});
+    miscRequestEmit(namespace, request, callback) {
+        if (this._socket !== null) {
+            this._socket.emit(namespace, request, callback);
+        }
+        else {
+            callback({status: 1, msg: "Socket is closed."});
+        }
+    }
+
+    setMiscListener(namespace, callback) {
+        if (this._socket !== null) {
+            this._socket.on(namespace, callback);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    rmMiscListener(namespace) {
+        if (this._socket !== null) {
+            this._socket.removeAllListeners(namespace);
+        }
+    }
+
+    getSocketID() {
+        if (this._socket !== null) {
+            return this._socket.id;
+        }
+        else {
+            return null;
+        }
+    }
+
+    getSessionID() {
+        return this._sessionID
+    }
+
+    subscribe(sessionID) {
+        this._sessionID = sessionID;
+        this._socket.emit("session", {type: "join", sessionId: sessionID});
     }
 
     unsubscribe() {
@@ -215,7 +335,7 @@ M3D.SceneSubscriber = class {
         this._geometries = {};
         this._materials = {};
 
-        this._scenes = [];
+        this._rootObjects = [];
         this._cameras = [];
     }
 };

@@ -12,36 +12,34 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         this._color = new THREE.Color(0xffffff); // emissive
         this._map = null;
 
+        // Is affected by lights
         this._lights = true;
     }
 
     set color(val) {
-        this._color = val;
+        if (!val.equals(this._color)) {
+            this._color = val;
 
-        // Notify onChange subscriber
-        if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {color: this._color.getHex()}};
-            this._onChangeListener.materialUpdate(update)
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {color: this._color.getHex()}};
+                this._onChangeListener.materialUpdate(update)
+            }
         }
     }
     set map(val) {
+        // TODO: Add texture sharing
         this._map = val;
-
-        if (this._map !== null) {
-            this._program[2] = "_texture";
-        }
-        else {
-            this._program[2] = "";
-        }
     }
     set lights(val) {
-        this._lights = val;
+        if (this._lights === val) {
+            this._lights = val;
 
-        if (this._lights) {
-            this._program[1] = "_lights";
-        }
-        else {
-            this._program[1] = "";
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {lights: this._lights}};
+                this._onChangeListener.materialUpdate(update)
+            }
         }
     }
 
@@ -71,7 +69,7 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         var obj = super.toJson();
 
         obj.color = this._color.getHex();
-        obj.program = this.program;
+        obj.lights = this._lights;
 
         return obj;
     }
@@ -80,11 +78,11 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         var material = new M3D.MeshBasicMaterial();
 
         // Material properties
-        var material = super.fromJson(obj, material);
+        material = super.fromJson(obj, material);
 
         // MeshBasicMaterial properties
         material._color = new THREE.Color(obj.color);
-        material._program = obj.program;
+        material._lights = obj.lights;
 
         return material;
     }
@@ -97,6 +95,10 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
                 case "color":
                     this._color = data.color;
                     delete data.color;
+                    break;
+                case "lights":
+                    this._lights = data.lights;
+                    delete data.lights;
                     break;
             }
         }

@@ -71,7 +71,17 @@ M3D.Object3D = class {
     //endregion
 
     //region SETTERS
-    set visible(val) { this._visible = val; }
+    set visible(val) {
+        if (!val.equals(this._visible)) {
+            this._visible = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {visible: this._visible}};
+                this._onChangeListener.objectUpdate(update)
+            }
+        }
+    }
 
     set position(vec) {
         if (!vec.equals(this._position)) {
@@ -170,7 +180,15 @@ M3D.Object3D = class {
     }
 
     set frustumCulled(val) {
-        this._frustumCulled = val;
+        if (val !== this._frustumCulled) {
+            this._frustumCulled = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {frustumCulled: this._frustumCulled}};
+                this._onChangeListener.objectUpdate(update)
+            }
+        }
     }
 
     addOnChangeListener(listener, recurse) {
@@ -191,7 +209,7 @@ M3D.Object3D = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {position: this._position.toArray(), quaternion: this._quaternion.toArray(), scale: this._scale.toArray(), matrix: this._matrix.toArray()}};
+            var update = {uuid: this._uuid, changes: {position: this._position.toArray(), quaternion: this._quaternion.toArray(), scale: this._scale.toArray()}};
             this._onChangeListener.objectUpdate(update)
         }
 	}
@@ -247,14 +265,24 @@ M3D.Object3D = class {
 
             // Notify onChange subscriber
             if (this._onChangeListener) {
-                var update = {uuid: object._uuid, changes: {parentUuid: null}};
+                var update = {uuid: object._uuid, changes: {parentUuid: null, objectRef: object}};
                 this._onChangeListener.hierarchyUpdate(update)
             }
 		}
 	}
 
 	clear() {
-	    this._children = [];
+        var self = this;
+
+        this._children = this._children.filter(function (child) {
+            // Notify onChange subscriber
+            if (self._onChangeListener) {
+                var update = {uuid: child._uuid, changes: {parentUuid: null, objectRef: child}};
+                self._onChangeListener.hierarchyUpdate(update)
+            }
+
+            return false;
+        });
     }
 
 	traverse(callback) {
@@ -273,62 +301,50 @@ M3D.Object3D = class {
 	toJson() {
 		var obj = {};
 
+		// Export UUID and object type
 		obj.uuid = this._uuid;
 		obj.type = this.type;
 
+        // Store its parent UUID
         if (this._parent) {
             obj.parentUuid = this._parent._uuid;
         }
 
+        // Export position, orientation and scale
 		obj.position = this._position.toArray();
 		obj.quaternion = this._quaternion.toArray();
 		obj.scale = this._scale.toArray();
 
-        obj.matrix = this._matrix.toArray();
+        // Export visibility and frustum culling settings
+        obj.visible = this._visible;
+        obj.frustumCulled = this._frustumCulled;
+
+        // Export matrix auto update setting
 		obj.matrixAutoUpdate = this._matrixAutoUpdate;
 
 		return obj;
 	}
 
-	exportHierarchyToJson(result) {
-		// If this is the first call in the recursion.. initialise the result objects
-		if (!result.objects || !result.geometries || !result.materials) {
-			result.objects = {};
-			result.geometries = {};
-			result.materials = {};
-		}
-
-		// Call Json export function
-		var obj = this.toJson();
-
-		result.objects[obj.uuid] = obj;
-
-		// If instance of mesh also add the reference _uuid to geometry and material
-		if (this.type === "Mesh") {
-			result.geometries[this._geometry._uuid] = this._geometry.toJson();
-			result.materials[this._material._uuid] = this._material.toJson();
-		}
-
-		// Recurse
-		for (var i = 0; i < this.children.length; i++) {
-			this._children[i].exportHierarchyToJson(result);
-		}
-	}
-
     static fromJson(data, object) {
 
+        // Object is undefined if M3D.Object3D was not extended
         if (!object) {
             var object = new M3D.Object3D();
         }
 
+        // Set uuid
         object._uuid = data.uuid;
 
+        // Set position, orientation and scale
         object._position.fromArray(data.position);
         object._quaternion.fromArray(data.quaternion);
         object._scale.fromArray(data.scale);
 
-        object._matrix.set(data.matrix);
-        // World matrix needs to be updated
+        // Set Visibility and frustum culling settings
+        object._visible = data.visible;
+        object._frustumCulled = data.frustumCulled;
+
+        // Export matrix auto update setting
         object._matrixWorldNeedsUpdate = true;
         object._matrixAutoUpdate = data.matrixAutoUpdate;
 
@@ -339,11 +355,14 @@ M3D.Object3D = class {
         var rebuiltObjects = {};
 
         // Rebuild the objects
-        for (var uuid of Object.keys(objects)) {
+        for (let uuid of Object.keys(objects)) {
             var obj = objects[uuid];
 
             switch (obj.type) {
                 case "Mesh":
+                case "Circle":
+                case "Quad":
+                case "Line":
                     var geometry = geometries[obj.geometryUuid];
                     var material = materials[obj.materialUuid];
 
@@ -386,7 +405,7 @@ M3D.Object3D = class {
         var rootObjects = [];
 
         // Rebuild the hierarchy
-        for (var uuid of Object.keys(objects)) {
+        for (let uuid of Object.keys(objects)) {
             var obj = rebuiltObjects[uuid];
             var parentUuid = objects[uuid].parentUuid;
 
@@ -401,12 +420,42 @@ M3D.Object3D = class {
                     parent.children.push(obj);
                 }
                 else {
-                    rootObjects.push(parent);
+                    rootObjects.push(obj);
                 }
             }
         }
 
         return rootObjects;
+    }
+
+    exportHierarchy(result, _addParentUuid) {
+        // If this is the first call in the recursion initialise the result objects
+        if (!result.objects || !result.geometries || !result.materials) {
+            result.objects = {};
+            result.geometries = {};
+            result.materials = {};
+        }
+
+        // Call Json export function
+        var obj = this.toJson();
+
+        // Do not export parent for the root of hierarchy
+        if (!_addParentUuid) {
+            delete obj.parentUuid;
+        }
+
+        result.objects[obj.uuid] = obj;
+
+        // If instance of mesh also add the reference _uuid to geometry and material
+        if (this.type === "Mesh" || this.type === "Quad" || this.type === "Circle" || this.type === "Line") {
+            result.geometries[this._geometry._uuid] = this._geometry.toJson();
+            result.materials[this._material._uuid] = this._material.toJson();
+        }
+
+        // Recurse
+        for (var i = 0; i < this.children.length; i++) {
+            this._children[i].exportHierarchy(result, true);
+        }
     }
 
     update(data) {
@@ -424,10 +473,13 @@ M3D.Object3D = class {
                     this._scale.fromArray(data.scale);
                     delete data.scale;
                     break;
-                case "matrix":
-                    this._matrix.fromArray(data.matrix);
-                    this._matrixWorldNeedsUpdate = true;
-                    delete data.matrix;
+                case "visible":
+                    this._visible = data.visible;
+                    delete data.visible;
+                    break;
+                case "frustumCulled":
+                    this._frustumCulled = data.frustumCulled;
+                    delete data.frustumCulled;
                     break;
                 case "matrixAutoUpdate":
                     this._matrixAutoUpdate = data.matrixAutoUpdate;

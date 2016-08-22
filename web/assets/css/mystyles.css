@@ -178,6 +178,13 @@ a.disabled { color:gray; }
   font-variant: normal;
 }
 
+.modal-title {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+  padding: 2px 0 0 0!important;
+}
+
 .med3d-modal-widget-header {
   background-color: #46474c;
   color: white;
@@ -310,16 +317,17 @@ a.disabled { color:gray; }
 } 
 
 .med3d-checkbox {
-  width: 10px;
-  height: 11px;
-  padding-right: 7px;
+  width: 18px;
+  height: 18px;
   -webkit-appearance: none;
   border: 1px solid black;
-  padding: 9px;
+  padding: 10px;
   border-radius: 0px;
   display: inline-block;
   position: relative;
-  margin-right: 5px;
+  margin-right: 6px!important;
+  margin-bottom: -2px!important;
+  margin-top: 8px!important;
 }
 
 .med3d-checkbox:checked {
@@ -328,12 +336,20 @@ a.disabled { color:gray; }
 }
 
 .med3d-checkbox:checked:after {
-  content: '\2588';
-  color: #49b2b2;
-  font-size: 4px;
+  content: "";
+  background-color: #49b2b2;
+  width: 10px;
+  height: 10px;
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 3px;
+  left: 3px;
+}
+
+.med3d-checkbox-text {
+  display:inline-block;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: -5px!important;
 }
 
 .hover-div {
@@ -400,7 +416,6 @@ body {
 
 .modal {
   text-align: center;
-  padding: 0!important;
 }
 
 .modal:before {
@@ -504,6 +519,9 @@ body {
   color: #333333;
 }
 
+.med3d-sidebar-hr {
+  margin: 18px 10px 5px 10px;
+}
 
 /* TESTING */
 

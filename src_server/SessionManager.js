@@ -28,7 +28,7 @@ var SessionManager = class {
         return session;
     }
 
-    updateSession(host, data) {
+    updateSessionData(host, data) {
         var session = this._sessions[host];
 
         if (!session) {
@@ -49,6 +49,8 @@ var SessionManager = class {
             if (data.newObjects.geometries) {
                 session.addGeometries(data.newObjects.geometries);
             }
+
+
         }
         
         // Process the updates
@@ -64,10 +66,80 @@ var SessionManager = class {
             if (data.updates.materials) {
                 session.updateMaterials(data.updates.materials);
             }
+
+
         }
 
         return true;
     }
+
+    // CAMERAS
+    addCamerasToSession(sessionID, userID, cameras) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.addCameras(userID, cameras)
+        }
+    }
+
+    updateSessionCameras(sessionID, userID, update) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.updateCameras(userID, update)
+        }
+    }
+
+    fetchSessionCameras(sessionID) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            return session.fetchCameras()
+        }
+
+        return null;
+    }
+
+
+
+    // ANNOTATIONS
+    addAnnotationsToSession(sessionID, userID, annotations) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.addAnnotations(userID, annotations)
+        }
+    }
+
+    // If index not specified.. Remove all
+    rmSessionAnnotations(sessionID, userID, index) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.rmAnnotations(userID, index)
+        }
+    }
+
+    fetchSessionAnnotations(sessionID, userID) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            return session.fetchAnnotations(userID)
+        }
+
+        return null;
+    }
+
+    clearSessionAnnotations(sessionID) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.clearAnnotations();
+        }
+    }
+
+
+
 
     deleteSession(host) {
         delete this._sessions[host];
@@ -75,6 +147,10 @@ var SessionManager = class {
 
     fetchSession(host) {
         return this._sessions[host];
+    }
+
+    fetchSessionsUuids() {
+        return Object.keys(this._sessions);
     }
 };
 

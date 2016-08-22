@@ -4,7 +4,7 @@
 
 var meshLoadingController = function($scope, TaskManagerService) {
 
-    TaskManagerService.addResultCallback("")
+    TaskManagerService.addResultCallback("");
 
     $scope.loadLocalObjFile = function (file) {
         // Create task
@@ -15,12 +15,21 @@ var meshLoadingController = function($scope, TaskManagerService) {
             var privateOnLoad = function(data) {
                 var group = new M3D.Group();
 
+                var boundingBox = new THREE.Box3();
                 for (var i = 0; i < data.length; i++) {
                     data[i].material = new M3D.MeshPhongMaterial();
-                    data[i].material.specular = new THREE.Color("#777777");
-                    data[i].material.color = new THREE.Color("#FF0000");
+                    data[i].material.specular = new THREE.Color("#444444");
+                    data[i].material.color = new THREE.Color("#8A0707");
+                    data[i].material.shininess = 8;
+
+                    var tempBox = new THREE.Box3();
+                    tempBox.setFromArray(data[i].geometry.vertices.array);
+                    boundingBox.union(tempBox);
+
                     group.add(data[i]);
                 }
+
+                group.position.subVectors(new THREE.Vector3(0, 0, 0), boundingBox.center());
 
                 // Pass group to onLoad callback
                 onLoad(group);
@@ -93,13 +102,23 @@ var meshLoadingController = function($scope, TaskManagerService) {
                             // Try to parse the response data
                             var data = objLoader.parse(res.data);
 
+                            var boundingBox = new THREE.Box3();
+
                             // Create objects group
                             for (var i = 0; i < data.length; i++) {
                                 data[i].material = new M3D.MeshPhongMaterial();
-                                data[i].material.specular = new THREE.Color("#777777");
-                                data[i].material.color = new THREE.Color("#FF0000");
+                                data[i].material.specular = new THREE.Color("#444444");
+                                data[i].material.color = new THREE.Color("#8A0707");
+                                data[i].material.shininess = 8;
+
+                                var tempBox = new THREE.Box3();
+                                tempBox.setFromArray(data[i].geometry.vertices.array);
+                                boundingBox.union(tempBox);
+
                                 group.add(data[i]);
                             }
+
+                            group.position.subVectors(new THREE.Vector3(0, 0, 0), boundingBox.center());
                         }
                         catch(e) {
                             onError({code: 2, msg: "Unknown parsing error."});

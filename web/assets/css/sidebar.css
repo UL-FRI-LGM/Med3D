@@ -21,7 +21,7 @@
     z-index: 1;
     position: fixed;
     width: 300px;
-    height: calc(100% - 57px);
+    height: 100%;
     margin-left: -250px;
     overflow-x: hidden;
     background: #2D2D2D;
@@ -52,6 +52,14 @@
 .sidebar-content-title.title-active  {
     display: block;
 }
+
+ .sidebar-sub-content-title {
+     display: block;
+     font-size: 14px;
+     font-weight: 500;
+     padding-left: 15px;
+     color: #fff;
+ }
 
 .sidebar-content {
     width: 100%;

@@ -93,9 +93,10 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 	}
 
 	toJson() {
+		// Export Object3D parameters
 		var obj = super.toJson();
 
-		// Add Perspective camera parameters
+		// Export perspective camera parameters
 		obj.fov = this._fov;
 		obj.near = this._near;
 		obj.far = this._far;
@@ -104,14 +105,17 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 	}
 
 	static fromJson(data, aspect) {
+		// Create new object with the given camera parameters
 		var camera = new M3D.PerspectiveCamera(data.fov, aspect, data.near, data.far);
 
+		// Import underlying Object3D parameters
 		return super.fromJson(data, camera);
 	}
 
 	update(data) {
 		super.update(data);
 
+		// Check if there are any camera parameter updates
 		var modified = false;
 		for (var prop in data) {
 			switch (prop) {

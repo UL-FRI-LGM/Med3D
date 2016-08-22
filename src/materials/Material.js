@@ -119,7 +119,15 @@ M3D.Material = class {
     }
 
     set useVertexColors(val) {
-        this._useVertexColors = val;
+        if (val !== this._useVertexColors) {
+            this._useVertexColors = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {useVertexColors: this._useVertexColors}};
+                this._onChangeListener.materialUpdate(update)
+            }
+        }
     }
 
     set onChangeListener(listener) { this._onChangeListener = listener; }
@@ -131,31 +139,31 @@ M3D.Material = class {
     get depthWrite() { return this._depthWrite; }
     get transparent() { return this._transparent; }
     get opacity() { return this._opacity; }
-    get program() { return this._program.join(''); }
-    get useVertexColors() {
-        return this._useVertexColors;
-    }
+    get useVertexColors() { return this._useVertexColors; }
 
 
     toJson() {
         var obj = {};
 
+        // Meta
         obj._uuid = this._uuid;
         obj.type = this.type;
-
         obj.name = this._name;
+
+        // Culled side
         obj.side = this._side;
 
+        // Depth test related parameters
         obj.depthFunc = this._depthFunc;
         obj.depthTest = this._depthTest;
         obj.depthWrite = this._depthWrite;
 
+        // Visibility parameters
         obj.transparent = this._transparent;
         obj.opacity = this._opacity;
 
-        obj.visible = this._visible;
-
-        obj.program = this._program;
+        // Color
+        obj.useVertexColors = this._useVertexColors;
 
         return obj;
     }
@@ -165,21 +173,24 @@ M3D.Material = class {
             var material = new M3D.Material();
         }
 
+        // Meta
         material._uuid = obj._uuid;
-
         material._name = obj.name;
+
+        // Culled side
         material._side = obj.side;
 
+        // Depth test related parameters
         material._depthFunc = obj.depthFunc;
         material._depthTest = obj.depthTest;
         material._depthWrite = obj.depthWrite;
 
+        // Visibility parameters
         material._transparent = obj.transparent;
         material._opacity = obj.opacity;
 
-        material._visible = obj.visible;
-
-        material._program = obj.program;
+        // Color
+        material._useVertexColors = obj.useVertexColors
 
         return material;
     }
@@ -187,10 +198,6 @@ M3D.Material = class {
     update(data) {
         for (var prop in data) {
             switch (prop) {
-                case "visible":
-                    this._visible = data.visible;
-                    delete data.visible;
-                    break;
                 case "opacity":
                     this._opacity = data.opacity;
                     delete data.opacity;
@@ -215,13 +222,13 @@ M3D.Material = class {
                     this._depthWrite = data.depthWrite;
                     delete data.depthWrite;
                     break;
+                case "useVertexColors":
+                    this._useVertexColors = data.useVertexColors;
+                    delete data.useVertexColors;
+                    break;
                 case "name":
                     this._name = data.name;
                     delete data.name;
-                    break;
-                case "program":
-                    this._program = data.program;
-                    delete data.program;
                     break;
 
             }

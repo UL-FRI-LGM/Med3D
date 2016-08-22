@@ -20,14 +20,14 @@ app.directive("newAnnotationWidget", function () {
             });
 
             contentElement.resize(function () {
-                scope.annotations.newAnnotation.position.offset = contentElement.offset();
-                scope.annotations.newAnnotation.position.width = contentElement.width();
-                scope.annotations.newAnnotation.position.height = contentElement.height();
+                scope.annotations.newAnnotation.windowPosition.offset = contentElement.offset();
+                scope.annotations.newAnnotation.windowPosition.width = contentElement.width();
+                scope.annotations.newAnnotation.windowPosition.height = contentElement.height();
             });
 
             // Handle dragging
             var onDrag = function () {
-                scope.annotations.newAnnotation.position.offset = contentElement.offset();
+                scope.annotations.newAnnotation.windowPosition.offset = contentElement.offset();
             };
 
             element.draggable({
@@ -49,7 +49,7 @@ app.directive("newAnnotationWidget", function () {
                         element.modal();
 
                         // Initialize position parameters
-                        scope.annotations.newAnnotation.position = {
+                        scope.annotations.newAnnotation.windowPosition = {
                             offset: contentElement.offset(),
                             width: contentElement.width(),
                             height: contentElement.height(),
@@ -72,12 +72,9 @@ app.directive("newAnnotationWidget", function () {
 
             scope.saveAnnotation = function () {
                 // Fetch offset for modal positioning
-                scope.annotations.newAnnotation.modalOffset = element.offset();
+                scope.annotations.newAnnotation.modalHolderPosition = element.offset();
                 // Push created annotation
-                scope.annotations.list.push(scope.annotations.newAnnotation);
-
-                // Finish annotation creation
-                scope.annotations.newAnnotation = undefined;
+                scope.annotations.finishAnnotation();
             }
         },
         templateUrl: function(element, attributes) {

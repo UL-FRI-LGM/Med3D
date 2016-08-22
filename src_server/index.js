@@ -86,14 +86,38 @@ app.post('/api/file-management', function(req, res) {
     }
 });
 
+app.post('/api/session-info', function (req, res) {
+    // Response will be json
+    res.contentType('json');
+
+    // Check if the request is correctly formed
+    if (req.body === undefined || req.body.reqType === undefined) {
+        res.send({status: 1, errMsg: "Badly formed request."});
+    }
+    else {
+        switch (req.body.reqType) {
+            case "active-list":
+                res.send({status: 0, data: sessionManager.fetchSessionsUuids()});
+                break;
+            default:
+                res.send({status: 2, errMsg: "Unknown request type."});
+                break;
+        }
+    }
+
+
+});
+
 
 // Sockets
 io.sockets.on('connection', function(socket) {
     console.log("Client connected");
+    var sessionId;
 
     socket.on('session', function(request, callback) {
         if (request.type === "create") {
             console.log("Create session request");
+
             // Check data
             if (!request.data) {
                 console.warn("Tried to create a new session without initial data!");
@@ -108,8 +132,11 @@ io.sockets.on('connection', function(socket) {
                 return;
             }
 
+            // Store session id
+            sessionId = socket.id.substring(2);
             socket.join(session.host);
 
+            // Notify the user that session creation has finished
             callback();
         }
         else if (request.type === "join") {
@@ -123,25 +150,95 @@ io.sockets.on('connection', function(socket) {
                 return;
             }
 
+            // Store session id
+            sessionId = request.sessionId;
             socket.join(request.sessionId);
             socket.emit("connectResponse", {status: 0, initialData: session.initialData});
         }
     });
 
-    socket.on('sessionUpdate', function(request, callback) {
+    socket.on('sessionDataUpdate', function(request, callback) {
         var hostId = socket.id.substring(2);
-        if (sessionManager.updateSession(hostId, request)) {
-            socket.broadcast.to(hostId).emit('sessionUpdate', request);
+        if (sessionManager.updateSessionData(hostId, request)) {
+            socket.broadcast.to(hostId).emit('sessionDataUpdate', request);
         }
         
         callback();
     });
 
+    socket.on('sessionCameras', function (request, callback) {
+        if (request.type === "add") {
+            sessionManager.addCamerasToSession(request.sessionId, socket.id.substring(2), request.cameras);
+        }
+        else if (request.type === "update") {
+            sessionManager.addCamerasToSession(request.sessionId, socket.id.substring(2), request.newCameras);
+            sessionManager.updateSessionCameras(request.sessionId, socket.id.substring(2), request.updates);
+            var forward = {userId: socket.id.substring(2), updates: request.updates};
+            socket.broadcast.to(request.sessionId).emit('sessionCamerasUpdate', forward);
+        }
+        else if (request.type === "fetch") {
+            console.log("Received fetch request!");
+            var cameras = sessionManager.fetchSessionCameras(request.sessionId);
+            callback({status: (cameras !== null) ? 0 : 1, cameras: cameras});
+            return;
+        }
+
+        callback();
+    });
+
+    socket.on('sessionAnnotations', function (request, callback) {
+        var forward;
+
+        if (request.type === "add") {
+            sessionManager.addAnnotationsToSession(request.sessionId, socket.id.substring(2), request.data);
+
+            // Forward to other listeners
+            forward = {type: request.type, userId: socket.id.substring(2), data: request.data};
+            socket.broadcast.to(request.sessionId).emit('sessionAnnotations', forward);
+        }
+        else if (request.type === "rm") {
+            sessionManager.rmSessionAnnotations(request.sessionId, socket.id.substring(2), request.index);
+
+            // Forward to other listeners
+            forward = {type: request.type, userId: socket.id.substring(2), index: request.index};
+            socket.broadcast.to(request.sessionId).emit('sessionAnnotations', forward);
+        }
+        else if (request.type === "fetch") {
+            var annotations = sessionManager.fetchSessionAnnotations(request.sessionId, socket.id.substring(2));
+            callback({status: (annotations !== null) ? 0 : 1, data: annotations});
+        }
+        // Clear all of the data
+        else if (request.type === "clear") {
+            sessionManager.clearSessionAnnotations(request.sessionId);
+
+            forward = {type: request.type};
+            socket.broadcast.to(request.sessionId).emit('sessionAnnotations', forward);
+        }
+
+        callback();
+    });
+
+    socket.on('chat', function (request) {
+        console.log(request);
+        console.log(sessionId);
+        socket.broadcast.to(sessionId).emit('chat', request);
+    });
+
     socket.on('disconnect', function() {
         var hostId = socket.id.substring(2);
 
+        // On unexpected disconnect clear all annotation data
+        if (sessionId !== undefined) {
+            sessionManager.rmSessionAnnotations(sessionId, socket.id.substring(2));
+            socket.broadcast.to(sessionId).emit('sessionAnnotations', {type: "rm", userId: socket.id.substring(2)});
+        }
+
         if (sessionManager.fetchSession(hostId)) {
+            // Clear all annotations
+            socket.broadcast.to(hostId).emit('sessionAnnotations', {type: "clear"});
+            // Notify session terminated
             socket.broadcast.to(hostId).emit('sessionTerminated');
+            // Delete session
             sessionManager.deleteSession(hostId);
         }
     });

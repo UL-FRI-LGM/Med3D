@@ -81,7 +81,7 @@ app.directive("objLoaderModal", function () {
             };
 
             // When the modal is shown fetch the obj list
-            modal.on('shown.bs.modal', function() {
+            modal.on('show.bs.modal', function() {
                 errorMsgSpan.html('');
 
                 $.ajax ({

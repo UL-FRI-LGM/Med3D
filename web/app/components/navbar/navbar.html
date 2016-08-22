@@ -1,0 +1,81 @@
+<nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#"><img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24"></a>
+    </div>
+
+    <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+
+            <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-file"></span> File <span class="caret"></span>
+                </a>
+
+                <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
+                    <li><a data-toggle="modal" data-target="#taskProgressModal">Save</a></li>
+                    <li class="dropdown-submenu">
+                        <a class="dropdown-submenu-anchor">Open / Download</a>
+                        <ul class="dropdown-menu">
+                            <li ng-class="{disabled: sharingState.listeningInProgress}"><a ng-attr-data-toggle="{{ sharingState.listeningInProgress ? '' : 'modal' }}" data-target="#objLoaderModal">Wavefront (.obj)</a></li>
+                            <li ng-class="{disabled: sharingState.listeningInProgress}"><a ng-attr-data-toggle="{{ sharingState.listeningInProgress ? '' : 'modal' }}" data-target="#volumeOpenModal">Volume (.mhd)</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+
+
+            <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-cog"></span> Options <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a data-toggle="modal" data-target="#inputSettingsModal">Inputs</a></li>
+                    <li><a data-toggle="modal" data-target="#displaySettingsModal">Display Settings</a></li>
+                </ul>
+            </li>
+
+
+            <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-question-sign"></span> Help <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a data-toggle="modal" data-target="#aboutModal">About</a></li>
+                    <li><a href="https://www.google.com" target="_blank">User Manual <i class="fa fa-external-link" aria-hidden="true" style="float: right;"></i></a></li>
+                    <li><a data-toggle="modal" data-target="#licenceModal">Licence</a></li>
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-globe"></span> Share <span class="caret"></span>
+                </a>
+
+                <ul class="dropdown-menu">
+                    <li ng-show="!sharingState.hostingInProgress && !sharingState.listeningInProgress"><a href="#sharingHostModal" data-toggle="modal">Host Session</a></li>
+                    <li ng-show="!sharingState.hostingInProgress && !sharingState.listeningInProgress"><a href="#sharingClientModal" data-toggle="modal">Join Session</a></li>
+                    <li ng-show="sharingState.hostingInProgress"><a id="sharingStopHostingButton">Stop Hosting</a></li>
+                    <li ng-show="sharingState.listeningInProgress"><a id="sharingLeaveSessionButton">Leave Session</a></li>
+                </ul>
+            </li>
+
+            <li>
+
+            </li>
+
+        </ul>
+        <ul class="nav navbar-nav navbar-right-no-margin">
+            <li>
+                <a data-toggle="modal" data-target="#loginModal">
+                    <span class="glyphicon glyphicon-log-in"></span> Login
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>

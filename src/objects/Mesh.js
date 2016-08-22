@@ -20,6 +20,36 @@ M3D.Mesh = class extends M3D.Object3D {
 		this.raycast = _raycast;
 	}
 
+	addOnChangeListener(listener, recurse) {
+		this._material.onChangeListener = listener;
+		this._geometry.onChangeListener = listener;
+
+		super.addOnChangeListener(listener, recurse);
+	}
+
+	// region GETTERS
+	get modelViewMatrix() { return this._modelViewMatrix; }
+	get normalMatrix() { return this._normalMatrix; }
+	get material() { return this._material; }
+	get geometry() { return this._geometry; }
+	// endregion
+
+	// region SETTERS
+	set modelViewMatrix(mvMat) { this._modelViewMatrix = mvMat; }
+	set normalMatrix(normMat) { this._normalMatrix = normMat; }
+
+	// TODO (Primoz): Figure out what to do when material or geometry is changed
+    set material(mat) { this._material = mat; }
+    set geometry(geom) { this._geometry = geom; }
+
+	set onChangeListener(listener) {
+		super.onChangeListener = listener;
+		this._geometry.onChangeListener = listener;
+		this._material.onChangeListener = listener;
+	}
+	// endregion
+
+
 	// region EXPORT/IMPORT
 	toJson() {
 		var obj = super.toJson();
@@ -31,43 +61,18 @@ M3D.Mesh = class extends M3D.Object3D {
 		return obj;
 	}
 
-	static fromJson(data, geometry, material) {
+	static fromJson(data, geometry, material, object) {
+		// Create mesh object
+		if (!object) {
+			var object = new M3D.Mesh(geometry, material);
+		}
 
-		var mesh = new M3D.Mesh(geometry, material);
+		// Import Object3D parameters
+		object = super.fromJson(data, object);
 
-		// Object3D fromJson
-		mesh = super.fromJson(data, mesh);
-
-		return mesh;
+		return object;
 	}
 	// endregion
-
-	addOnChangeListener(listener, recurse) {
-		this._material.onChangeListener = listener;
-		this._geometry.onChangeListener = listener;
-
-		super.addOnChangeListener(listener, recurse);
-	}
-	
-	// region SETTERS
-	set modelViewMatrix(mvMat) { this._modelViewMatrix = mvMat; }
-	set normalMatrix(normMat) { this._normalMatrix = normMat; }
-	// TODO (Primoz): Figure out what to do when material or geometry is changed
-    set material(mat) { this._material = mat; }
-    set geometry(geom) { this._geometry = geom; }
-	set onChangeListener(listener) {
-		super.onChangeListener = listener;
-		this._geometry.onChangeListener = listener;
-		this._material.onChangeListener = listener;
-	}
-	// endregion
-
-	// region GETTERS
-	get modelViewMatrix() { return this._modelViewMatrix; }
-	get normalMatrix() { return this._normalMatrix; }
-    get material() { return this._material; }
-    get geometry() { return this._geometry; }
-    // endregion
 };
 
 

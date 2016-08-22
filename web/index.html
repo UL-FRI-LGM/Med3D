@@ -17,6 +17,7 @@
     <link href="assets/css/bootstrap-social.css" rel="stylesheet">
     <link href="assets/css/mystyles.css" rel="stylesheet">
     <link href="assets/css/sidebar.css" rel="stylesheet">
+    <link href="assets/css/chat.css" rel="stylesheet">
     <!-- endbuild -->
 
     <!-- build:js scripts/main.js -->
@@ -39,6 +40,7 @@
     <script src="app/components/settings/settingsService.js"></script>
     <script src="app/components/input/inputService.js"></script>
     <script src="app/components/task_manager/taskManagerService.js"></script>
+    <script src="app/components/sharing/sharingService.js"></script>
 
     <!-- Controllers -->
     <script src="app/components/input/navigatorController.js"></script>
@@ -49,6 +51,9 @@
     <script src="app/components/task_manager/taskManagerController.js"></script>
     <script src="app/components/annotations/annotationsSidebarController.js"></script>
     <script src="app/components/annotations/annotationsWidgetController.js"></script>
+    <script src="app/components/sharing/sharingController.js"></script>
+    <script src="app/components/navbar/navbarController.js"></script>
+    <script src="app/components/chat/chatController.js"></script>
 
     <!-- Directives -->
     <script src="app/components/task_manager/taskProgressDirective.js"></script>
@@ -62,6 +67,10 @@
     <script src="app/components/annotations/annotationsSidebarDirective.js"></script>
     <script src="app/components/annotations/annotationWidgetDirective.js"></script>
     <script src="app/components/annotations/newAnnotationWidgetDirective.js"></script>
+    <script src="app/components/sharing/sharingHostModalDirective.js"></script>
+    <script src="app/components/sharing/sharingClientModalDirective.js"></script>
+    <script src="app/components/navbar/navbarDirective.js"></script>
+    <script src="app/components/chat/chatDirective.js"></script>
     <!-- DEBUG INCLUDE -->
     <script src="../libraries/three-math.min.js"></script>
     <script src="../src/Med3D.js"></script>
@@ -137,98 +146,7 @@
 </head>
 
 <body ng-app="med3d">
-
-    <nav class="navbar navbar-inverse navbar-fixed-top hover-div" role="navigation">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#"><img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24"></a>
-        </div>
-
-        <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-file"></span> 
-                        File <span class="caret"></span>
-                    </a>
-
-                    <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
-                        <li><a data-toggle="modal" data-target="#taskProgressModal">Save</a></li>
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-submenu-anchor">Open / Download</a>
-                            <ul class="dropdown-menu">
-                                <li><a data-toggle="modal" data-target="#objLoaderModal">Wavefront (.obj)</a></li>
-                                <li><a data-toggle="modal" data-target="#volumeOpenModal">Volume (.mhd)</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-
-
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-cog"></span> 
-                        Options <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a data-toggle="modal" data-target="#inputSettingsModal">Inputs</a></li>
-                        <li><a data-toggle="modal" data-target="#displaySettingsModal">Display Settings</a></li>
-                    </ul>
-                </li>
-
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-wrench"></span>
-                        Sharing<span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li id="dropdownCloseSessionItem" class="collapse"><a>Close session</a></li>
-                        <li id="dropdownStartSharingSceneItem" class="collapse"><a>Share scene</a></li>
-                        <li id="dropdownStopSharingSceneItem" class="collapse"><a>Stop sharing</a></li>
-                        <li id="dropdownSessionUrlItem" class="collapse"><a href="#sharedSessionUrl" data-backdrop="false" data-toggle="modal">Session URL</a></li>
-                    </ul>
-                </li>
-
-
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-question-sign"></span> 
-                        Help <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a data-toggle="modal" data-target="#aboutModal">About</a></li>
-                        <li><a href="https://www.google.com" target="_blank">User Manual <i class="fa fa-external-link" aria-hidden="true" style="float: right;"></i></a></li>
-                        <li><a data-toggle="modal" data-target="#licenceModal">Licence</a></li>
-                    </ul>
-                </li>
-
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-wrench"></span> 
-                        Test <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#floatingWindow" data-backdrop="false" data-toggle="modal">Example Window</a></li>
-                        <li><a href="#widgetExample" data-backdrop="false" data-toggle="modal">Example Widget</a></li>
-                    </ul>
-                </li>
-
-            </ul>
-            <ul class="nav navbar-nav navbar-right-no-margin">
-                <li>
-                    <a data-toggle="modal" data-target="#loginModal">
-                        <span class="glyphicon glyphicon-log-in"></span> Login
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+    <navbar ng-controller="NavbarController"></navbar>
 
     <!-- CANVAS -->
     <m3d-canvas ng-controller="RenderingController" shaderPath="../src/shaders"></m3d-canvas>
@@ -315,45 +233,23 @@
         </div>
     </div>
 
-
-
     <div ng-controller="AnnotationsWidgetController">
         <new-annotation-widget></new-annotation-widget>
 
         <annotation-widget ng-repeat="ann in annotations.list" annotations="annotations" current="ann"></annotation-widget>
+
+        <span ng-repeat="(user, annArr) in annotations.sharedList">
+            <annotation-widget ng-repeat="ann in annArr" annotations="annotations" current="ann"></annotation-widget>
+        </span>
     </div>
 
 
-    <div id="sharedSessionUrl" class="modal fade floating-window">
-        <div class="modal-dialog">
-            <div class="modal-content med3d-modal">
-                <div class="modal-header med3d-modal-header">
-                    <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
-                    <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title">Session url</h4>
-
-                </div>
-                <div class="modal-body">
-                    <p><b>Send this link to the person that you want to share your scene with.</b></p>
-                    <div class="input-group" style="width: 100%;">
-                        <!-- Target -->
-                        <input id="sessionUrl" type="text" value="http://localhost:8080/test/gui/index.html?sessionUuid=f0KTPED12sPx_HR6AAAI" class="form-control" style="width: calc(100% - 40px);; height: 35px;">
-
-                        <!-- Trigger -->
-                        <button class="btn clipboard" data-clipboard-target="#sessionUrl" style="border-top-left-radius: 0; border-bottom-left-radius: 0; display: table-cell; height: 35px; border: 1px solid #ccc;">
-                            <img class="clippy" src="assets/img/clippy.svg" alt="Copy to clipboard" style="height: 16px">
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+    <div ng-controller="SharingController">
+        <sharing-host-modal data-trigger="sharingHostModal"></sharing-host-modal>
+        <sharing-client-modal data-trigger="sharingClientModal"></sharing-client-modal>
     </div>
 
-
-    <footer class="footer hover-div">
-        <p><span class="glyphicon glyphicon-console"></span>&nbsp&nbsp<span id="applicationStatus">Application status.</span></p>
-    </footer>
+    <chat ng-controller="ChatController"></chat>
 
     <script>
         $(document).ready(function(){
@@ -370,11 +266,6 @@
 
             $(".floating-window").draggable({
                 handle: ".modal-header"
-            });
-
-            // Do not close on sub-dropdown click
-            $('.dropdown-submenu-anchor').bind('click', function (e) {
-                e.stopPropagation()
             });
 
             $('.modal-content').resizable({

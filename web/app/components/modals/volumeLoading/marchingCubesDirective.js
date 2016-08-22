@@ -74,7 +74,7 @@ app.directive("marchingCubesModal", function () {
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
             };
 
-            modal.on('shown.bs.modal', function() {
+            modal.on('show.bs.modal', function() {
                 errorMsgSpan.html('');
 
                 $.ajax ({
@@ -170,7 +170,7 @@ app.directive("marchingCubesModal", function () {
             });
 
 
-            var currentTab = "#localObjTab";
+            var currentTab = "#localMhdTab";
 
             modal.find('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                 var newTab = $(e.target).attr("href"); // activated tab
@@ -211,6 +211,7 @@ app.directive("marchingCubesModal", function () {
 
             // Start marching cubes
             volumeFileOpenButton.click(function() {
+                console.log(currentTab);
                 if (currentTab === "#localMhdTab") {
                     localOnLoadClick();
                 }

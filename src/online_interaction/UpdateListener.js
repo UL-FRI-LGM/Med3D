@@ -15,6 +15,7 @@ M3D.UpdateListener = class {
     get materialUpdate() { return this._onMaterialUpdate; }
     get geometryUpdate() { return this._onGeometryUpdate; }
 
+
     set objectUpdate(callback) { this._onObjectUpdate = callback; }
     set hierarchyUpdate(callback) { this._onHierarchyUpdate = callback; }
     set materialUpdate(callback) { this._onMaterialUpdate = callback; }
