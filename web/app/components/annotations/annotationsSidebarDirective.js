@@ -48,8 +48,8 @@ app.directive("annotationsSidebar", function () {
                 scope.annotations.list[index].active = !scope.annotations.list[index].active;
             };
 
-            scope.toggleActiveShared = function (user, index) {
-                scope.annotations.sharedList[user][index].active = !scope.annotations.sharedList[user][index].active;
+            scope.toggleActiveShared = function (id, index) {
+                scope.annotations.sharedList[id].list[index].active = !scope.annotations.sharedList[id].list[index].active;
             };
 
         },

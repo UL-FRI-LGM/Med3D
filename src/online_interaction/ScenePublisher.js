@@ -4,12 +4,13 @@
 
 M3D.ScenePublisher = class {
     
-    constructor(rootObjects, cameras, onConnectionChange) {
+    constructor(username, rootObjects, onConnectionChange) {
 
         var self = this;
 
+        this._username = username;
+
         this._rootObjects = rootObjects;
-        this._cameras = cameras;
         this._updateInProgress = false;
 
         // Scheduled updates
@@ -18,7 +19,6 @@ M3D.ScenePublisher = class {
         this._scheduledMaterialsUpdates = {};
         this._scheduledGeometriesUpdates = {};
 
-        this._newCameras = {};
         this._newObjects = {objects: {}, geometries: {}, materials: {}};
         this._synchronizedObjects = new Map();
 
@@ -166,6 +166,10 @@ M3D.ScenePublisher = class {
 
         this._onConnectionChange = onConnectionChange;
         this._socket = null;
+
+        // Subscribers data
+        this._subscribersCameras = {};
+        this._subscriberOnCameraChange = null
     }
 
     startPublishing(updateInterval) {
@@ -190,7 +194,8 @@ M3D.ScenePublisher = class {
 
             // After finishing the data upload. Share cameras.
             self._uploadData(function () {
-                self._uploadCameras(self._cameras, serverCallback)
+                self._setupSubscriberCameraListener();
+                serverCallback();
             });
         });
     }
@@ -210,6 +215,7 @@ M3D.ScenePublisher = class {
         this._synchronizedObjects.clear();
     }
 
+    // region SCENE DATA MANAGEMENT
     // Uploads the shared objects to the server
     _uploadData(callback) {
         var data = {objects: {}, geometries: {}, materials: {}};
@@ -244,23 +250,9 @@ M3D.ScenePublisher = class {
         }
 
         // Form the request and forward it to server via socket.io
-        var request = {type: "create", data: data};
+        var request = {type: "create", username: this._username, data: data};
 
         this._socket.emit("session", request, callback);
-    }
-
-    // Uploads new cameras to the server
-    _uploadCameras(cameras, callback) {
-        // Export the cameras
-        var camerasJson = {};
-        for (var i = 0; i < cameras.length; i++) {
-            camerasJson[cameras[i]._uuid] = cameras[i].toJson();
-            cameras[i].addOnChangeListener(this._cameraChangeListener, false);
-        }
-
-        var request = {type: "add", sessionId: this._socket.io.engine.id, cameras: camerasJson};
-
-        this._socket.emit("sessionCameras", request, callback);
     }
 
     _updateData(callback) {
@@ -348,20 +340,110 @@ M3D.ScenePublisher = class {
         this._newObjects = {objects: {}, geometries: {}, materials: {}};
         this._dirty = false;
     }
+    // endregion SCENE DATA MANAGEMENT
+
+    // region CAMERA HOSTING
+    addCameras(cameras, callback) {
+        var self = this;
+
+        // Export the cameras
+        var camerasJson = {};
+        for (var i = 0; i < cameras.length; i++) {
+            camerasJson[cameras[i]._uuid] = cameras[i].toJson();
+        }
+
+        // Forming request
+        var request = {type: "add", sessionId: this._socket.io.engine.id, cameras: camerasJson};
+
+        // When successfully uploaded add change listeners
+        this._socket.emit("sessionCameras", request, function () {
+            for (var i = 0; i < cameras.length; i++) {
+                cameras[i].addOnChangeListener(self._cameraChangeListener, false);
+            }
+
+            if (callback) {
+                callback();
+            }
+        });
+    }
 
     _updateCameras(callback) {
-        if (Object.keys(this._scheduledCameraUpdates).length > 0 || Object.keys(this._newCameras).length > 0) {
-            var request = {type: "update", sessionId: this._socket.io.engine.id, newCameras: this._newCameras, updates: this._scheduledCameraUpdates};
+        if (Object.keys(this._scheduledCameraUpdates).length > 0) {
+            var request = {type: "update", sessionId: this._socket.io.engine.id, updates: this._scheduledCameraUpdates};
 
-            this._newCameras = {};
             this._scheduledCameraUpdates = {};
-
             this._socket.emit("sessionCameras", request, callback);
         }
         else {
             callback();
         }
     }
+    // endregion
+
+
+    // region CAMERA LISTENING
+    _setupSubscriberCameraListener() {
+        var self = this;
+
+        this._socket.on("sessionCameras", function (request) {
+            if (request.type === "add") {
+                var userCamerasList = request.data.list;
+
+                // If user does not own the camera array create it
+                if (self._subscribersCameras[request.userId] === undefined) {
+                    self._subscribersCameras[request.userId] = {list: [], ownerUsername: request.data.ownerUsername};
+                }
+
+                // Create cameras
+                for (let uuid in userCamerasList) {
+                    var newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
+                    self._subscribersCameras[request.userId].list.push(newCamera);
+
+                    // Notify subscriber
+                    if (self._subscriberOnCameraChange !== null) {
+                        self._subscriberOnCameraChange(self._subscribersCameras);
+                    }
+                }
+            }
+            else if (request.type === "update") {
+                // Fetch user camera list
+                var userCameras = self._subscribersCameras[request.userId];
+
+                // Update cameras
+                if (userCameras !== undefined) {
+                    // Iterate through updates
+                    for (var uuid in request.updates) {
+
+                        // Try to find targeted camera
+                        var camera = userCameras.list.find(cam => cam._uuid === uuid);
+
+                        if (camera) {
+                            camera.update(request.updates[uuid]);
+                        }
+                    }
+                }
+            }
+            else if (request.type === "rm") {
+                // Delete all user cameras
+                if (request.uuid === undefined) {
+                    delete self._subscribersCameras[request.userId];
+                }
+                else {
+                    delete self._subscribersCameras[request.userId][uuid];
+                }
+
+                // Notify subscriber
+                if (self._subscriberOnCameraChange !== null) {
+                    self._subscriberOnCameraChange(self._subscribersCameras);
+                }
+            }
+        });
+    }
+
+    setOnCamerasChange(callback) {
+        this._subscriberOnCameraChange = callback;
+    }
+    // endregion
 
     miscRequestEmit(namespace, request, callback) {
         if (this._socket !== null) {
@@ -388,6 +470,7 @@ M3D.ScenePublisher = class {
         }
     }
 
+    // region META GETTERS
     getSocketID() {
         if (this._socket !== null) {
             return this._socket.id;
@@ -406,12 +489,12 @@ M3D.ScenePublisher = class {
         }
     }
 
-    addCameras(...cameras) {
-        for (var i = 0; i < cameras.length; i++) {
-            this._newCameras[cameras[i]._uuid] = cameras[i].toJson();
-            cameras[i].addOnChangeListener(this._cameraChangeListener, false);
-        }
+    getUsername() {
+        return this._username;
     }
+    // endregion
+
+
 
     update() {
         var currentTime = new Date();

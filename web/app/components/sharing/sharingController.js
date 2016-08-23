@@ -8,9 +8,9 @@ var sharingController = function($scope, SharingService) {
     $scope.sharingSettings = SharingService.settings;
     $scope.sharingState = $scope.sharingService.state;
 
-    $scope.startDataSharing = function (callback) {
+    $scope.startDataSharing = function (username, callback) {
         if (!$scope.sharingState.hostingInProgress) {
-            $scope.sharingService.startHostingSession(function (event) {
+            $scope.sharingService.startHostingSession(username, function (event) {
                 if (event.status === 0) {
                     $scope.$apply(function () {
                         $scope.sharingState.hostingInProgress = true;
@@ -26,9 +26,9 @@ var sharingController = function($scope, SharingService) {
         }
     };
 
-    $scope.joinSession = function (uuid, callback) {
+    $scope.joinSession = function (username, uuid, callback) {
         if (!$scope.sharingState.listeningInProgress) {
-            $scope.sharingService.joinSession(uuid, function (event) {
+            $scope.sharingService.joinSession(username, uuid, function (event) {
                 if (event.status === 0) {
                     $scope.$apply(function () {
                         $scope.sharingState.listeningInProgress = true;

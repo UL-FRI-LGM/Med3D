@@ -11,10 +11,13 @@
 
             <div class="modal-body" style="padding: 5px;">
                 <div class="panel panel-default" style="margin-bottom: 5px; padding: 10px">
-                    <h4 style="padding-left: 0; font-weight: 500">Configure sharing settings and press share to start sharing your data</h4>
+                    <h4 style="padding-left: 5px; font-weight: 600;" >Configure hosting settings</h4>
 
 
                     <div style="margin-top: 5px;">
+                        <span style="font-weight: 700; margin-left: 5px; margin-bottom: 5px;">Username</span>
+                        <input type="text" class="form-control input-username" maxlength="20" style="width: 50%; height: 30px; margin-bottom: 5px">
+
                         <input id="toggleCameraSharing" class="med3d-checkbox" type="checkbox" ng-model="sharingSettings.shareCamera"><span class="med3d-checkbox-text">&nbspShare Camera</span>
                         <br>
                         <input id="toggleAnnotationSharing" class="med3d-checkbox" type="checkbox" ng-model="sharingSettings.shareAnnotations"><span class="med3d-checkbox-text">&nbspShare Annotations</span>

@@ -5,9 +5,16 @@
 app.factory('PublicRenderData', function(){
     return {
         contentRenderGroup: null,
-        camera: null,
+        canvasDimensions: {width: 1280, height: 1024},
+
+        // Camera management
+        activeCamera: null,
+        cameras: [],
         sharedCameras: {},
-        replaceRenderContent: null
+
+        // Function binder
+        replaceRenderContent: null,
+        setActiveCamera: null
     };
 });
 
@@ -38,13 +45,17 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
         }
         $scope.startAnimation();
     };
+    $scope.publicRenderData.setActiveCamera = function (camera) {
+        $scope.publicRenderData.activeCamera = camera;
+        $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height;
+    };
+
+
 
 
     // Annotations
     $scope.annotations = Annotations;
     this.annotationRenderGroup = new M3D.Group();
-
-
 
     this.createMarker = function () {
         var marker = {};
@@ -68,7 +79,7 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
 
         return function() {
             // Set raycaster parameters
-            self.raycaster.setFromCamera(InputService.cursor.position, $scope.publicRenderData.camera);
+            self.raycaster.setFromCamera(InputService.cursor.position, $scope.publicRenderData.activeCamera);
 
             // Fetch object intersections
             var intersects = self.raycaster.intersectObjects($scope.publicRenderData.contentRenderGroup.children, true);
@@ -106,11 +117,11 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
                 -(annItem.windowPosition.offset.top / window.innerHeight) * 2 + 1,  //y
                 0.5);
 
-            modalPos.unproject($scope.publicRenderData.camera);
+            modalPos.unproject($scope.publicRenderData.activeCamera);
 
-            var dir = modalPos.sub($scope.publicRenderData.camera.position).normalize();
+            var dir = modalPos.sub($scope.publicRenderData.activeCamera.position).normalize();
             var distance = -0.2 / -Math.abs(dir.z);
-            var pos = $scope.publicRenderData.camera.position.clone().add(dir.multiplyScalar(distance));
+            var pos = $scope.publicRenderData.activeCamera.position.clone().add(dir.multiplyScalar(distance));
 
             // Check if marker exists
             if (annItem.marker === undefined) {
@@ -148,7 +159,7 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
 
             // Shared annotations
             for (var userId in $scope.annotations.sharedList) {
-                var annList = $scope.annotations.sharedList[userId];
+                var annList = $scope.annotations.sharedList[userId].list;
 
                 for (var i = 0; i < annList.length; i++) {
                     if (annList[i].active && annList[i].markerMeta !== undefined) {
@@ -186,8 +197,13 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
         self.scene.add(self.annotationRenderGroup);
 
         // Camera initialization
-        $scope.publicRenderData.camera = new M3D.PerspectiveCamera(60, width / height, 0.1, 2000);
-        $scope.publicRenderData.camera.position = new THREE.Vector3(0, 0, 200);
+        var initCamera = new M3D.PerspectiveCamera(60, width / height, 0.1, 2000);
+        initCamera.position = new THREE.Vector3(0, 0, 200);
+
+        $scope.publicRenderData.cameras.push(initCamera);
+        $scope.publicRenderData.activeCamera = initCamera
+
+
     };
 
     /**
@@ -206,7 +222,7 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
         self.update(dt);
 
         // Render the scene
-        self.renderer.render(self.scene,  $scope.publicRenderData.camera);
+        self.renderer.render(self.scene,  $scope.publicRenderData.activeCamera);
     };
 
     /**
@@ -216,20 +232,22 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
     this.update = function(dt) {
         var transformation = InputService.update();
 
-        // Update camera position
-        $scope.publicRenderData.camera.translateX(transformation.translation.x * dt * 0.01);
-        $scope.publicRenderData.camera.translateY(transformation.translation.y * dt * 0.01);
-        $scope.publicRenderData.camera.translateZ(transformation.translation.z * dt * 0.01);
+        // If own camera update it's position based on the input
+        if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
+            $scope.publicRenderData.activeCamera.translateX(transformation.translation.x * dt * 0.01);
+            $scope.publicRenderData.activeCamera.translateY(transformation.translation.y * dt * 0.01);
+            $scope.publicRenderData.activeCamera.translateZ(transformation.translation.z * dt * 0.01);
 
-        $scope.publicRenderData.camera.rotateX(transformation.rotation.x * dt * 0.001);
-        $scope.publicRenderData.camera.rotateY(transformation.rotation.y  * dt * 0.001);
-        $scope.publicRenderData.camera.rotateZ(transformation.rotation.z * dt * 0.001);
+            $scope.publicRenderData.activeCamera.rotateX(transformation.rotation.x * dt * 0.001);
+            $scope.publicRenderData.activeCamera.rotateY(transformation.rotation.y * dt * 0.001);
+            $scope.publicRenderData.activeCamera.rotateZ(transformation.rotation.z * dt * 0.001);
+        }
 
-        $scope.publicRenderData.camera.updateMatrixWorld();
+        // Always update world matrix
+        $scope.publicRenderData.activeCamera.updateMatrixWorld();
 
-
+        // Annotation render group update
         self.updateAnnotations();
-
 
         // Update scene sharing
         SharingService.update();
@@ -244,6 +262,8 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
      * @param height {number} canvas height
      */
     $scope.init = function (renderer, width, height) {
+        $scope.publicRenderData.canvasDimensions = {width: width, height: height};
+
         // Store reference to renderer
         self.renderer = renderer;
         self.renderer.clearColor = "#C8C7C7";
@@ -255,9 +275,11 @@ var renderingController = function($scope, SettingsService, InputService, TaskMa
     };
 
     $scope.resizeCanvas = function (width, height) {
+        $scope.publicRenderData.canvasDimensions = {width: width, height: height};
+
         // Update camera aspect ratio and renderer viewport
-        if ($scope.publicRenderData.camera) {
-            $scope.publicRenderData.camera.aspect = width / height;
+        if ($scope.publicRenderData.activeCamera) {
+            $scope.publicRenderData.activeCamera.aspect = width / height;
         }
 
         // Update renderer viewport

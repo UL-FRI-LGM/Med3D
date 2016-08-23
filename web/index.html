@@ -54,6 +54,7 @@
     <script src="app/components/sharing/sharingController.js"></script>
     <script src="app/components/navbar/navbarController.js"></script>
     <script src="app/components/chat/chatController.js"></script>
+    <script src="app/components/cameras/camerasSidebarController.js"></script>
 
     <!-- Directives -->
     <script src="app/components/task_manager/taskProgressDirective.js"></script>
@@ -71,6 +72,7 @@
     <script src="app/components/sharing/sharingClientModalDirective.js"></script>
     <script src="app/components/navbar/navbarDirective.js"></script>
     <script src="app/components/chat/chatDirective.js"></script>
+    <script src="app/components/cameras/camerasSidebarDirective.js"></script>
     <!-- DEBUG INCLUDE -->
     <script src="../libraries/three-math.min.js"></script>
     <script src="../src/Med3D.js"></script>
@@ -163,8 +165,8 @@
                     </li>
 
                     <li>
-                        <a href="" data-target="#fileSidebarContent">
-                            <img class="sidebar-icon" src="assets/img/file.png"/>
+                        <a href="" data-target="#camerasSidebarContent">
+                            <img class="sidebar-icon" src="assets/img/eye.png"/>
                         </a>
                     </li>
                 </ul>
@@ -173,16 +175,9 @@
             <annotations-sidebar ng-controller="AnnotationsSidebarController" toggle-id="annotationSidebarContent"></annotations-sidebar>
 
 
+            <cameras-sidebar ng-controller="CamerasSidebarController" toggle-id="camerasSidebarContent"></cameras-sidebar>
 
-          <span id="fileSidebarContent">
-              <div class="sidebar-content-title">
-                  Files
-              </div>
 
-              <div class="sidebar-content">
-                <!-- add content here -->
-              </div>
-          </span>
         </div>
     </div>
 
@@ -238,8 +233,8 @@
 
         <annotation-widget ng-repeat="ann in annotations.list" annotations="annotations" current="ann"></annotation-widget>
 
-        <span ng-repeat="(user, annArr) in annotations.sharedList">
-            <annotation-widget ng-repeat="ann in annArr" annotations="annotations" current="ann"></annotation-widget>
+        <span ng-repeat="(id, data) in annotations.sharedList">
+            <annotation-widget ng-repeat="ann in data.list" annotations="annotations" current="ann"></annotation-widget>
         </span>
     </div>
 

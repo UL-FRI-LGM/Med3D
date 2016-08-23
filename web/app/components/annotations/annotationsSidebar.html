@@ -28,11 +28,11 @@
                 <div class="sidebar-content-title">
                     Shared
                 </div>
-                <div ng-repeat="(user, array) in annotations.sharedList" ng-style="$index > 0 && {'margin-top':'10px'}">
+                <div ng-repeat="(id, data) in annotations.sharedList" ng-style="$index > 0 && {'margin-top':'10px'}">
                     <div class="sidebar-sub-content-title" style="font-size: small; font-weight: 600">
-                        User: {{user}}
+                        User: {{data.ownerUsername}}
                     </div>
-                    <div class="list-group-item med3d-annotation-list-item" ng-repeat="ann in array" ng-click="toggleActiveShared(user, $index)" ng-style="!ann.active && {'background-color': '#888888'}">
+                    <div class="list-group-item med3d-annotation-list-item" ng-repeat="ann in data.list" ng-click="toggleActiveShared(id, $index)" ng-style="!ann.active && {'background-color': '#888888'}">
                         <a class="med3d-annotation-sidebar-title">
                             {{ann.title}}
                         </a>

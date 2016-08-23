@@ -59,19 +59,19 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     // This function updates local annotations when it receives a request
     this._onSharedAnnotationsChange = function (request) {
         if (request.type === "add") {
-            var newAnnotations = [];
+            var newAnnotationsList = [];
 
-            for (var i = 0; i < request.data.length; i++) {
-                newAnnotations.push(self._buildAnnotation(request.data[i]));
+            for (var i = 0; i < request.data.list.length; i++) {
+                newAnnotationsList.push(self._buildAnnotation(request.data.list[i]));
             }
 
 
             $rootScope.$apply(function() {
                 if (self.annotations.sharedList[request.userId] === undefined) {
-                    self.annotations.sharedList[request.userId] = newAnnotations;
+                    self.annotations.sharedList[request.userId] = {ownerUsername: request.data.ownerUsername, list: newAnnotationsList};
                 }
                 else {
-                    self.annotations.sharedList[request.userId] = self.annotations.sharedList[request.userId].concat(newAnnotations);
+                    self.annotations.sharedList[request.userId].list = self.annotations.sharedList[request.userId].list.concat(newAnnotationsList);
                 }
             });
         }
@@ -81,12 +81,12 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                     if (request.index === undefined) {
                         delete self.annotations.sharedList[request.userId];
                     }
-                    else if (self.annotations.sharedList[request.userId].length > request.index) {
-                        if (self.annotations.sharedList[request.userId].length <= 1) {
+                    else if (self.annotations.sharedList[request.userId].list.length > request.index) {
+                        if (self.annotations.sharedList[request.userId].list.length <= 1) {
                             delete self.annotations.sharedList[request.userId];
                         }
                         else {
-                            self.annotations.sharedList[request.userId].splice(request.index, 1);
+                            self.annotations.sharedList[request.userId].list.splice(request.index, 1);
                         }
                     }
                 }
@@ -95,6 +95,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         else if (request.type === "clear") {
             $rootScope.$apply(function() {
                 self.annotations.sharedList = {};
+                self.annotations.list = [];
             });
         }
     };
@@ -178,7 +179,35 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         }
     };
 
-    this.startHostingSession = function (callback) {
+    this._setupHostCameraSharing = function () {
+        if (self.settings.shareCamera) {
+            self.dataPublisher.addCameras(self.renderData.cameras);
+        }
+
+        // On cameras change notify angular
+        self.dataPublisher.setOnCamerasChange(function (cameras) {
+            $rootScope.$apply(function() {
+                self.renderData.sharedCameras = cameras;
+
+                // Check if active camera was deleted
+                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
+                    var found = false;
+                    for (var userId in self.renderData.sharedCameras) {
+                        if (self.renderData.sharedCameras[userId].list.indexOf(self.renderData.activeCamera) >= 0) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        self.renderData.activeCamera = self.renderData.cameras[0];
+                    }
+                }
+            });
+        });
+    };
+
+    this.startHostingSession = function (username, callback) {
 
         // Check if the render data is initialized
         if (self.renderData.contentRenderGroup === null) {
@@ -187,17 +216,14 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         }
 
         var sharedRootObjects = [self.renderData.contentRenderGroup];
-        var sharedCameras = [];
-
-        // Check if camera is shared
-        if (self.renderData.camera !== null && self.settings.shareCamera) {
-            sharedCameras.push(self.renderData.camera);
-        }
 
         // Create new data publisher
-        self.dataPublisher = new M3D.ScenePublisher(sharedRootObjects, sharedCameras, function (event) {
+        self.dataPublisher = new M3D.ScenePublisher(username, sharedRootObjects, function (event) {
             // If connected successfully
             if (event.status === 0) {
+                // Setup camera sharing
+                self._setupHostCameraSharing();
+
                 // Check if annotation sharing is active
                 self._setupHostAnnotationsSharing();
                 self._setupHostChatSharing();
@@ -227,6 +253,15 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             self.dataPublisher.rmMiscListener("chat");
             self.dataPublisher.rmMiscListener("sessionAnnotations");
 
+            $rootScope.$apply(function() {
+                self.renderData.sharedCameras = {};
+
+                // Check if shared camera was used
+                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
+                    self.renderData.activeCamera = self.renderData.cameras[0];
+                }
+            });
+
             self.annotations.rmListener();
             self.dataPublisher.stopPublishing();
             callback({"status": 0, msg: "Successfully stopped session hosting."});
@@ -252,12 +287,12 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
                     // Build annotations
                     for (var userId in response.data) {
-                        var annotationArr = [];
-                        for (var i = 0; i < response.data[userId].length; i++) {
-                            annotationArr.push(self._buildAnnotation(response.data[userId][i]));
+                        var annotationList = [];
+                        for (var i = 0; i < response.data[userId].list.length; i++) {
+                            annotationList.push(self._buildAnnotation(response.data[userId].list[i]));
                         }
 
-                        sharedAnnotations[userId] = annotationArr;
+                        sharedAnnotations[userId] = {ownerUsername: response.data[userId].ownerUsername, list: annotationList};
                     }
 
                     // Set build annotations to shared list
@@ -291,9 +326,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                             }
                         };
 
-
-                        self.annotations.setListener(onAdd, onRm, function () {
-                        });
+                        self.annotations.setListener(onAdd, onRm, function () {});
                     }
                     // endregion
 
@@ -319,13 +352,47 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         }
     };
 
+    this._setupClientCameraSharing = function () {
+        if (self.settings.shareCamera) {
+            self.dataSubscriber.addCameras(self.renderData.cameras);
+        }
+
+        // On cameras change notify angular
+        self.dataSubscriber.setOnCamerasChange(function (cameras) {
+            // Check if active camera was deleted
+            $rootScope.$apply(function() {
+                self.renderData.sharedCameras = cameras;
+
+                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
+                    var found = false;
+                    for (var userId in self.renderData.sharedCameras) {
+                        if (self.renderData.sharedCameras[userId].list.indexOf(self.renderData.activeCamera) >= 0) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        self.renderData.activeCamera = self.renderData.cameras[0];
+                    }
+                }
+
+            });
+        });
+    };
+
     this.joinSession = function () {
         var callbackRef;
 
         var onConnected = function (status, rootObjects, cameras) {
             if (status === 0) {
                 self.renderData.replaceRenderContent.apply(this, rootObjects);
-                self.renderData.sharedCameras = cameras;
+
+                $rootScope.$apply(function() {
+                    self.renderData.sharedCameras = cameras;
+                });
+
+                self._setupClientCameraSharing();
                 self._setupClientAnnotationSharing();
                 self._setupClientChatSharing();
             }
@@ -344,11 +411,11 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         // Setup connection listener
         var listener = new M3D.SceneSubscriberListener(onConnected, onTerminated);
 
-        return function (uuid, callback) {
+        return function (username, uuid, callback) {
             callbackRef = callback;
 
             // Subscribe to the given session
-            self.dataSubscriber = new M3D.SceneSubscriber(listener);
+            self.dataSubscriber = new M3D.SceneSubscriber(username, listener);
             self.dataSubscriber.subscribe(uuid);
         }
     }();
@@ -364,6 +431,16 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             self.annotations.sharedList = {};
         });
 
+        // Delete shared cameras
+        $rootScope.$apply(function() {
+            self.renderData.sharedCameras = {};
+
+            // Check if shared camera was used
+            if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
+                self.renderData.activeCamera = self.renderData.cameras[0];
+            }
+        });
+
         self.dataSubscriber = null;
 
         callback({status: 0});
@@ -373,13 +450,13 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.sendChatMessage = function(msg) {
         if (self.state.hostingInProgress && self.dataPublisher !== null) {
             self.dataPublisher.miscRequestEmit("chat", {
-                sender: self.dataPublisher.getSocketID(),
+                sender: self.dataPublisher.getUsername(),
                 message: msg
             });
         }
         else if (self.state.listeningInProgress && self.dataSubscriber !== null) {
             self.dataSubscriber.miscRequestEmit("chat", {
-                sender: self.dataSubscriber.getSocketID(),
+                sender: self.dataSubscriber.getUsername(),
                 message: msg
             });
         }
@@ -389,6 +466,9 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.update = function () {
         if (self.state.hostingInProgress && self.dataPublisher !== null) {
             self.dataPublisher.update();
+        }
+        else if (self.state.listeningInProgress && self.dataSubscriber !== null) {
+            self.dataSubscriber.update();
         }
     };
 

@@ -11,9 +11,10 @@ M3D.SceneSubscriberListener = class {
 
 M3D.SceneSubscriber = class {
 
-    constructor(updateListener) {
+    constructor(username, updateListener) {
         this._socket = io();
         this._sessionID = null;
+        this._username = username;
 
         var self = this;
         this._objects = {};
@@ -24,6 +25,40 @@ M3D.SceneSubscriber = class {
         this._cameras = {};
 
         this._updateListener = updateListener;
+
+        // region CAMERAS
+        this._updateInProgress = false;
+
+        // Scheduled updates
+        this._scheduledCameraUpdates = {};
+
+        //TODO: Set update interval based on the server/publisher latency
+        this._updateInterval = 8;
+        this._lastUpdate = null;
+        this._dirty = false;
+
+        var onCameraUpdate = function(update) {
+            self._dirty = true;
+            // Update previous update entry
+            var changes = update.changes;
+
+            var entry = self._scheduledCameraUpdates[update.uuid];
+
+            if (entry !== undefined) {
+                for (var prop in changes) {
+                    entry[prop] = changes[prop];
+                }
+            }
+            else {
+                // Add new update entry
+                self._scheduledCameraUpdates[update.uuid] = update.changes;
+            }
+        };
+
+        this._cameraChangeListener = new M3D.UpdateListener(onCameraUpdate);
+
+        this._subscriberOnCameraChange = null;
+        // endregion
 
         //region SOCKET.IO
         this._socket.on("connectResponse", function(response) {
@@ -50,22 +85,24 @@ M3D.SceneSubscriber = class {
                 }
 
                 self._socket.emit("sessionCameras", {type: "fetch", sessionId: self._sessionID}, function(response) {
+
+                    // Check if the fetch was successful
                     if (response.status === 0) {
-                        var camerasJson = response.cameras;
+                        var camerasOwners = response.data;
 
                         // Fetch cameras
-                        for (let userId in camerasJson) {
+                        for (let userId in camerasOwners) {
 
-                            var userCameras = camerasJson[userId];
+                            var userCamerasList = camerasOwners[userId].list;
 
                             // If user does not own the camera array create it
                             if (!self._cameras[userId]) {
-                                self._cameras[userId] = [];
+                                self._cameras[userId] = {list: [], ownerUsername: response.data[userId].ownerUsername};
                             }
 
                             // Create cameras
-                            for (let uuid in userCameras) {
-                                self._cameras[userId].push(M3D[userCameras[uuid].type].fromJson(userCameras[uuid]));
+                            for (let uuid in userCamerasList) {
+                                self._cameras[userId].list.push(M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]));
                             }
                         }
 
@@ -265,16 +302,57 @@ M3D.SceneSubscriber = class {
             }
         });
 
-        this._socket.on("sessionCamerasUpdate", function (request) {
-            var userCameras = self._cameras[request.userId];
+        this._socket.on("sessionCameras", function (request) {
+            if (request.type === "add") {
 
-            if (userCameras) {
-                for (var uuid in request.updates) {
-                    var camera = userCameras.find(cam => cam._uuid === uuid);
+                var userCamerasList = request.data.list;
 
-                    if (camera) {
-                        camera.update(request.updates[uuid]);
+                // If user does not own the camera array create it
+                if (self._cameras[request.userId] === undefined) {
+                    self._cameras[request.userId] = {list: [], ownerUsername: request.data.ownerUsername};
+                }
+
+                // Create cameras
+                for (let uuid in userCamerasList) {
+                    var newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
+                    self._cameras[request.userId].list.push(newCamera);
+
+                    // Notify subscriber
+                    if (self._subscriberOnCameraChange !== null) {
+                        self._subscriberOnCameraChange(self._cameras);
                     }
+                }
+            }
+            else if (request.type === "update") {
+                // Fetch user camera list
+                var userCameras = self._cameras[request.userId];
+
+                // Update cameras
+                if (userCameras !== undefined) {
+                    // Iterate through updates
+                    for (var uuid in request.updates) {
+
+                        // Try to find targeted camera
+                        var camera = userCameras.list.find(cam => cam._uuid === uuid);
+
+                        if (camera) {
+                            camera.update(request.updates[uuid]);
+                        }
+                    }
+                }
+            }
+            else if (request.type === "rm") {
+                // Delete all user cameras
+                if (request.uuid === undefined) {
+                    delete self._cameras[request.userId];
+                }
+                else {
+                    delete self._cameras[request.userId][uuid];
+                }
+
+                // Notify subscriber
+                if (self._subscriberOnCameraChange !== null) {
+                    self._subscriberOnCameraChange(self._cameras);
                 }
             }
         });
@@ -284,6 +362,48 @@ M3D.SceneSubscriber = class {
         });
         //endregion
     }
+
+    // region CAMERA HOSTING
+    addCameras(cameras, callback) {
+        var self = this;
+
+        // Export the cameras
+        var camerasJson = {};
+        for (var i = 0; i < cameras.length; i++) {
+            camerasJson[cameras[i]._uuid] = cameras[i].toJson();
+        }
+
+        // Forming request
+        var request = {type: "add", sessionId: this._sessionID, cameras: camerasJson};
+
+        // When successfully uploaded add change listeners
+        this._socket.emit("sessionCameras", request, function () {
+            for (var i = 0; i < cameras.length; i++) {
+                cameras[i].addOnChangeListener(self._cameraChangeListener, false);
+            }
+
+            if (callback) {
+                callback();
+            }
+        });
+    }
+
+    _updateCameras(callback) {
+        if (Object.keys(this._scheduledCameraUpdates).length > 0) {
+            var request = {type: "update", sessionId: this._sessionID, updates: this._scheduledCameraUpdates};
+
+            this._scheduledCameraUpdates = {};
+            this._socket.emit("sessionCameras", request, callback);
+        }
+        else {
+            callback();
+        }
+    }
+
+    setOnCamerasChange(callback) {
+        this._subscriberOnCameraChange = callback;
+    }
+    // endregion
 
     miscRequestEmit(namespace, request, callback) {
         if (this._socket !== null) {
@@ -323,9 +443,13 @@ M3D.SceneSubscriber = class {
         return this._sessionID
     }
 
+    getUsername() {
+        return this._username;
+    }
+
     subscribe(sessionID) {
         this._sessionID = sessionID;
-        this._socket.emit("session", {type: "join", sessionId: sessionID});
+        this._socket.emit("session", {type: "join", sessionId: sessionID, username: this._username});
     }
 
     unsubscribe() {
@@ -337,5 +461,24 @@ M3D.SceneSubscriber = class {
 
         this._rootObjects = [];
         this._cameras = [];
+    }
+
+
+    update() {
+        var currentTime = new Date();
+
+        if (!this._dirty || currentTime - this._lastUpdate < this._updateInterval || this._updateInProgress) {
+            return;
+        }
+
+        this._lastUpdate = currentTime;
+        this._updateInProgress = true;
+
+        var self = this;
+
+        // Implement timeout mechanism
+        this._updateCameras(function () {
+            self._updateInProgress = false;
+        });
     }
 };

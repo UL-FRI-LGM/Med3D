@@ -6,13 +6,14 @@
 
 var Session = class {
 
-    constructor(host) {
+    constructor(host, username) {
         this._cameras = {};
         this._annotations = {};
         this._objects = {};
         this._geometries = {};
         this._materials = {};
         this._host = host;
+        this._username = username;
         this._initialized = false;
     }
 
@@ -30,31 +31,42 @@ var Session = class {
     get camera() { return this._camera; }
     get host() { return this._host; }
     get initialData() { return {cameras: this._cameras, objects: this._objects, geometries: this._geometries, materials: this._materials}}
+    get ownerUsername() { return this._username; }
 
 
     // CAMERAS
-    addCameras(userId, cameras) {
+    addCameras(userId, username, cameras) {
         if (!this._cameras[userId]) {
-            this._cameras[userId] = cameras;
+            this._cameras[userId] = { ownerUsername: username, list: cameras };
             console.log("Created camera list for user: " + userId + ".")
         }
         else {
             for (let uuid in cameras) {
                 console.log("Added new camera!");
-                this._cameras[userId][uuid] = cameras[uuid];
+                this._cameras[userId].list[uuid] = cameras[uuid];
             }
         }
     }
 
-    rmCameras(userId) {
-        delete this._cameras[userId];
+    rmCameras(userId, uuid) {
+        if (this._cameras[userId] !== undefined) {
+            var camerasList = this._cameras[userId].list;
+
+            if (uuid !== undefined) {
+                delete camerasList[uuid];
+            }
+            else {
+                delete this._cameras[userId];
+            }
+            console.log("Removed Camera!");
+        }
     }
 
     updateCameras(userId, update) {
-        var cameras = this._cameras[userId];
+        var entry = this._cameras[userId];
 
         // No camera is bound to that user
-        if (!cameras) {
+        if (!entry) {
             return;
         }
 
@@ -63,7 +75,7 @@ var Session = class {
         for (var uuid in update) {
             var updateEntry = update[uuid];
 
-            camera = cameras[uuid];
+            camera = entry.list[uuid];
 
             // If camera exists. Update it.
             if (camera !== undefined) {
@@ -75,35 +87,46 @@ var Session = class {
         }
     }
 
-    fetchCameras() {
-        return this._cameras;
+    fetchCameras(userId) {
+        var allCameras = {};
+
+        for (var id in this._cameras) {
+            if (id !== userId) {
+                allCameras[id] = this._cameras[id];
+            }
+        }
+
+        console.log("Fetched cameras!");
+        return allCameras;
     }
 
     // ANNOTATIONS
-    addAnnotations(userId, annotations) {
+    addAnnotations(userId, username, annotations) {
         if (!this._annotations[userId]) {
-            this._annotations[userId] = annotations;
+            this._annotations[userId] = {ownerUsername: username, list: annotations};
             console.log("Created annotations list for user: " + userId + ".")
         }
         else {
             for (var i = 0; i < annotations.length; i++) {
                 console.log("Added new annotation!");
-                this._annotations[userId].push(annotations[i]);
+                this._annotations[userId].list.push(annotations[i]);
             }
         }
     }
 
     rmAnnotations(userId, index) {
-        var annotationsList = this._annotations[userId];
+        if (this._annotations[userId] !== undefined) {
+            var annotationsList = this._annotations[userId].list;
 
-        if (annotationsList) {
-            if (index !== undefined) {
-                annotationsList.splice(index, 1);
+            if (annotationsList) {
+                if (index !== undefined) {
+                    annotationsList.splice(index, 1);
+                }
+                else {
+                    delete this._annotations[userId];
+                }
+                console.log("Removed annotation!");
             }
-            else {
-                delete this._annotations[userId];
-            }
-            console.log("Removed annotation!");
         }
     }
 

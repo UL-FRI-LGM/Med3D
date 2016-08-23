@@ -18,9 +18,31 @@ app.directive('sharingClientModal', function() {
             });
 
             var modalActive = false;
+            var joinButton = element.find("#joinSessionButton");
+            joinButton.attr("disabled", true);
+
             var sessionListGroup = element.find("#sessionListGroup");
             var errorMsgSpan = element.find("#sessionClientModalError");
+            var usernameInput = element.find(".input-username");
+            var emptyListItem = element.find(".empty-list-item");
+
             var selectedSession = null;
+            var joiningInProgress = false;
+
+
+            var validateInput = function() {
+                var disable = false;
+                disable = disable || selectedSession === null;
+                disable = disable || joiningInProgress;
+                disable = disable || usernameInput.val().length < 3;
+
+                joinButton.attr("disabled", disable);
+            };
+
+            usernameInput.bind("propertychange change click keyup input paste", function () {
+                validateInput();
+            });
+
 
             // Ajax load data
             // When the modal is shown fetch the obj list
@@ -47,24 +69,37 @@ app.directive('sharingClientModal', function() {
 
                             var item;
                             var anchor;
-                            var sessionName;
+                            var sessionHostHolder;
+                            var sessionIdHolder;
 
                             // Remove finished sessions
                             sessionListGroup.children().each(function() {
-                                if (jsonData.data.indexOf($(this).data("uuid")) < 0) {
+                                var current = $(this);
+
+                                if (jsonData.data.filter(function(entry) { return entry.sessionId === current.data("uuid"); }).length <= 0) {
                                     if (selectedSession === $(this)) {
-                                        selectedSession = null
+                                        selectedSession = null;
+                                        // disable button
+                                        validateInput();
                                     }
                                     $(this).remove();
                                 }
                             });
+
+                            // Display empty array note
+                            if (jsonData.data.length > 0) {
+                                emptyListItem.css("display", "none");
+                            }
+                            else {
+                                emptyListItem.css("display", "block");
+                            }
 
 
                             for (var i = 0; i < jsonData.data.length; i++) {
                                 var isNew = false;
 
                                 // Check if entry for this file already exists (reuse anchor if exists)
-                                var match = sessionListGroup.find("[data-uuid='" + jsonData.data[i] + "']");
+                                var match = sessionListGroup.find("[data-uuid='" + jsonData.data[i].sessionId + "']");
                                 if (match.length > 0) {
                                     anchor = match.first();
                                     anchor.html("");
@@ -75,17 +110,27 @@ app.directive('sharingClientModal', function() {
                                         href: '#',
                                         class: 'list-group-item',
                                         style: 'height: 40px',
-                                        'data-uuid': jsonData.data[i]
+                                        'data-uuid': jsonData.data[i].sessionId
                                     });
                                 }
 
-                                sessionName = jQuery('<div/>', {
-                                    style: 'padding: 0; text-weight: 500',
-                                    text: jsonData.data[i]
+                                sessionHostHolder = jQuery('<div/>', {
+                                    style: 'padding: 0;',
+                                    class: 'col-sm-7',
+                                    html: '<span style="font-weight: 500;">' + jsonData.data[i].ownerUsername + '</span>'
                                 });
 
+                                sessionIdHolder = jQuery('<div/>', {
+                                    style: 'padding: 0;',
+                                    class: 'col-sm-5',
+                                    html: '<span style="float: right; font-weight: 500;">' +jsonData.data[i].sessionId + '</span>'
+                                });
+
+
+
                                 // Add inner elements
-                                anchor.append(sessionName);
+                                anchor.append(sessionHostHolder);
+                                anchor.append(sessionIdHolder);
 
                                 if (isNew) {
                                     anchor.click(function () {
@@ -97,6 +142,7 @@ app.directive('sharingClientModal', function() {
                                         // Mark current item as selected
                                         selectedSession = $(this);
                                         selectedSession.addClass("active");
+                                        validateInput();
                                     });
 
                                     sessionListGroup.append(anchor);
@@ -115,19 +161,13 @@ app.directive('sharingClientModal', function() {
                 });
             };
 
-            var joinButton = element.find("#joinSessionButton");
-
             joinButton.click(function () {
                 joinButton.attr("disabled", true);
+                joiningInProgress = true;
 
-                if (scope.sharingState.listeningInProgress) {
-                    scope.leaveSession(function (event) {
-                        joinButton.attr("disabled", false);
-                        element.modal('hide');
-                    });
-                }
-                else {
-                    scope.joinSession(selectedSession.data("uuid"), function (event) {
+                if (!scope.sharingState.listeningInProgress) {
+                    scope.joinSession(usernameInput.val(), selectedSession.data("uuid"), function (event) {
+                        joiningInProgress = false;
                         joinButton.attr("disabled", false);
                         element.modal('hide');
                     });

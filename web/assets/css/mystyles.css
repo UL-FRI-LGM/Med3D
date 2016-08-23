@@ -482,7 +482,7 @@ body {
 
 .med3d-annotation-list-item {
   height: 40px;
-  margin: 10px; !important;
+  margin: 5px 10px 10px 10px; !important;
   padding: 0px;
   border-radius: 5px 8px 8px 5px !important;
   background-color: #C8C8C8;
@@ -562,4 +562,12 @@ body {
 .med3d-file-list-group a.active {
   border-color: #70B1E8 !important;
   background-color: #F3F9FE !important;
+}
+
+.empty-list-item {
+  text-align: center;
+  height: 40px;
+  border-radius: 5px;
+  font-weight: 600;
+  display: none;
 }

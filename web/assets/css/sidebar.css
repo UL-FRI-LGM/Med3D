@@ -49,6 +49,7 @@
     color: #fff;
 }
 
+
 .sidebar-content-title.title-active  {
     display: block;
 }
@@ -58,6 +59,7 @@
      font-size: 14px;
      font-weight: 500;
      padding-left: 15px;
+     margin-top: 5px;
      color: #fff;
  }
 

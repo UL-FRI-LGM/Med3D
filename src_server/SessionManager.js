@@ -15,13 +15,13 @@ var SessionManager = class {
         return this._sessions.hasOwnProperty(room);
     }
 
-    createNewSession(host, data) {
+    createNewSession(host, username, data) {
         // Check if this host already owns a session
         if (host in this._sessions) {
             return null;
         }
 
-        var session = new Session(host);
+        var session = new Session(host, username);
         session.initialize(data);
         this._sessions[host] = session;
 
@@ -74,11 +74,19 @@ var SessionManager = class {
     }
 
     // CAMERAS
-    addCamerasToSession(sessionID, userID, cameras) {
+    addCamerasToSession(sessionID, userID, username, cameras) {
         var session = this._sessions[sessionID];
 
         if (session) {
-            session.addCameras(userID, cameras)
+            session.addCameras(userID, username, cameras)
+        }
+    }
+
+    rmCamerasFromSession(sessionID, userID, uuid) {
+        var session = this._sessions[sessionID];
+
+        if (session) {
+            session.rmCameras(userID, uuid)
         }
     }
 
@@ -90,11 +98,11 @@ var SessionManager = class {
         }
     }
 
-    fetchSessionCameras(sessionID) {
+    fetchSessionCameras(sessionID, userID) {
         var session = this._sessions[sessionID];
 
         if (session) {
-            return session.fetchCameras()
+            return session.fetchCameras(userID)
         }
 
         return null;
@@ -103,11 +111,11 @@ var SessionManager = class {
 
 
     // ANNOTATIONS
-    addAnnotationsToSession(sessionID, userID, annotations) {
+    addAnnotationsToSession(sessionID, userID, username, annotations) {
         var session = this._sessions[sessionID];
 
         if (session) {
-            session.addAnnotations(userID, annotations)
+            session.addAnnotations(userID, username, annotations)
         }
     }
 
@@ -149,8 +157,13 @@ var SessionManager = class {
         return this._sessions[host];
     }
 
-    fetchSessionsUuids() {
-        return Object.keys(this._sessions);
+    fetchSessionsMeta() {
+        var metaArray = [];
+        for (var sessionId in this._sessions) {
+            metaArray.push({sessionId: sessionId, ownerUsername: this._sessions[sessionId].ownerUsername})
+        }
+
+        return metaArray;
     }
 };
 
