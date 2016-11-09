@@ -23,8 +23,6 @@ M3D.MeshRenderer = class {
         this._glProgramManager = new M3D.GLProgramManager(this._gl);
 
 
-        // Framebuffer
-        this._rttFamebuffer = null;
 
         // Frustum
         this._projScreenMatrix = new THREE.Matrix4();
@@ -67,7 +65,10 @@ M3D.MeshRenderer = class {
             return;
         }
 
-        this._setupRenderTarget(renderTarget);
+        // Check if render target was specified
+        if (renderTarget !== undefined) {
+            this._initRenderTarget(renderTarget);
+        }
 
         // Update scene graph and camera matrices
         if (scene.autoUpdate === true)
@@ -127,11 +128,11 @@ M3D.MeshRenderer = class {
             // Clean up
             this._gl.disable(this._gl.BLEND);
         }
-        
+
+        // If RTT cleanup viewport and frame-buffer
         if (this._currentRenderTarget) {
-            this._gl.bindTexture(this._gl.TEXTURE_2D, this._glManager.getUniform(this._currentRenderTarget._texture));
-            this._gl.generateMipmap(this._gl.TEXTURE_2D);
-            this._gl.bindTexture(this._gl.TEXTURE_2D, null);
+            this._cleanupRenderTarget();
+            this._currentRenderTarget = null;
         }
     }
 
@@ -295,7 +296,7 @@ M3D.MeshRenderer = class {
 
         const texture = prefix + ".texture";
         if (uniformSetter[texture] !== undefined) {
-            uniformSetter[texture].set(this._glManager.getUniform(material.map), textureIdx++);
+            uniformSetter[texture].set(this._glManager.getTexture(material.map), textureIdx++);
         }
 
     }
@@ -426,7 +427,7 @@ M3D.MeshRenderer = class {
 
                 if (object.visible === true) {
                     // Updates or derives attributes from the WebGL geometry
-                    this._glManager.updateObjectData(object, this._currentRenderTarget);
+                    this._glManager.updateObjectData(object);
 
                     // Derive mv and normal matrices
                     object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
@@ -459,29 +460,22 @@ M3D.MeshRenderer = class {
         }
     }
 
-    _setupRenderTarget(renderTarget) {
-        if (renderTarget) {
-            // Check if the render target is specified
-            this._currentRenderTarget = renderTarget;
-            var rttViewport = renderTarget._viewport;
+    _initRenderTarget(renderTarget) {
+        // Check if the render target is specified
+        this._currentRenderTarget = renderTarget;
+        var rttViewport = renderTarget._viewport;
 
-            // Setup viewport
-            this._gl.viewport(rttViewport.x, rttViewport.y, rttViewport.z, rttViewport.w);
+        // Setup viewport
+        this._gl.viewport(rttViewport.x, rttViewport.y, rttViewport.z, rttViewport.w);
 
-            if (this._rttFamebuffer === null) {
-                this._rttFamebuffer = this._gl.createFramebuffer();
-            }
+        this._glManager.initRenderTarget(renderTarget);
+    }
 
-            this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._rttFamebuffer);
+    _cleanupRenderTarget() {
+        this._currentRenderTarget = null;
+        this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
 
-            this._glManager.updateRTTTexture(renderTarget);
-        }
-        else {
-            this._currentRenderTarget = null;
-            this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
-
-            this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, null);
-        }
+        this._glManager.cleanupRenderTarget();
     }
 
     /**

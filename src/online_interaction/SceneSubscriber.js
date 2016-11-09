@@ -302,6 +302,9 @@ M3D.SceneSubscriber = class {
             }
         });
 
+        var avg = 0;
+        var N = 0;
+
         this._socket.on("sessionCameras", function (request) {
             if (request.type === "add") {
 
@@ -324,6 +327,15 @@ M3D.SceneSubscriber = class {
                 }
             }
             else if (request.type === "update") {
+
+                if (request.timestamp !== undefined) {
+                    N++;
+                    avg = avg * (N-1)/N + ((new Date().getTime() - request.timestamp) / 1000) / N;
+                    if (N % 100 === 0) {
+                        console.log(avg);
+                    }
+                }
+
                 // Fetch user camera list
                 var userCameras = self._cameras[request.userId];
 

@@ -7,165 +7,22 @@
 var regLogical = new RegExp("#if|#else if|#else|#fi",'gi');
 var regAndOr = new RegExp("(\&\&|[|]{2})", 'gi');
 
-// Shader minify regex
-var commentReplacement = /(\/{2}.*)/g;
-var shaderMinify = /([ \n\r\t]*)(}|{|\+|-|\*|;|\)|\(|\\|\/|\[|\])([ \n\r\t]*)/gm;
 
 var ShaderBuilder = class {
     constructor() {
-        this._fs = require('fs');
+
     }
 
-    _readShader(path) {
-        return this._fs.readFileSync(path, "utf8");
-    }
 
-    // Returns flag combinations
-    _getCombinations(set) {
-
-        var k_combinations = function(set, k) {
-            var i, j, combs, head, tailcombs;
-
-            if (k > set.length || k <= 0) {
-                return [];
-            }
-
-            if (k == set.length) {
-                return [set];
-            }
-
-            if (k == 1) {
-                combs = [];
-                for (i = 0; i < set.length; i++) {
-                    combs.push([set[i]]);
-                }
-                return combs;
-            }
-
-            combs = [];
-            for (i = 0; i < set.length - k + 1; i++) {
-                head = set.slice(i, i + 1);
-                tailcombs = k_combinations(set.slice(i + 1), k - 1);
-                for (j = 0; j < tailcombs.length; j++) {
-                    combs.push(head.concat(tailcombs[j]));
-                }
-            }
-            return combs;
-        }
-
-        var k, i, combs, k_combs;
-        combs = [];
-
-        // Calculate all non-empty k-combinations
-        for (k = 1; k <= set.length; k++) {
-            k_combs = k_combinations(set, k);
-            for (i = 0; i < k_combs.length; i++) {
-                combs.push(k_combs[i]);
-            }
-        }
-        return combs;
-    }
-
-    buildShaderCombinations(path, flags, glVersion, minify, exportPath) {
+    buildShader(shaderTemplate, flags) {
         // Read shader source from file
         var shaderSource = this._readShader(path);
-
-        // Fetch name and suffix
-        var name = path.substring(path.lastIndexOf('/') + 1).split(".")[0];
-        name = name.replace("_template", "");
-        var dot = path.lastIndexOf('.') + 1;
-        var suffix = (dot === 0) ? "" : path.substring(dot);
-
-        // Flag combinations
-        var flagsComb = this._getCombinations(flags);
-        flagsComb.push([]);
-
-        // Result shaders
-        var shaders = [];
-
-        for (var i = 0; i < flagsComb.length; i++) {
-            // Build flags suffix
-            var flagsSuffix = (flagsComb[i].length > 0) ? "_" + flagsComb[i].join("_").toLowerCase() : "";
-
-            // Parse if's
-            var result = this._parseIfs(shaderSource, flagsComb[i]);
-
-            // Minify shader
-            if (minify) {
-                result = result.replace(commentReplacement, "");
-                result = result.replace(shaderMinify, "$2");
-            }
-
-
-            var shader = {name: glVersion + name + flagsSuffix + "." + suffix, source: result};
-
-            if (exportPath) {
-                if (exportPath.length === 0) {
-                    exportPath = "/";
-                }
-                else if (['\\', '/'].indexOf(exportPath[exportPath.length-1]) === 0) {
-                    exportPath += "/";
-                }
-
-                this._fs.writeFile(exportPath + shader.name , shader.source, function(err) {
-                    // Check if error
-                    if (err) {
-                        console.log(err);
-                    }
-                });
-            }
-
-            shaders.push(shader);
-        }
-
-        return shaders
-    }
-
-    buildShader(path, flags, glVersion, minify, exportPath) {
-        // Read shader source from file
-        var shaderSource = this._readShader(path);
-
-        // Fetch name and suffix
-        var name = path.substring(path.lastIndexOf('/') + 1).split(".")[0];
-        name = name.replace("_template", "");
-        var dot = path.lastIndexOf('.') + 1;
-        var suffix = (dot === 0) ? "" : path.substring(dot);
-
-        // Build flags suffix
-        var flagsSuffix = "_" + flags.join("_").toLowerCase();
 
         // Parse if's
         var result = this._parseIfs(shaderSource, flags);
 
-        // Minify shader
-        if (minify) {
-            result = result.replace(commentReplacement, "");
-            result = result.replace(shaderMinify, "$2");
-        }
-
-        var shader = {name: glVersion + name + flagsSuffix + "." + suffix, source: result};
-
-        if (exportPath) {
-            if (exportPath.length === 0) {
-                exportPath = "\\";
-            }
-            else if (['\\', '/'].indexOf(exportPath[exportPath.length-1]) >= 0) {
-                exportPath += "\\";
-            }
-
-            this._fs.writeFile(shader.name , shader.source, function(err) {
-                // Check if error
-                if (err) {
-                    console.log(err);
-                }
-
-                console.log("The file was saved!");
-            });
-        }
-
-        return shader;
+        return result;
     }
-
 
 
 
@@ -174,6 +31,7 @@ var ShaderBuilder = class {
         // region Build flag match regex
         var trueFlagsStr = "";
         var falseFlagsStr = "";
+
         for (var i = 0; i < flags.length; i++) {
             trueFlagsStr += flags[i];
             falseFlagsStr += "!" + flags[i];
@@ -473,8 +331,5 @@ var ShaderBuilder = class {
     }
 };
 
-// Static GL flags
-ShaderBuilder.WEB_GL1 = "gl1_";
-ShaderBuilder.WEB_GL2 = "gl2_";
 
 module.exports = ShaderBuilder;

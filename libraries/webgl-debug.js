@@ -750,7 +750,7 @@ function makeLostContextSimulatingCanvas(canvas) {
       "getShaderInfoLog",
       "getShaderSource",
       "getTexParameter",
-      "getUniform",
+      "getTexture",
       "getUniformLocation",
       "getVertexAttrib"
     ];

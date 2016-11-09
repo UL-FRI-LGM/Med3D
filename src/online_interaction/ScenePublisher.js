@@ -370,6 +370,7 @@ M3D.ScenePublisher = class {
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
             var request = {type: "update", sessionId: this._socket.io.engine.id, updates: this._scheduledCameraUpdates};
+            request.timestamp = new Date().getTime();
 
             this._scheduledCameraUpdates = {};
             this._socket.emit("sessionCameras", request, callback);

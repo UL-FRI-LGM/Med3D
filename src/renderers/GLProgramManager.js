@@ -200,7 +200,7 @@ M3D.GLProgramManager = class {
                     uniformSetter[info.name]['set'] = function (texture, index) {
                         self._gl.activeTexture(self._gl.TEXTURE0 + index);
                         self._gl.bindTexture(self._gl.TEXTURE_2D, texture);
-                        self._gl.uniform1i(location, self._gl.TEXTURE0 + index);
+                        self._gl.uniform1i(location, index);
                     };
                     break;
             }

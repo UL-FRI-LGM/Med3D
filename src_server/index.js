@@ -171,6 +171,9 @@ io.sockets.on('connection', function(socket) {
         callback();
     });
 
+    var N = 0;
+    var avg = 0;
+
     socket.on('sessionCameras', function (request, callback) {
         var forward;
         if (request.type === "add") {
@@ -186,8 +189,16 @@ io.sockets.on('connection', function(socket) {
         else if (request.type === "update") {
             sessionManager.updateSessionCameras(request.sessionId, socket.id.substring(2), request.updates);
 
+            if (request.timestamp !== undefined) {
+                N++;
+                avg = avg * (N-1)/N + ((new Date().getTime() - request.timestamp) / 1000) / N;
+                if (N % 100 === 0) {
+                    console.log(avg);
+                }
+            }
+
             // Forward to subscribers
-            forward = {type: request.type, userId: socket.id.substring(2), updates: request.updates, data: {ownerUsername: username, list: request.newCameras}};
+            forward = {type: request.type, userId: socket.id.substring(2), timestamp: request.timestamp, updates: request.updates, data: {ownerUsername: username, list: request.newCameras}};
             socket.broadcast.to(request.sessionId).emit('sessionCameras', forward);
         }
 

@@ -14,7 +14,7 @@ M3D.GLManager = class {
      * @param gl_version Specifies which version of GL context should be retrieved
      */
     constructor (canvas, glVersion) {
-        // GL Context
+        // region GL Context fetch
         this._gl = null;
         this._glVersion = glVersion;
 
@@ -37,11 +37,18 @@ M3D.GLManager = class {
         if (!this._gl) {
             throw 'ERROR: Failed to retrieve GL Context.'
         }
+        // endregion
 
-        this._uniformManager = new M3D.GLUnifromManager(this._gl);
+        // region CONSTANTS
+        this._FIRST_COLOR_ATTACHMENT = this._gl.COLOR_ATTACHMENT0;
+        this._LAST_COLOR_ATTACHMENT = this._gl.COLOR_ATTACHMENT15;
+        // endregion
+
+        this._fboManager = new M3D.GLFrameBufferManager(this._gl);
+        this._textureManager = new M3D.GLTextureManager(this._gl);
         this._attributeManager = new M3D.GLAttributeManager(this._gl);
 
-        //region Clear values
+        // region Clear values
         this.autoClear = true;
         this._clearColor = new THREE.Vector4(0, 0, 0, 0);
         this._clearDepth = null;
@@ -51,7 +58,7 @@ M3D.GLManager = class {
         this.setClearColor(0, 0, 0, 1);
         this.setClearDepth(1);
         this.setClearStencil(0);
-        //endregion
+        // endregion
     }
 
     /**
@@ -98,16 +105,76 @@ M3D.GLManager = class {
         var texture = material.map;
 
         if (texture) {
-            this._uniformManager.updateTexture(texture);
+            this._textureManager.updateTexture(texture, false);
         }
     }
 
-    updateRTTTexture(renderTarget) {
-        this._uniformManager.updateTexture(renderTarget.texture, renderTarget);
+    initRenderTarget(renderTarget) {
+        var glTexture;
+        var drawBuffersLength;
+        var drawAttachments = [];
+
+        // Bind the framebuffer matching the specified render target
+        this._fboManager.bindFramebuffer(renderTarget);
+
+        // region DEPTH
+        if (renderTarget.depthTexture !== null) {
+            // Fetch and update the texture
+            glTexture = this._textureManager.updateTexture(renderTarget.depthTexture, true, renderTarget.width, renderTarget.height);
+
+            // Attach as framebuffer depth attachment
+            this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._gl.DEPTH_ATTACHMENT, this._gl.TEXTURE_2D, glTexture, 0);
+
+            // Unbind the texture (binded in the texture manager)
+            this._gl.bindTexture(this._gl.TEXTURE_2D, null);
+        }
+        else {
+            // If the depth texture is not specified remove the depth attachment from the frame buffer
+            this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._gl.DEPTH_ATTACHMENT, this._gl.TEXTURE_2D, null, 0);
+        }
+        // endregion
+
+        // region COLOR ATTACHMENTS (DRAW BUFFERS)
+        drawBuffersLength = renderTarget.sizeDrawBuffers();
+
+        // TODO: Is it reasonable to check if there are more than 15 draw buffers?
+        for (var i = 0; i < drawBuffersLength; i++) {
+            glTexture = this._textureManager.updateTexture(renderTarget._drawBuffers[i], true, renderTarget.width, renderTarget.height);
+
+            // Attach draw buffer as color attachment (in specified order)
+            this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._FIRST_COLOR_ATTACHMENT + i, this._gl.TEXTURE_2D, glTexture, 0);
+            drawAttachments.push(this._FIRST_COLOR_ATTACHMENT + i);
+        }
+
+        // Unbind the texture (binded in the texture manager)
+        this._gl.bindTexture(this._gl.TEXTURE_2D, null);
+
+        // Unbind any attachments left from the previous renders
+        if (renderTarget.__fboLength !== null && renderTarget.__fboLength > drawBuffersLength) {
+            for (var i = drawBuffersLength; i < renderTarget.__fboLength; i++) {
+                this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._FIRST_COLOR_ATTACHMENT + i, this._gl.TEXTURE_2D, null, 0);
+            }
+        }
+
+        // Setup draw buffers
+        this._gl.drawBuffers(drawAttachments);
+
+        // Private length specifying number of attachments used in previous renders
+        renderTarget.__fboLength = drawBuffersLength;
+        // endregion
+
+        // Validation
+        if (this._gl.checkFramebufferStatus(this._gl.FRAMEBUFFER) !== this._gl.FRAMEBUFFER_COMPLETE) {
+            console.error("Framebuffer not complete!")
+        }
     }
 
-    getUniform(reference) {
-        return this._uniformManager.getUniform(reference);
+    cleanupRenderTarget() {
+        this._fboManager.unbindFramebuffer();
+    }
+
+    getTexture(reference) {
+        return this._textureManager.getTexture(reference);
     }
 
     getBuffer (attribute) {

@@ -355,6 +355,7 @@ onmessage = function(msg) {
     var maxZ = voxelDim.z * (((dimensions.zFull) ? dimensions.zFull : dimensions.z) - 1);
     var maxAxisVal = Math.max(maxX, maxY, maxZ);
 
+    console.log(dimensions.z);
     var idx = 0;
     for (var z = 0; z < dimensions.z - 1; z++) {
 

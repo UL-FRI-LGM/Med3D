@@ -23,7 +23,7 @@ uniform Material material;
 in vec3 fragVNorm;
 in vec3 fragVPos;
 
-out vec4 color;
+out vec4 color[3];
 
 // Calculates the point light color contribution
 vec3 calcPointLight (Light light, vec3 normal, vec3 viewDir) {
@@ -82,5 +82,7 @@ void main() {
         }
     }
 
-    color = vec4(combined, 1.0);
+    color[0] = vec4(combined, 1.0);
+    color[1] = vec4(normal, 1.0);
+    color[2] = vec4(abs(fragVPos), 1.0);
 }

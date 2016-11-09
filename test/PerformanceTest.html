@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1920" height="1080"></canvas>
+<br>
+FPS: <span id="fps">N/A</span>
+
+<script src="lib/jquery.min.js"></script>
+
+<!-- DEBUG INCLUDE -->
+<script src="../libraries/three-math.min.js"></script>
+<script src="../src/Med3D.js"></script>
+
+<!-- LOADERS -->
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/marching_cubes/MHDReader.js"></script>
+
+<!-- ONLINE INTERACTION -->
+<script src="../src/online_interaction/UpdateListener.js"></script>
+<script src="../src/online_interaction/ScenePublisher.js"></script>
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLTextureManager.js"></script>
+<script src="../src/core/GLManager.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
+
+<!-- MATERIALS -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+
+<!-- OBJECTS -->
+<script src="../src/objects/Geometry.js"></script>
+<script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Group.js"></script>
+<script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+<script src="../src/objects/Circle.js"></script>
+<script src="../src/objects/Line.js"></script>
+
+<script src="../src/core/Raycaster.js"></script>
+
+<!-- PROGRAM MANAGEMENT -->
+<script src="../src/renderers/GLProgram.js"></script>
+<script src="../src/renderers/GLProgramManager.js"></script>
+
+<!-- RENDERS -->
+<script src="../src/renderers/Renderer.js"></script>
+<script src="../src/renderers/MeshRenderer.js"></script>
+
+<script src="../libraries/socket.io-1.4.5.js"></script>
+<script src="../src/controls/KeyboardInput.js"></script>
+<!-- <script src="scripts/Input.js"></script>-->
+
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<!-- ONLINE INTERACTION -->
+<script src="../src/online_interaction/ScenePublisher.js"></script>
+<script src="../src/online_interaction/SceneSubscriber.js"></script>
+
+
+<script>
+    var TRIANGLE_COUNT = 4000000;
+    var objects;
+    var currentCamera;
+
+    // Initialize renderer
+    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    // Set path to shader files
+    renderer.addShaderLoaderUrls("../src/shaders");
+
+    var group = new M3D.Group();
+    var scene = new M3D.Scene();
+    scene.add(group);
+
+    // Initialize lights and add them to the scene
+    var aLight = new M3D.AmbientLight(undefined, 0.3);
+    var dLight = new M3D.DirectionalLight(undefined, 0.6);
+    var dLight2 = new M3D.DirectionalLight(undefined, 0.6);
+    var dLight3 = new M3D.DirectionalLight(undefined, 0.6);
+    var dLight4 = new M3D.DirectionalLight(undefined, 0.6);
+    var dLight5 = new M3D.DirectionalLight(undefined, 0.6);
+
+    dLight.position = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    dLight2.position = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    dLight3.position = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    dLight4.position = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    dLight5.position = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+
+    scene.add(aLight);
+    scene.add(dLight);
+    scene.add(dLight2);
+    scene.add(dLight3);
+    scene.add(dLight4);
+    scene.add(dLight5);
+    scene.add(new M3D.PointLight(undefined, 0.7));
+    scene.add(new M3D.PointLight(undefined, 0.7));
+    scene.add(new M3D.PointLight(undefined, 0.7));
+    scene.add(new M3D.PointLight(undefined, 0.7));
+    scene.add(new M3D.PointLight(undefined, 0.7));
+
+    // Camera initialization
+    var camera = new M3D.OrthographicCamera(-960, 960, 540, -540);
+    camera.position = new THREE.Vector3(0, 0, 1000);
+    currentCamera = camera;
+
+
+    var vertices = [];
+    for (var i = 0; i < TRIANGLE_COUNT; i++) {
+
+        var offsetX = Math.random() * 1910 - 960;
+        var offsetY = Math.random() * 1070 - 540;
+
+        vertices.push(offsetX);
+        vertices.push(offsetY);
+        vertices.push(0);
+
+        vertices.push(10 + offsetX);
+        vertices.push(offsetY);
+        vertices.push(0);
+
+        vertices.push(offsetX);
+        vertices.push(10 + offsetY);
+        vertices.push(0);
+
+        /*var buffer = M3D.Float32Attribute(vertices, 3);
+
+        var geometry = new M3D.Geometry();
+        geometry.vertices = buffer;
+        geometry.computeVertexNormals();
+        geometry.computeBoundingSphere();
+
+        var material = new M3D.MeshPhongMaterial();
+        material.color = new THREE.Color(Math.random() * 0xffffff);
+        material.specular = new THREE.Color("#999999");
+
+        group.add(new M3D.Mesh(geometry, material));*/
+    }
+
+
+    var buffer = M3D.Float32Attribute(vertices, 3);
+
+    var geometry = new M3D.Geometry();
+    geometry.vertices = buffer;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+
+    var material = new M3D.MeshBasicMaterial();
+    material.color = new THREE.Color(Math.random() * 0xffffff);
+    //material.specular = new THREE.Color("#999999");
+    //material.side = M3D.FRONT_AND_BACK_SIDE;
+
+    var bigObj = new M3D.Mesh(geometry, material);
+
+    group.add(bigObj);
+
+    animate();
+
+
+    var prevTime = -1, currTime, dt;
+    function animate() {
+        requestAnimationFrame(animate);
+        calculateFps();
+
+
+        // Calculate delta time and update timestamps
+        currTime = new Date();
+        dt = (prevTime !== -1) ? currTime - prevTime : 0;
+        prevTime = currTime;
+
+        renderer.render(scene, currentCamera);
+    }
+
+    // FPS calculation
+    var timeNow = 0, timeLast = 0, fps = 0;
+    function calculateFps() {
+        timeNow = new Date().getTime();
+        fps++;
+
+        if (timeNow - timeLast >= 10000) {
+            //Write value in HTML
+            //multiply with 1000.0 / (timeNow - timeLast) for accuracy
+            document.getElementById("fps").innerHTML = Number(fps * 1000.0 / (timeNow - timeLast)).toPrecision( 5 );
+
+            //reset
+            timeLast = timeNow;
+            fps = 0;
+        }
+    }
+
+    document.addEventListener('keydown', function(event) {
+    });
+
+</script>
+
+</body>
+</html>
