@@ -13,7 +13,6 @@ var ShaderBuilder = class {
 
     }
 
-
     buildShader(shaderTemplate, flags) {
         // Read shader source from file
         var shaderSource = this._readShader(path);
