@@ -1,0 +1,15 @@
+#if (A && C)
+    #for test in 10 to 0
+        #if (B)
+            b is true
+        #fi
+        value = ##test
+    #end
+#else
+    #for test in 4 to z
+        #if (B)
+            b is true
+        #fi
+        value = ##test
+    #end
+#fi

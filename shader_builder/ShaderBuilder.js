@@ -1,7 +1,153 @@
 /**
  * Created by Primoz on 9. 11. 2016.
  */
-var ShaderBuilder = {};
+
+
+ShaderBuilder = class {
+    constructor() {
+        this._LOGTAG = "ShaderBuilder: ";
+
+        /**
+        templateName => {
+           {shaderName => source},
+           tree: ShaderBuilder.RootNode
+        }
+        */
+        this._templatesCache = {};
+
+        // Regular expressions used for template tree building
+        // Commend matching
+        this._multiLineCommentRegex = /\/\*[\s\S]*\*\//g;
+        this._singleLineCommentRegex = /\/\/.*/g;
+
+        // Line reducing
+        this._lineReduceRegex = /[^\r\n]+/g;
+        this._prefixSuffixSpaceTrimRegex = /(^\s+|\s+$)/g;
+        this._multipleSpaceMatch = /\s+/g;
+    }
+
+    /**
+     * Generates shader name for the given set of flags and values.
+     */
+    _generateShaderName (flags, values) {
+        // Sort the flags to get the correct order
+        var sortedFlags = flags.sort();
+
+        // Combine values and their names in order to generate map name for the built shader
+        var valuesNameArr = [];
+
+        for (var name in values) {
+            if (values.hasOwnProperty(name)) {
+                valuesNameArr.push(name + "_" + values[name]);
+            }
+        }
+
+        /** Create flags and values encoded shader name */
+        var shaderName = "";
+
+        // First concat the shader flags
+        for (var i = 0; i < sortedFlags.length; i++) {
+            shaderName += sortedFlags[i];
+        }
+
+        // Append the merged values and value names
+        for (var i = 0; i < valuesNameArr.length; i++) {
+            shaderName += valuesNameArr[i];
+        }
+
+        return shaderName;
+    }
+
+    /** Checks if the template tree for the given template was already built */
+    hasTemplate (templateName) {
+        return this._templatesCache[templateName] !== undefined
+    }
+
+    buildTemplateTree (templateName, templateSource) {
+
+        // Warn the user if the template tree is beeing overwritten
+        if (this.hasTemplate(templateName)) {
+            console.log(this._LOGTAG + "Warning. Overwriting the template tree!");
+        }
+
+        // Remove multi line comments
+        templateSource = templateSource.replace(this._multiLineCommentRegex , '');
+
+        // Generate array of lines with no empty lines
+        var arrayOfLines = templateSource.match(this._lineReduceRegex);
+
+        // Create root node of the template tree
+        var rootNode = new ShaderBuilder.RootNode();
+
+        for (var i = 0; i < arrayOfLines.length; i++) {
+            // Remove redundant spaces and single line comments
+            var trimmedLine = arrayOfLines[i].replace(this._prefixSuffixSpaceTrimRegex, '').replace(this._multipleSpaceMatch,' ').replace(this._singleLineCommentRegex, '');
+
+            // If there is nothing left do not bother adding the line to the tree
+            if (trimmedLine.length === 0) {
+                continue;
+            }
+
+            // Interpret the line of code
+            try {
+                rootNode.parseLine(trimmedLine);
+            }
+            catch (error) {
+                console.error(this._LOGTAG + "Exception occurred while building the template tree (" + error + ")\n" +
+                    "Problematic line: " + arrayOfLines[i].replace(this._prefixSuffixSpaceTrimRegex, ''));
+                return false;
+            }
+        }
+
+        // TODO: Validate if the template tree is correct
+
+        // Store the template tree
+        this._templatesCache[templateName] = {cachedShaders: {}, tree: rootNode};
+
+        return true;
+    }
+
+    // Tries to fetch the shader. If the shader it's not build jet it tries to build it
+    fetchShader (templateName, flags, values) {
+        var shaderTemplate = this._templatesCache[templateName];
+
+        // Generate flags, values unique shader name
+        var shaderName = this._generateShaderName(flags, values);
+
+        // Check if this shader was already built
+        if (shaderTemplate !== undefined) {
+            var cachedShaders = shaderTemplate.cachedShaders;
+
+            // Check if the required shader is already built
+            var requiredShader = cachedShaders[shaderName];
+
+            if (requiredShader !== undefined) {
+                return requiredShader;
+            }
+            else {
+                try {
+                    // Try to build the shader
+                    var shader = shaderTemplate.tree.build(flags, values)
+
+                    // Add shader to cached shaders map
+                    cachedShaders[shaderName] = shader;
+
+                    return shader;
+                }
+                catch (error) {
+                    console.error(this._LOGTAG + "Exception occurred while building the shader (" + error + ")");
+
+                    return undefined;
+                }
+            }
+        }
+        else {
+            console.log(this._LOGTAG + "Could not find the shader template!");
+            return undefined;
+        }
+    }
+};
+
 
 ShaderBuilder.STATE_OPENED = 0;
 ShaderBuilder.STATE_CLOSED = 1;
@@ -9,16 +155,18 @@ ShaderBuilder.STATE_CLOSED = 1;
 // region REGEX SECTION
 
 // Matches all available commands (#for, #endfor, #if, #else and #fi)
-ShaderBuilder.commandRegex = /#for.*|#endfor.*|#if.*|#else.*|#fi.*/i;
+ShaderBuilder.commandRegex = /#for.*|#end.*|#if.*|#else.*|#fi.*/i;
 
 // Matches #for and #if commands
 ShaderBuilder.nodeStartRegex = /#for.*|#if.*/i;
 
 // Matches correctly formed for loop (#FOR variable IN [unsigned integer] TO [unsigned integer])
-ShaderBuilder.forLoopStartRegex = /#for\s+\S+\s+in\s+[1-9][0-9]*\s+to\s+[1-9][0-9]*/i;
+ShaderBuilder.forLoopStartRegex = /#for\s+[a-zA-Z1-9]*\s+in\s+[a-zA-Z0-9]*\s+to\s+[a-zA-Z0-9]*/i;
 
 // Matches 3 groups of for loop (variable, first u-int and second u-int
-ShaderBuilder.forLoopVariableRegex = /#for\s+([a-z0-9]+)\s+in\s+([1-9][0-9]*)\s+to\s+([1-9][0-9]*)/i;
+ShaderBuilder.forLoopVariableRegex = /#for\s+([a-z0-9]+)\s+in\s+([a-z0-9]+)\s+to\s+([a-z0-9]+)/i;
+
+ShaderBuilder.endforRegex = /^#end$/i;
 
 // Matches suffix and prefix spaces
 ShaderBuilder.prefixSuffixSpaceRegex = /(^\s+|\s+$)/g;
@@ -30,19 +178,22 @@ ShaderBuilder.ifRegex = /#if.*/i;
 ShaderBuilder.elseIfRegex = /#else\s+if.*/i;
 
 // Matches #else command
-ShaderBuilder.elseRegex = /#else/i;
+ShaderBuilder.elseRegex = /^#else$/i;
 
 // Matches #fi command
-ShaderBuilder.fiRegex = /#fi/i;
+ShaderBuilder.fiRegex = /^#fi$/i;
 
 // Matches valid condition shell
-ShaderBuilder.validConditionShellRegex = /\([a-zA-Z0-9!|&()\s]+\)/i;
+ShaderBuilder.validConditionShellRegex = /\((?:[a-zA-Z0-9!()\s]+|&&|\|\|)+\)/i;
 
 // Matches logical operators || and &&
 ShaderBuilder.logicalOperatorsRegex = /\&\&|[|]{2}/g;
 
 // Matcher everything but brackets
 ShaderBuilder.everythingButBracketsRegex = /[^()!]+/g;
+
+// Is a positive integer
+ShaderBuilder.isPosInt = /0|[1-9][0-9]*/;
 
 //endregion
 
@@ -52,7 +203,7 @@ ShaderBuilder.everythingButBracketsRegex = /[^()!]+/g;
  */
 ShaderBuilder.Node = class {
 
-    constructor() {
+    constructor () {
         this._state = ShaderBuilder.STATE_OPENED;
     };
 
@@ -62,14 +213,14 @@ ShaderBuilder.Node = class {
      *
      * @returns {number} Can either be ShaderBuilder.STATE_OPENED or ShaderBuilder.STATE_CLOSED
      */
-    get state() { return this._state; }
+    get state () { return this._state; }
 
     /**
      * Sets the current state of the node.
      *
      * @param {number} value Must either be ShaderBuilder.STATE_OPENED or ShaderBuilder.STATE_CLOSED
      */
-    set state(value) { this._state = value }
+    set state (value) { this._state = value }
 
     /**
      * This is an abstract function which should be extended. It specifies call for line parsing which is used when building the
@@ -77,7 +228,7 @@ ShaderBuilder.Node = class {
      *
      * @param line {string} Line of template code
      */
-    parseLine(line) {};
+    parseLine (line) {};
 
     /**
      * Creates new Node based on the specified line. If the line is ShaderBuilder command either ConditionNode or LoopNode
@@ -87,7 +238,7 @@ ShaderBuilder.Node = class {
      * @returns {ShaderBuilder.Node} Created ShaderBuilder node.
      * @private
      */
-    _createNewSubNode(line) {
+    _createNewSubNode (line) {
         if (!ShaderBuilder.commandRegex.test(line)) {
             // Create new code node
             return new ShaderBuilder.CodeNode(line);
@@ -107,13 +258,17 @@ ShaderBuilder.Node = class {
             return new ShaderBuilder.ConditionNode(condition);
         }
         else if (ShaderBuilder.forLoopStartRegex.test(line)) {
-            var extraction = ShaderBuilder.forLoopVariableRegex;
 
-            if (extraction === null) {
-                throw "Badly formed for loop";
+            // Fetch for loop parameters
+            var groups = ShaderBuilder.forLoopVariableRegex.exec(line);
+
+            // Check if all of the parameters are given in the foor loop
+            if (groups.length != 4) {
+                throw "Badly formed command";
             }
 
-            return new ShaderBuilder.LoopNode(extraction[1], parseInt(extraction[2]), parseInt(extraction[3]));
+            // Create and return a new loop node
+            return new ShaderBuilder.LoopNode(groups[1], groups[2], groups[3]);
         }
         else {
             throw "Badly formed command";
@@ -127,7 +282,7 @@ ShaderBuilder.Node = class {
      * @returns {string} Combined shader code that was built based on the input
      * @abstract
      */
-    build(flags) {
+    build (flags, values) {
         return "";
     }
 };
@@ -137,7 +292,7 @@ ShaderBuilder.Node = class {
  */
 ShaderBuilder.RootNode = class extends ShaderBuilder.Node {
 
-    constructor() {
+    constructor () {
         super();
         this._subNodes = [];
     }
@@ -148,7 +303,7 @@ ShaderBuilder.RootNode = class extends ShaderBuilder.Node {
      *
      * @param line Line of template code
      */
-    parseLine(line) {
+    parseLine (line) {
         if (this._subNodes.length > 0) {
             // Fetch last node
             var lastNode = this._subNodes[this._subNodes.length - 1];
@@ -196,12 +351,12 @@ ShaderBuilder.RootNode = class extends ShaderBuilder.Node {
      * @param flags Flags that evaluate to true when conditions are tested.
      * @returns {string} Combined shader code that was built based on the input
      */
-    build(flags) {
+    build (flags, values) {
         var shaderCode = "";
 
         // Recurse into all sub nodes
         for (var i = 0; i < this._subNodes.length; i++) {
-            shaderCode += this._subNodes[i].build(flags);
+            shaderCode += this._subNodes[i].build(flags, values);
         }
 
         // Remove last new line
@@ -213,26 +368,38 @@ ShaderBuilder.RootNode = class extends ShaderBuilder.Node {
     }
 };
 
+/**
+ * Code Node is used for the shader code blocks that have no # commands in them (actual shader code)
+ */
 ShaderBuilder.CodeNode = class extends ShaderBuilder.Node {
-    constructor(line) {
+
+    /**
+     * Creates ne Code Node
+     * @param line First line of shader code for this CodeNode
+     */
+    constructor (line) {
         super();
         this._code = line + "\n";
         // Code node should always be closed since it does not contain any sub nodes
         this._state = ShaderBuilder.STATE_CLOSED;
     }
 
-    parseLine(line) {
+    /**
+     * Appends the given line to the code string
+     * @param line Line of shader code
+     */
+    parseLine (line) {
         this._code += line + "\n";
     }
 
-    build(flags) {
+    build (flags, values) {
         return this._code;
     }
 };
 
 ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
 
-    constructor(condition) {
+    constructor (condition) {
         super();
 
         this._if_condition = condition;
@@ -251,7 +418,7 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
      * @param flags Flags that will be set to true
      * @returns {Object} Evaluation result
      */
-    static evaluateCondition(condition, flags) {
+    static evaluateCondition (condition, flags) {
         // Remove all spaces
         condition = condition.replace(/\s/g, '');
 
@@ -317,6 +484,7 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
         }
     };
 
+    // Returns sub-nodes that are part of current condition that is opened
     _fetchSubNodes () {
         if (this._else_subNodes !== null) {
             return this._else_subNodes;
@@ -329,7 +497,9 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
         }
     }
 
-    parseLine(line) {
+    parseLine (line) {
+
+        // Fetch the last condition sub-nodes
         var subNodes = this._fetchSubNodes();
 
         if (subNodes.length > 0) {
@@ -392,8 +562,6 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
                     subNodes.push(this._createNewSubNode(line));
                 }
             }
-
-
         }
         else {
             // If the finish command is passed close the Condition Node
@@ -406,7 +574,12 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
         }
     }
 
-    build(flags) {
+    /**
+     * Returns shader code from the first condition that evaluates true for the given flags
+     * @param flags Flags that should take the value true
+     * @returns {string} Shader code
+     */
+    build (flags, values) {
         var extractionSubNodes = null;
         var shaderCode = "";
 
@@ -436,7 +609,7 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
 
         // Recurse in sub nodes whose condition evaluated to true
         for (var i = 0; i < extractionSubNodes.length; i++) {
-            shaderCode += extractionSubNodes[i].build(flags);
+            shaderCode += extractionSubNodes[i].build(flags, values);
         }
 
         return shaderCode;
@@ -444,7 +617,7 @@ ShaderBuilder.ConditionNode = class extends ShaderBuilder.Node {
 };
 
 ShaderBuilder.LoopNode = class extends ShaderBuilder.Node {
-    constructor(macro, from, to) {
+    constructor (macro, from, to) {
         super();
         this._macro = macro;
         this._from = from;
@@ -453,10 +626,129 @@ ShaderBuilder.LoopNode = class extends ShaderBuilder.Node {
         this._subNodes = [];
     }
 
-    parseLine(line) {
+    parseLine (line) {
+        if (this._subNodes.length > 0) {
+            // Fetch the last node
+            var lastNode = this._subNodes[this._subNodes.length - 1];
 
+            /**
+             This is written in expanded form for easier debugging.
+             */
+            if (lastNode instanceof ShaderBuilder.CodeNode) {
+                // Last node is type of CodeNode
+
+                // Check if the next statement is a command
+                if (ShaderBuilder.commandRegex.test(line)) {
+                    if (ShaderBuilder.nodeStartRegex.test(line)) {
+                        // If the current line is a node start command, create appropriate node
+                        this._subNodes.push(this._createNewSubNode(line));
+                    }
+                    else if (ShaderBuilder.endforRegex.test(line)) {
+                        // If the for loop end command was given set state to closed
+                        this._state = ShaderBuilder.STATE_CLOSED;
+                    }
+                    else {
+                        // Unexpected command
+                        throw "Unexpected Command";
+                    }
+                }
+                else {
+                    // Normal line of shader code
+                    lastNode.parseLine(line);
+                }
+            }
+            else {
+                if (lastNode.state === ShaderBuilder.STATE_OPENED) {
+                    // Pass the line of code to the current last node if opened. If not create a new node
+                    lastNode.parseLine(line);
+                }
+                else if (ShaderBuilder.endforRegex.test(line)) {
+                    // If the for loop end command was given set state to closed
+                    this._state = ShaderBuilder.STATE_CLOSED;
+                }
+                else {
+                    // Try to create a new node
+                    this._subNodes.push(this._createNewSubNode(line));
+                }
+            }
+        }
+        else {
+            if (ShaderBuilder.endforRegex.test(line)) {
+                // If the finish command is passed close the Loop Node
+                this._state = ShaderBuilder.STATE_CLOSED;
+            }
+            else {
+                // Node list is empty.. Try to create a new sub-node
+                this._subNodes.push(this._createNewSubNode(line));
+            }
+        }
+    }
+
+    build (flags, values) {
+
+        // FETCH FOR LOOP PARAMETERS
+        var fromInt;
+        var toInt;
+
+        // Fetch from value
+        if (ShaderBuilder.isPosInt.test(this._from)) {
+            fromInt = parseInt(this._from, 10);
+        }
+        else {
+            if (values[this._from] !== undefined) {
+                fromInt = values[this._from];
+            }
+            else {
+                throw "For loop parameter [" + this._from + "] not specified."
+            }
+        }
+
+        // Fetch TO value
+        if (ShaderBuilder.isPosInt.test(this._to)) {
+            toInt = parseInt(this._to, 10);
+        }
+        else {
+            if (values[this._to] !== undefined) {
+                toInt = values[this._to];
+            }
+            else {
+                throw "For loop parameter [" + this._to + "] not specified."
+            }
+        }
+
+        // Check if the parameters are of integer type
+        if (!Number.isInteger(fromInt) || !Number.isInteger(toInt) || fromInt < 0 || toInt < 0) {
+            throw "Invalid for loop parameters."
+        }
+
+        // FETCH SHADER CODE
+        var shaderCode = "";
+
+        // Recurse into all sub nodes
+        for (var i = 0; i < this._subNodes.length; i++) {
+            shaderCode += this._subNodes[i].build(flags, values);
+        }
+
+        // Unwind the for loop and combine the shader code
+        var combinedShaderCode = "";
+        // Create regex that matches ##variable
+        var reg = new RegExp("##" + this._macro, 'g');;
+
+        // Check if incrementing od decrementing for is needed
+        if (fromInt < toInt) {
+            for (var i = fromInt; i < toInt; i++) {
+                combinedShaderCode += shaderCode.replace(reg, i);
+            }
+        }
+        else {
+            for (var i = fromInt; i > toInt; i--) {
+                combinedShaderCode += shaderCode.replace(reg, i);
+            }
+        }
+
+        return combinedShaderCode;
     }
 };
 
-
-module.exports = ShaderBuilder.RootNode;
+// LOCAL DEBUGGING
+module.exports = ShaderBuilder;
