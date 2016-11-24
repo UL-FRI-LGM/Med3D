@@ -7,7 +7,10 @@ uniform mat3 NMat;  // Normal Matrix
 
 in vec3 VPos;       // Vertex position
 in vec3 VNorm;      // Vertex normal
-in vec2 uv;          // Texture coordinate
+
+#if (TEXTURE)
+    in vec2 uv;          // Texture coordinate
+#fi
 
 // Output transformed vertex position, normal and texture coordinate
 out vec3 fragVPos;
@@ -25,6 +28,8 @@ void main() {
     // Transform normal
     fragVNorm = vec3(NMat * VNorm);
 
-    // Pass-through texture coordinate
-    fragUV = uv;
+    #if (TEXTURE)
+        // Pass-through texture coordinate
+        fragUV = uv;
+    #fi
 }

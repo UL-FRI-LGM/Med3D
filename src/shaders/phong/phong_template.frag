@@ -1,7 +1,7 @@
 #version 300 es
 precision mediump float;
 
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS ##NUM_LIGHTS
 
 struct Light {
     bool directional;
@@ -13,15 +13,26 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float shininess;
+
+    #if (TEXTURE)
+        sampler2D texture;
+    #fi
 };
 
-uniform Light lights[MAX_LIGHTS];
+#if (!NO_LIGHTS)
+uniform Light lights[##NUM_LIGHTS];
+#fi
+
 uniform vec3 ambient;
 uniform Material material;
 
 // From vertex shader
 in vec3 fragVNorm;
 in vec3 fragVPos;
+
+#if (TEXTURE)
+    in vec2 fragUV;
+#fi
 
 out vec4 color[3];
 
@@ -39,7 +50,7 @@ vec3 calcPointLight (Light light, vec3 normal, vec3 viewDir) {
 
     // Attenuation
     float distance = length(light.position - fragVPos);
-    float attenuation = 1.0f / (1.0f + 0.1f * distance + 0.01f * (distance * distance));
+    float attenuation = 1.0f / (1.0f + 0.01f * distance + 0.0001f * (distance * distance));
 
     // Combine results
     vec3 diffuse  = light.color * diffuseF  * material.diffuse  * attenuation;
@@ -73,16 +84,24 @@ void main() {
     // Calculate combined light contribution
     vec3 combined = ambient;
 
-    for (int i = 0; i < MAX_LIGHTS; i++) {
-        if (!lights[i].directional) {
-            combined += calcPointLight(lights[i], normal, viewDir);
-        }
-        else {
-            combined += calcDirectLight(lights[i], normal, viewDir);
-        }
-    }
+    #if (!NO_LIGHTS)
+        #for lightIdx in 0 to NUM_LIGHTS
+            if (!lights[##lightIdx].directional) {
+                combined += calcPointLight(lights[##lightIdx], normal, viewDir);
+            }
+            else {
+                combined += calcDirectLight(lights[##lightIdx], normal, viewDir);
+            }
+        #end
+    #fi
 
-    color[0] = vec4(combined, 1.0);
-    color[1] = vec4(normal, 1.0);
-    color[2] = vec4(abs(fragVPos), 1.0);
+    #if (TEXTURE)
+        color[0] = vec4(combined, 1.0) * texture(material.texture, fragUV);
+        color[1] = vec4(normal, 1.0);
+        color[2] = vec4(abs(fragVPos), 1.0);
+    #else
+        color[0] = vec4(combined, 1.0);
+        color[1] = vec4(normal, 1.0);
+        color[2] = vec4(abs(fragVPos), 1.0);
+    #fi
 }

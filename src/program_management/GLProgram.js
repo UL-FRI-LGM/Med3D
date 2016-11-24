@@ -37,5 +37,4 @@ M3D.GLProgram = class {
      * Tells GL to use this program
      */
 	use() { this._gl.useProgram(this._program); }
-
 };

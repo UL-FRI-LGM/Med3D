@@ -10,6 +10,8 @@
 FPS: <span id="fps">N/A</span>
 
 <script src="../libraries/three-math.min.js"></script>
+<script src="lib/jquery.min.js"></script>
+
 <script src="../src/Med3D.js"></script>
 
 <!-- LOADERS -->
@@ -18,13 +20,13 @@ FPS: <span id="fps">N/A</span>
 <script src="../src/loaders/XHRLoader.js"></script>
 <script src="../src/loaders/ShaderLoader.js"></script>
 <script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/loaders/ImageLoader.js"></script>
 
-<!-- ONLINE INTERACTION -->
-<script src="../src/online_interaction/UpdateListener.js"></script>
-<script src="../src/online_interaction/ScenePublisher.js"></script>
 <!-- CORE -->
 <script src="../src/core/BufferAttribute.js"></script>
 <script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLTextureManager.js"></script>
+<script src="../src/core/GLFrameBufferManager.js"></script>
 <script src="../src/core/GLManager.js"></script>
 <script src="../src/core/Object3D.js"></script>
 <script src="../src/core/Scene.js"></script>
@@ -32,12 +34,19 @@ FPS: <span id="fps">N/A</span>
 <!-- CAMERA -->
 <script src="../src/cameras/Camera.js"></script>
 <script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
 
 <!-- LIGHTS -->
 <script src="../src/lights/Light.js"></script>
 <script src="../src/lights/AmbientLight.js"></script>
 <script src="../src/lights/DirectionalLight.js"></script>
 <script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
+
+<script src="../src/program_management/ShaderBuilder.js"></script>
+<script src="../src/program_management/MaterialProgramTemplate.js"></script>
 
 <!-- MATERIALS -->
 <script src="../src/materials/Material.js"></script>
@@ -47,16 +56,25 @@ FPS: <span id="fps">N/A</span>
 <!-- OBJECTS -->
 <script src="../src/objects/Geometry.js"></script>
 <script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Group.js"></script>
+<script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+<script src="../src/objects/Circle.js"></script>
+<script src="../src/objects/Line.js"></script>
 
 <!-- PROGRAM MANAGEMENT -->
-<script src="../src/renderers/GLProgram.js"></script>
-<script src="../src/renderers/GLProgramManager.js"></script>
+<script src="../src/program_management/GLProgram.js"></script>
+<script src="../src/program_management/GLProgramManager.js"></script>
 
 <!-- RENDERS -->
 <script src="../src/renderers/Renderer.js"></script>
 <script src="../src/renderers/MeshRenderer.js"></script>
 
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<script src="../src/marching_cubes/MHDReader.js"></script>
 <script src="../src/controls/KeyboardInput.js"></script>
+
 
 <script>
     var objects;
@@ -91,10 +109,13 @@ FPS: <span id="fps">N/A</span>
     // Initialize object loader and load the objects
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
+
+
+    // region Setup keyboard
     var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
     var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
-    var keyboardInput = new M3D.KeyboardInput();
+    var keyboardInput = M3D.KeyboardInput.instance;
     keyboardInput.addListener(function (pressedKeys) {
         // ROTATIONS
         if (pressedKeys[65]) {  // A
@@ -147,13 +168,16 @@ FPS: <span id="fps">N/A</span>
             keyboardTranslation.y = -1;
         }
     });
+    // endregion
+
 
     loader.load("models/untitled4.obj", function ( obj ) {
         objects = obj;
         for (var i = 0; i < obj.length; i++) {
             obj[i].position.z = 0;
             obj[i].material = new M3D.MeshPhongMaterial();
-            obj[i].material.specular = new THREE.Color("#999999");
+
+            //obj[i].material.specular = new THREE.Color("#999999");
             obj[i].geometry.drawWireframe = false;
             scene.add(obj[i]);
         }

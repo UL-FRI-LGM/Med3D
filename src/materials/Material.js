@@ -32,6 +32,9 @@ M3D.Material = class {
 
         // Should use vertex colors
         this._useVertexColors = false;
+
+        // Shader program template
+        this._requiredProgramTemplate = null;
     }
 
     set name(val) {
@@ -120,6 +123,9 @@ M3D.Material = class {
 
     set useVertexColors(val) {
         if (val !== this._useVertexColors) {
+            // Invalidate required program template
+            this._requiredProgramTemplate = null;
+
             this._useVertexColors = val;
 
             // Notify onChange subscriber

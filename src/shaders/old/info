@@ -1,6 +1,0 @@
-File names are structured according to these guidelines:
-
- * Vertex shaders end with '.vert'
- * Fragment shaders end with '.frag'
- * Files containing information about shaders and their inputs/outputs end with '.shader'
- * File names begin with 'gl_' or 'gl2_' if using WebGL 1.x or Webgl 2.x, respectively

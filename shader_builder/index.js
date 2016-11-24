@@ -7,13 +7,14 @@ var fs = require('fs');
 
 var shaderBuilder = new ShaderBuilder();
 
-var templateName = "test6.txt";
+var templateName = "phong_template.frag";
 var templateSource = fs.readFileSync(templateName, "utf8");
 
 shaderBuilder.buildTemplateTree(templateName, templateSource);
 
 
+
 if (shaderBuilder.hasTemplate(templateName)) {
     console.log("SHADER CODE:");
-    console.log(shaderBuilder.fetchShader(templateName, ["A"], {"z": 6}));
+    console.log(shaderBuilder.fetchShader(templateName, ["LIGHTS"], {"NUM_LIGHTS": 4}));
 }

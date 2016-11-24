@@ -28,11 +28,16 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         }
     }
     set map(val) {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
         // TODO: Add texture sharing
         this._map = val;
     }
     set lights(val) {
-        if (this._lights === val) {
+        if (this._lights !== val) {
+            // Invalidate required program template
+            this._requiredProgramTemplate = null;
+
             this._lights = val;
 
             // Notify onChange subscriber
@@ -48,21 +53,28 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
     get lights() { return this._lights; }
 
     requiredProgram() {
-        var programName = "basic";
+        // If the template is already generate use it
+        if (this._requiredProgramTemplate !== null) {
+            return this._requiredProgramTemplate;
+        }
+
+        // Create program specification
+        var flags = [];
+        var values = {};
 
         if (this._lights) {
-            programName += "_lights";
+            flags.push("LIGHTS");
         }
 
         if (this._map instanceof M3D.Texture) {
-            programName += "_texture"
+            flags.push("TEXTURE");
         }
 
         if (this._useVertexColors) {
-            programName += "_colors"
+            flags.push("VERTEX_COLORS");
         }
 
-        return programName;
+        return new M3D.MaterialProgramTemplate("basic", flags, values);
     }
 
     toJson() {

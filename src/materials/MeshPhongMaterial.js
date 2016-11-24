@@ -42,6 +42,9 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
     }
 
     set map(val) {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
+
         // TODO: Enable texture sharing
         this._map = val;
     }
@@ -52,13 +55,24 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
     get map() { return this._map; }
 
     requiredProgram() {
-        var programName = "phong";
-
-        if (this._map instanceof M3D.Texture) {
-            programName += "_texture"
+        // If the template is already generate use it
+        if (this._requiredProgramTemplate !== null) {
+            return this._requiredProgramTemplate;
         }
 
-        return programName;
+        // Create program specification
+        var flags = [];
+        var values = {};
+
+        // Add texture flag
+        if (this._map instanceof M3D.Texture) {
+            flags.push("TEXTURE");
+        }
+        else if (this._useVertexColors) {
+            flags.push("VERTEX_COLORS");
+        }
+
+        return new M3D.MaterialProgramTemplate("phong", flags, values);
     }
 
     toJson() {

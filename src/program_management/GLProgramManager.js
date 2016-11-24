@@ -9,77 +9,108 @@ M3D.GLProgramManager = class {
 
     constructor (gl) {
         this._gl = gl;
+        this._shaderBuilder = new M3D.ShaderBuilder();
         this._compiledPrograms = {};
     }
 
     /**
-     *
-     * @param programTemplate
-     * @returns {GLProgram}
+     * Checks if shader builder already contains the template with the given name
+     * @param templateName Program template name
+     * @returns {boolean} Returns true if the template exists in the shade builder
      */
-    compileProgram (programTemplate) {
-        // Generate program id from it's shaders
-        var programId = programTemplate.id;
-
-        // Check if the entry for this program already exist
-        var program = this._compiledPrograms[programId];
-
-        if (program === undefined) {
-            program = new M3D.GLProgram(this._gl);
-        }
-
-        // Check if the program is already initialized
-        if (!program.initialized) {
-            // Fetch shader types
-            var sources = programTemplate.sources;
-            var shaderTypes = Object.keys(sources);
-
-            var compiled = [];
-
-            // Compile the shaders
-            for (var i = 0; i < shaderTypes.length; i++) {
-                switch (shaderTypes[i]) {
-                    case M3D.VERTEX_SHADER:
-                        compiled.push(this._compileShader(sources[M3D.VERTEX_SHADER], this._gl.VERTEX_SHADER));
-                        program.attachShader(compiled[compiled.length - 1]);
-                        break;
-                    case M3D.FRAGMENT_SHADER:
-                        compiled.push(this._compileShader(sources[M3D.FRAGMENT_SHADER], this._gl.FRAGMENT_SHADER));
-                        program.attachShader(compiled[compiled.length - 1]);
-                        break;
-                    default:
-                        console.error("Encountered unknown shader type.");
-                        break;
-                }
-            }
-
-            // Program linking
-            this._gl.linkProgram(program.glProgram);
-
-            // Clean up
-            while (compiled.length > 0) {
-                this._gl.deleteShader(compiled.pop());
-            }
-
-            // Initialize setters
-            program.attributeSetter = this._initAttributeSetter(program.glProgram);
-            program.uniformSetter = this._initUniformSetter(program.glProgram);
-
-            // Mark as initialized
-            program.initialized = true;
-            this._compiledPrograms[programId] = program;
-        }
-
-        return program;
+    isTemplateDownloaded(programID) {
+        return this._shaderBuilder.hasTemplate(programID + M3D.VERTEX_SHADER) && this._shaderBuilder.hasTemplate(programID + M3D.FRAGMENT_SHADER);
     }
 
-    /**
-     * Retrieves already compiled program from the cache
-     * @param programId ID of the requested program
-     * @returns {*}
-     */
-    fetchCompiledProgram (programId) { return this._compiledPrograms[programId]; }
+    addTemplate(programTemplateSrc) {
+        /**
+         * TEMPLATE FORMAT: {id: "program name", sources: {shader_i_type: shader_i_source, ... i = [0, N]}}
+         */
 
+        var programID = programTemplateSrc.id;
+        var sources = programTemplateSrc.sources;
+        var shaderTypes = Object.keys(sources);
+
+        // Build the template tree for every shader
+        for (var i = 0; i < shaderTypes.length; i++) {
+            // TODO: Should we throw exception here or allow bad programs?
+            this._shaderBuilder.buildTemplateTree(programID + shaderTypes[i], sources[shaderTypes[i]]);
+        }
+    }
+
+    fetchProgram (programTemplate, numLights) {
+        var compiledProgram = this._compiledPrograms[programTemplate.programID + "NUM_LIGHTS" + numLights];
+
+        // Check if the program is already compiled
+        if (compiledProgram !== undefined) {
+            return compiledProgram;
+        }
+
+        // Create new program
+        compiledProgram = new M3D.GLProgram(this._gl);
+
+        if (!compiledProgram.initialized) {
+
+            // region LIGHTS INIT
+            // Add number of lights (so that shader is built with correct light count)
+            programTemplate.values["NUM_LIGHTS"] = numLights;
+
+            // If there are no lights.. do not create lights array
+            if (numLights === 0) {
+                programTemplate.flags.push("NO_LIGHTS");
+            }
+            // endregion LIGHTS INIT
+
+            // Build shader sources
+            var vertexSources = this._shaderBuilder.fetchShader(programTemplate.name + M3D.VERTEX_SHADER, programTemplate.flags, programTemplate.values);
+            var fragmentSources = this._shaderBuilder.fetchShader(programTemplate.name + M3D.FRAGMENT_SHADER, programTemplate.flags, programTemplate.values);
+
+            // region LIGHTS CLEANUP
+            if (numLights === 0) {
+                programTemplate.flags.splice(-1,1);;
+            }
+
+            // Rm number of lights
+            delete programTemplate.values["NUM_LIGHTS"];
+            // endregion
+
+            // Check if the shader sources are valid
+            if (vertexSources === undefined || fragmentSources === undefined) {
+                console.error("FAILED TO BUILD SHADER PROGRAM!");
+                return undefined;
+            }
+
+            // Compile shaders
+            var vertexShader = this._compileShader(vertexSources, this._gl.VERTEX_SHADER);
+            var fragmentShader = this._compileShader(fragmentSources, this._gl.FRAGMENT_SHADER);
+
+            // Attach fragment and vertex shader
+            compiledProgram.attachShader(vertexShader);
+            compiledProgram.attachShader(fragmentShader);
+
+            // Program linking
+            this._gl.linkProgram(compiledProgram.glProgram);
+
+            if (!this._gl.getProgramParameter(compiledProgram.glProgram, this._gl.LINK_STATUS) ) {
+                var info = this._gl.getProgramInfoLog(compiledProgram.glProgram);
+                console.error("Could not compile WebGL program. \n\n" + info);
+            }
+
+            // Delete shaders as they are no longer needed
+            this._gl.deleteShader(vertexShader);
+            this._gl.deleteShader(fragmentShader);
+
+            // Initialize setters
+            compiledProgram.attributeSetter = this._initAttributeSetter(compiledProgram.glProgram);
+            compiledProgram.uniformSetter = this._initUniformSetter(compiledProgram.glProgram);
+
+            // Mark as initialized
+            compiledProgram.initialized = true;
+
+            // Add program to the compiled programs list
+            this._compiledPrograms[programTemplate.programID  + "NUM_LIGHTS" + numLights] = compiledProgram;
+        }
+    }
 
     /**
      * Initializes attribute setter based on the compiled shaders

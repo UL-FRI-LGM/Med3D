@@ -1,65 +1,17 @@
 {
-    "gl2_basic": {
+    "phong": {
         "description": "Default gl2 program used for testing.",
         "shaders": {
-            "vertex": "basic/gl2_basic.vert",
-            "fragment": "basic/gl2_basic.frag"
+            "vertex": "phong/phong_template.vert",
+            "fragment": "phong/phong_template.frag"
         }
     },
 
-    "gl2_basic_texture": {
+    "basic": {
         "description": "Default gl2 program used for testing.",
         "shaders": {
-            "vertex": "basic/gl2_basic_texture.vert",
-            "fragment": "basic/gl2_basic_texture.frag"
-        }
-    },
-
-    "gl2_basic_lights": {
-        "description": "Default gl2 program used for testing.",
-        "shaders": {
-            "vertex": "basic/gl2_basic_lights.vert",
-            "fragment": "basic/gl2_basic_lights.frag"
-        }
-    },
-
-    "gl2_basic_lights_colors": {
-        "description": "Default gl2 program used for testing.",
-        "shaders": {
-            "vertex": "basic/gl2_basic_lights_colors.vert",
-            "fragment": "basic/gl2_basic_lights_colors.frag"
-        }
-    },
-
-    "gl2_basic_lights_texture": {
-        "description": "Default gl2 program used for testing.",
-        "shaders": {
-            "vertex": "basic/gl2_basic_lights_texture.vert",
-            "fragment": "basic/gl2_basic_lights_texture.frag"
-        }
-    },
-
-    "gl2_basic_lights_texture_colors": {
-        "description": "Default gl2 program used for testing.",
-        "shaders": {
-            "vertex": "basic/gl2_basic_lights_texture_colors.vert",
-            "fragment": "basic/gl2_basic_lights_texture_colors.frag"
-        }
-    },
-
-    "gl2_phong": {
-        "description": "Phong shader program... ...",
-        "shaders": {
-            "vertex": "phong/gl2_phong.vert",
-            "fragment": "phong/gl2_phong.frag"
-        }
-    },
-
-    "gl2_phong_texture": {
-        "description": "Phong shader program... ...",
-        "shaders": {
-            "vertex": "phong/gl2_phong_texture.vert",
-            "fragment": "phong/gl2_phong_texture.frag"
+            "vertex": "basic/basic_template.vert",
+            "fragment": "basic/basic_template.frag"
         }
     }
 }

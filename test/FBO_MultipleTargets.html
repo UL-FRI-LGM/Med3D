@@ -6,6 +6,8 @@
 </head>
 <body>
 <canvas id="canvas" width="1920" height="1080"></canvas>
+<br>
+PRESS (L) TO TOGGLE THE LIGHTS
 
 <script src="../libraries/three-math.min.js"></script>
 <script src="lib/jquery.min.js"></script>
@@ -43,6 +45,10 @@
 <script src="../src/textures/Texture.js"></script>
 <script src="../src/renderers/RenderTarget.js"></script>
 
+<script src="../src/program_management/ShaderBuilder.js"></script>
+<script src="../src/program_management/MaterialProgramTemplate.js"></script>
+
+
 <!-- MATERIALS -->
 <script src="../src/materials/Material.js"></script>
 <script src="../src/materials/MeshBasicMaterial.js"></script>
@@ -58,8 +64,8 @@
 <script src="../src/objects/Line.js"></script>
 
 <!-- PROGRAM MANAGEMENT -->
-<script src="../src/renderers/GLProgram.js"></script>
-<script src="../src/renderers/GLProgramManager.js"></script>
+<script src="../src/program_management/GLProgram.js"></script>
+<script src="../src/program_management/GLProgramManager.js"></script>
 
 <!-- RENDERS -->
 <script src="../src/renderers/Renderer.js"></script>
@@ -147,9 +153,28 @@
     var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
     directional.position = new THREE.Vector3(0, 0.3, 0.7);
 
-    sceneRtt.add(ambient);
-    sceneRtt.add(directional);
-    sceneRtt.add(pLight);
+
+    var lightsOn = false;
+
+    window.onkeyup = function(e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        if (key === 76) {
+            if (lightsOn) {
+                sceneRtt.remove(ambient);
+                sceneRtt.remove(directional);
+                sceneRtt.remove(pLight);
+            }
+            else {
+                sceneRtt.add(ambient);
+                sceneRtt.add(directional);
+                sceneRtt.add(pLight);
+            }
+
+            lightsOn = !lightsOn;
+        }
+    };
+
 
     // Camera
     var cameraRtt = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
@@ -168,18 +193,22 @@
     sceneOut.add(new M3D.AmbientLight(new THREE.Color("#ffffff"), 1));
     var depthQuad = new M3D.Quad(new THREE.Vector2(-470, 260), new THREE.Vector2(475, -265), new M3D.MeshBasicMaterial());
     depthQuad.position = new THREE.Vector3(-480, 270, -5);
+    depthQuad.material.lights = false;
     depthQuad.material.map = renderTarget.depthTexture;
 
     var normalQuad = new M3D.Quad(new THREE.Vector2(-475, 260), new THREE.Vector2(470, -265), new M3D.MeshBasicMaterial());
     normalQuad.position = new THREE.Vector3(480, 270, -5);
+    normalQuad.material.lights = false;
     normalQuad.material.map = renderTarget.getDrawBuffer(1);
 
     var combinedQuad = new M3D.Quad(new THREE.Vector2(-470, 265), new THREE.Vector2(475, -260), new M3D.MeshBasicMaterial());
     combinedQuad.position = new THREE.Vector3(-480, -270, -5);
+    combinedQuad.material.lights = false;
     combinedQuad.material.map = renderTarget.getDrawBuffer(0);
 
     var specularQuad = new M3D.Quad(new THREE.Vector2(-475, 265), new THREE.Vector2(470, -260), new M3D.MeshBasicMaterial());
     specularQuad.position = new THREE.Vector3(480, -270, -5);
+    specularQuad.material.lights = false;
     specularQuad.material.map = renderTarget.getDrawBuffer(2);
 
 
@@ -237,7 +266,6 @@
         cameraRtt.translateX(keyboardTranslation.x * dt * 0.01);
         cameraRtt.translateY(keyboardTranslation.y * dt * 0.01);
         cameraRtt.translateZ(keyboardTranslation.z * dt * 0.01);
-        console.log(keyboardTranslation.x);
 
         cameraRtt.rotateX(keyboardRotation.x * dt * 0.001);
         cameraRtt.rotateY(keyboardRotation.y  * dt * 0.001);

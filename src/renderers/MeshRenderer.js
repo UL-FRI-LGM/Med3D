@@ -17,12 +17,9 @@ M3D.MeshRenderer = class {
             throw 'Something went wrong while initializing WebGL context.'
         }
 
-
         // Current program
         this._shaderLoader = new M3D.ShaderLoader();
         this._glProgramManager = new M3D.GLProgramManager(this._gl);
-
-
 
         // Frustum
         this._projScreenMatrix = new THREE.Matrix4();
@@ -30,7 +27,7 @@ M3D.MeshRenderer = class {
         this._frustum = new THREE.Frustum();
 
         //region Current frame render arrays
-        this._requiredPrograms = new Set();
+        this._requiredPrograms = [];
         this._compiledPrograms = new Map();
         this._loadingPrograms = new Set();
         this._opaqueObjects = [];
@@ -87,17 +84,18 @@ M3D.MeshRenderer = class {
         this._opaqueObjects.length = 0;
         this._transparentObjects.length = 0;
         this._lights.length = 0;
-        this._requiredPrograms.clear();
+        this._requiredPrograms = [];
         this._compiledPrograms.clear();
 
         // Update objects attributes and setup lights
         this._projectObject(scene, camera);
 
+        this._setupLights(this._lights, camera);
+
+        // Programs need to be loaded after the lights
         if (!this._loadPrograms()) {
             return;
         }
-
-        this._setupLights(this._lights, camera);
 
         // Clear color, depth and stencil buffer
         if (this._glManager.autoClear) {
@@ -137,44 +135,47 @@ M3D.MeshRenderer = class {
     }
 
     _loadPrograms() {
-        // Fetch compiled programs
-        var requiredPrograms = Array.from(this._requiredPrograms);
-
         var scope = this;
         var everythingLoaded = true;
-        var glVersion = this._glManager.glVersion;
 
-        for (var i = 0; i < requiredPrograms.length; i++) {
-            const fullName = glVersion + "_" + requiredPrograms[i];
+        // Fetch all required programs
+        for (var i = 0; i < this._requiredPrograms.length; i++) {
 
-            // Check if the program is already compiled
-            var compiledProgram = this._glProgramManager.fetchCompiledProgram(fullName);
+            // Fetch program name
+            let programName = this._requiredPrograms[i].name;
 
-            if (compiledProgram === undefined) {
+            // Check is the required program template is already downloaded
+            if (!this._glProgramManager.isTemplateDownloaded(programName)) {
                 everythingLoaded = false;
 
                 // Called when the program template is loaded.. Initiates shader compilation
-                var onLoad = function (programTemplate) {
-                    scope._glProgramManager.compileProgram(programTemplate);
-                    scope._loadingPrograms.delete(fullName);
+                var onLoad = function (programTemplateSrc) {
+                    scope._glProgramManager.addTemplate(programTemplateSrc);
+                    scope._loadingPrograms.delete(programName);
                 };
 
                 // Something went wrong while fetching the program templates
                 var onError = function (event) {
-                    console.error("Failed to load program " + fullName + ".")
-                    scope._loadingPrograms.delete(fullName);
+                    console.error("Failed to load program " + programName + ".")
+                    scope._loadingPrograms.delete(programName);
                 };
 
-                if (!this._loadingPrograms.has(fullName)) {
-                    this._loadingPrograms.has(fullName);
-                    this._loadingPrograms.add(fullName);
+                // Check if the program is already loading
+                if (!this._loadingPrograms.has(programName)) {
+                    this._loadingPrograms.add(programName);
 
                     // Initiate loading
-                    this._shaderLoader.loadProgramSources(fullName, onLoad, undefined, onError);
+                    this._shaderLoader.loadProgramSources(programName, onLoad, undefined, onError);
                 }
             }
             else {
-                this._compiledPrograms.set(requiredPrograms[i], compiledProgram);
+                // Build program for specific number of lights (is disregarded if the shader is not using lights)
+                var numLights = this._lightsCombined.directional.length + this._lightsCombined.point.length;
+
+                var program = this._glProgramManager.fetchProgram(this._requiredPrograms[i], numLights);
+
+                // Bind required program and compiled program
+                this._compiledPrograms.set(this._requiredPrograms[i].programID, program);
             }
         }
 
@@ -185,7 +186,7 @@ M3D.MeshRenderer = class {
 
         for (var i = 0; i < objects.length; i++) {
 
-            var program = this._compiledPrograms.get(objects[i].material.requiredProgram());
+            var program = this._compiledPrograms.get(objects[i].material.requiredProgram().programID);
             program.use();
 
             this._setup_uniforms(program, objects[i], camera);
@@ -353,7 +354,6 @@ M3D.MeshRenderer = class {
             uniformSetter["ambient"].set(this._lightsCombined.ambient);
         }
 
-        const MAX_LIGHTS = 8;
         var index = 0, prefix, light;
 
         // DIRECTIONAL LIGHTS
@@ -391,20 +391,6 @@ M3D.MeshRenderer = class {
 
             index++;
         }
-
-        // REMAINING
-        for (var i = index; i < MAX_LIGHTS; i++) {
-            prefix = "lights[" + i + "]";
-            if (uniformSetter[prefix + ".position"]) {
-                uniformSetter[prefix + ".position"].set([0, 0, 0]);
-            }
-            if (uniformSetter[prefix + ".color"]) {
-                uniformSetter[prefix + ".color"].set([0, 0, 0]);
-            }
-            if (uniformSetter[prefix + ".directional"]) {
-                uniformSetter[prefix + ".directional"].set(0);
-            }
-        }
     }
 
     _projectObject(object, camera) {
@@ -422,8 +408,22 @@ M3D.MeshRenderer = class {
 
             // Frustum culling
             if (object.frustumCulled === false || this._isObjectVisible(object)) {
-                // Adds required program to set
-                this._requiredPrograms.add(object.material.requiredProgram());
+
+                // Adds required program to the array of required programs if it's not present in it already
+                var requiredProgram = object.material.requiredProgram();
+                var found = false;
+
+                for (var i = 0; i < this._requiredPrograms; i++) {
+                    if (requiredProgram.compare(this._requiredPrograms[i])) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                // If the program was not found add it to required programs array
+                if (!found) {
+                    this._requiredPrograms.push(requiredProgram)
+                }
 
                 if (object.visible === true) {
                     // Updates or derives attributes from the WebGL geometry

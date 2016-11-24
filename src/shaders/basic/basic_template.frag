@@ -10,7 +10,7 @@ struct Material {
 
 uniform Material material;
 
-#if (LIGHTS)
+#if (LIGHTS && !NO_LIGHTS)
     #define MAX_LIGHTS 8
 
     struct Light {
@@ -25,7 +25,7 @@ uniform Material material;
     in vec3 fragVPos;
 #fi
 
-#if (COLORS)
+#if (VERTEX_COLORS)
     in vec3 fragVColor;
 #fi
 
@@ -35,12 +35,12 @@ uniform Material material;
 
 out vec4 color;
 
-#if (LIGHTS)
+#if (LIGHTS && !NO_LIGHTS)
     // Calculates the point light color contribution
     vec3 calcPointLight(Light light) {
         // Attenuation
         float distance = length(light.position - fragVPos);
-        float attenuation = 1.0f / (1.0f + 0.1f * distance + 0.01f * (distance * distance));
+        float attenuation = 1.0f / (1.0f + 0.01f * distance + 0.0001f * (distance * distance));
 
         // Combine results
         vec3 diffuse = light.color * material.diffuse * attenuation;
@@ -52,9 +52,9 @@ out vec4 color;
 
 void main() {
 
-    color = vec4(material.diffuse, 1);
+    #if (LIGHTS && !NO_LIGHTS)
+        color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    #if (LIGHTS)
         for (int i = 0; i < MAX_LIGHTS; i++) {
             if (!lights[i].directional) {
                 color += vec4(calcPointLight(lights[i]), 0);
@@ -63,6 +63,8 @@ void main() {
                 color += vec4(lights[i].color * material.diffuse, 0);
             }
         }
+    #else
+        color = vec4(material.diffuse, 1.0);
     #fi
 
     #if (COLORS)
