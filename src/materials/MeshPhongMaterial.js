@@ -10,7 +10,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         this._color = new THREE.Color(0xffffff);
         this._specular = new THREE.Color(0x111111);
         this._shininess = 16;
-        this._map = null;
+        this._maps = [];
     }
 
     set color(val) {
@@ -41,18 +41,37 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         }
     }
 
-    set map(val) {
-        // Invalidate required program template
-        this._requiredProgramTemplate = null;
-
-        // TODO: Enable texture sharing
-        this._map = val;
-    }
-
     get color() { return this._color; }
     get specular() { return this._specular; }
     get shininess() { return this._shininess; }
-    get map() { return this._map; }
+    get maps() { return this._maps; }
+
+
+    addMap(map) {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
+
+        this._maps.push(map)
+    }
+
+
+    removeMap(map) {
+        let index = this._maps.indexOf(map);
+
+        if (index > -1) {
+            // Invalidate required program template
+            this._requiredProgramTemplate = null;
+
+            this._maps.splice(index, 1);
+        }
+    }
+
+    clearMaps() {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
+
+        this._maps = [];
+    }
 
     requiredProgram() {
         // If the template is already generate use it
@@ -65,8 +84,10 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         var values = {};
 
         // Add texture flag
-        if (this._map instanceof M3D.Texture) {
+        if (this._maps.length > 0) {
             flags.push("TEXTURE");
+            // Specify number of used textures
+            values["NUM_TEX"] = this._maps.length;
         }
         else if (this._useVertexColors) {
             flags.push("VERTEX_COLORS");

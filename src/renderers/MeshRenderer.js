@@ -275,9 +275,6 @@ M3D.MeshRenderer = class {
     }
 
     _setup_material_uniforms(material, uniformSetter) {
-
-        var textureIdx = 0;
-
         const prefix = "material";
 
         const diffuse = prefix + ".diffuse";
@@ -295,11 +292,15 @@ M3D.MeshRenderer = class {
             uniformSetter[shininess].set(material.shininess);
         }
 
-        const texture = prefix + ".texture";
-        if (uniformSetter[texture] !== undefined) {
-            uniformSetter[texture].set(this._glManager.getTexture(material.map), textureIdx++);
-        }
+        // Setup texture uniforms
+        var textures = material.maps;
 
+        for (var i = 0; i < textures.length; i++) {
+            const texture = prefix + ".texture" + i;
+            if (uniformSetter[texture] !== undefined) {
+                uniformSetter[texture].set(this._glManager.getTexture(textures[i]), i);
+            }
+        }
     }
 
     _setup_material_settings(material) {

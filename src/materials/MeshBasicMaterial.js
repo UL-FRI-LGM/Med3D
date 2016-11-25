@@ -10,7 +10,7 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
         this.type = "MeshBasicMaterial";
 
         this._color = new THREE.Color(0xffffff); // emissive
-        this._map = null;
+        this._maps = [];
 
         // Is affected by lights
         this._lights = true;
@@ -27,12 +27,7 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
             }
         }
     }
-    set map(val) {
-        // Invalidate required program template
-        this._requiredProgramTemplate = null;
-        // TODO: Add texture sharing
-        this._map = val;
-    }
+
     set lights(val) {
         if (this._lights !== val) {
             // Invalidate required program template
@@ -49,8 +44,36 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
     }
 
     get color() { return this._color; }
-    get map() { return this._map; }
+    get maps() { return this._maps; }
     get lights() { return this._lights; }
+
+    // region MAP MANAGEMENT
+    addMap(map) {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
+
+        this._maps.push(map)
+    }
+
+
+    removeMap(map) {
+        let index = this._maps.indexOf(map);
+
+        if (index > -1) {
+            // Invalidate required program template
+            this._requiredProgramTemplate = null;
+
+            this._maps.splice(index, 1);
+        }
+    }
+
+    clearMaps() {
+        // Invalidate required program template
+        this._requiredProgramTemplate = null;
+
+        this._maps = [];
+    }
+    // endregion
 
     requiredProgram() {
         // If the template is already generate use it
@@ -66,8 +89,10 @@ M3D.MeshBasicMaterial = class extends M3D.Material {
             flags.push("LIGHTS");
         }
 
-        if (this._map instanceof M3D.Texture) {
+        if (this._maps.length > 0) {
             flags.push("TEXTURE");
+            // Specify number of used textures
+            values["NUM_TEX"] = this._maps.length;
         }
 
         if (this._useVertexColors) {

@@ -15,7 +15,9 @@ struct Material {
     float shininess;
 
     #if (TEXTURE)
-        sampler2D texture;
+        #for I_TEX in 0 to NUM_TEX
+            sampler2D texture##I_TEX;
+        #end
     #fi
 };
 
@@ -95,13 +97,16 @@ void main() {
         #end
     #fi
 
+    color[0] = vec4(combined, 1.0);
+
     #if (TEXTURE)
-        color[0] = vec4(combined, 1.0) * texture(material.texture, fragUV);
-        color[1] = vec4(normal, 1.0);
-        color[2] = vec4(abs(fragVPos), 1.0);
-    #else
-        color[0] = vec4(combined, 1.0);
-        color[1] = vec4(normal, 1.0);
-        color[2] = vec4(abs(fragVPos), 1.0);
+        // Apply all of the textures
+        #for I_TEX in 0 to NUM_TEX
+             color[0] *= texture(material.texture##I_TEX, fragUV);
+        #end
+
     #fi
+
+    color[1] = vec4(normal, 1.0);
+    color[2] = vec4(abs(fragVPos), 1.0);
 }

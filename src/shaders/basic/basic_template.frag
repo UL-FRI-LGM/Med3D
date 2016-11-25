@@ -4,7 +4,11 @@ precision mediump float;
 struct Material {
     vec3 diffuse;
     #if (TEXTURE)
-        sampler2D texture;
+        #if (TEXTURE)
+            #for I_TEX in 0 to NUM_TEX
+                sampler2D texture##I_TEX;
+            #end
+        #fi
     #fi
 };
 
@@ -72,6 +76,9 @@ void main() {
     #fi
 
     #if (TEXTURE)
-        color *= texture(material.texture, fragUV);
+        // Apply all of the textures
+        #for I_TEX in 0 to NUM_TEX
+             color *= texture(material.texture##I_TEX, fragUV);
+        #end
     #fi
 }

@@ -194,22 +194,23 @@ PRESS (L) TO TOGGLE THE LIGHTS
     var depthQuad = new M3D.Quad(new THREE.Vector2(-470, 260), new THREE.Vector2(475, -265), new M3D.MeshBasicMaterial());
     depthQuad.position = new THREE.Vector3(-480, 270, -5);
     depthQuad.material.lights = false;
-    depthQuad.material.map = renderTarget.depthTexture;
+    depthQuad.material.addMap(renderTarget.depthTexture);
 
-    var normalQuad = new M3D.Quad(new THREE.Vector2(-475, 260), new THREE.Vector2(470, -265), new M3D.MeshBasicMaterial());
-    normalQuad.position = new THREE.Vector3(480, 270, -5);
-    normalQuad.material.lights = false;
-    normalQuad.material.map = renderTarget.getDrawBuffer(1);
 
     var combinedQuad = new M3D.Quad(new THREE.Vector2(-470, 265), new THREE.Vector2(475, -260), new M3D.MeshBasicMaterial());
     combinedQuad.position = new THREE.Vector3(-480, -270, -5);
     combinedQuad.material.lights = false;
-    combinedQuad.material.map = renderTarget.getDrawBuffer(0);
+    combinedQuad.material.addMap(renderTarget.getDrawBuffer(0));
+
+    var normalQuad = new M3D.Quad(new THREE.Vector2(-475, 260), new THREE.Vector2(470, -265), new M3D.MeshBasicMaterial());
+    normalQuad.position = new THREE.Vector3(480, 270, -5);
+    normalQuad.material.lights = false;
+    normalQuad.material.addMap(renderTarget.getDrawBuffer(1));
 
     var specularQuad = new M3D.Quad(new THREE.Vector2(-475, 265), new THREE.Vector2(470, -260), new M3D.MeshBasicMaterial());
     specularQuad.position = new THREE.Vector3(480, -270, -5);
     specularQuad.material.lights = false;
-    specularQuad.material.map = renderTarget.getDrawBuffer(2);
+    specularQuad.material.addMap(renderTarget.getDrawBuffer(2));
 
 
     sceneOut.add(depthQuad);
