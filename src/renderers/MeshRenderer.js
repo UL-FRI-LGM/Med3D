@@ -217,45 +217,70 @@ M3D.MeshRenderer = class {
     }
 
     _setup_attributes(program, object, vertices) {
-        var attributeSetter = program.attributeSetter;
+        let attributeSetter = program.attributeSetter;
+        let attributes = Object.getOwnPropertyNames(attributeSetter);
 
-        var noError = true;
+        let customAttributes;
 
-        var attributes = Object.getOwnPropertyNames(attributeSetter);
+        // If material is a type of CustomShaderMaterial it may contain its own definition of attributes
+        if (object.material instanceof M3D.CustomShaderMaterial) {
+            customAttributes = object.material._attributes;
+        }
 
-        var buffer;
+        let buffer;
+
         // Set all of the properties
-        for (var i = 0; i < attributes.length; i++) {
+        for (let i = 0; i < attributes.length; i++) {
+
             switch (attributes[i]) {
                 case "VPos":
                     buffer = this._glManager.getBuffer(vertices);
                     attributeSetter["VPos"].set(buffer, 3);
                     break;
                 case "VNorm":
-                    var normals = object.geometry.normals;
+                    let normals = object.geometry.normals;
                     buffer = this._glManager.getBuffer(normals);
                     attributeSetter["VNorm"].set(buffer, 3);
                     break;
                 case "VColor":
-                    var vertColor = object.geometry.vertColor;
+                    let vertColor = object.geometry.vertColor;
                     buffer = this._glManager.getBuffer(vertColor);
                     attributeSetter["VColor"].set(buffer, 4);
                     break;
                 case "uv":
-                    var uv = object.geometry.uv;
+                    let uv = object.geometry.uv;
                     buffer = this._glManager.getBuffer(uv);
                     attributeSetter["uv"].set(buffer, 2);
                     break;
                 default:
-                    console.error("Unknown Attribute!");
-                    noError = false;
+                    let found = false;
+
+                    // Check if the custom attributes are given
+                    if (customAttributes !== undefined) {
+                        let attr = customAttributes[attributes[i]];
+
+                        // If attribute is defined in the custom attribute object, fetch buffer and bind it to program
+                        if (attr !== undefined) {
+                            found = true;
+                            buffer = this._glManager.getBuffer(attr);
+                            attributeSetter[attributes[i]].set(buffer, 3);
+                        }
+                    }
+
+                    // Notify the user if the attribute was not found
+                    if (!found) {
+                        console.error("Attribute (" + attributes[i] + ") not set!");
+                    }
                     break;
             }
         }
     }
 
     _setup_uniforms(program, object, camera) {
-        var uniformSetter = program.uniformSetter;
+        let uniformSetter = program.uniformSetter;
+
+        // Reset the uniform validation
+        uniformSetter.__validation.reset();
 
         if (uniformSetter["PMat"] !== undefined) {
             uniformSetter["PMat"].set(camera.projectionMatrix.elements);
@@ -272,30 +297,59 @@ M3D.MeshRenderer = class {
         this._setup_light_uniforms(uniformSetter);
 
         this._setup_material_uniforms(object.material, uniformSetter);
+
+        // Check if all of the uniforms have been set
+        let notSet = uniformSetter.__validation.validate();
+
+        if (notSet.length > 0) {
+            let notSetString = notSet[0];
+
+            // Notify the user which uniforms have not been set
+            for (let i = 1; i < notSet.length; i++) {
+                notSetString += ", " + notSet[i];
+            }
+
+            console.error("Uniforms (" + notSetString + ") not set!");
+        }
     }
 
     _setup_material_uniforms(material, uniformSetter) {
         const prefix = "material";
 
-        const diffuse = prefix + ".diffuse";
-        if (uniformSetter[diffuse] !== undefined) {
-            uniformSetter[diffuse].set(material.color.toArray());
+        // Setup custom user uniforms (in case of CustomShaderMaterial)
+        if (material instanceof M3D.CustomShaderMaterial) {
+            let customUniforms = material._uniforms;
+
+            // Set all of the custom uniforms if they are defined within the shader
+            for (let name in customUniforms) {
+                if (customUniforms.hasOwnProperty(name)) {
+                    if (uniformSetter[name] !== undefined) {
+                        uniformSetter[name].set(customUniforms[name]);
+                    }
+                }
+            }
+        }
+        else {
+            const diffuse = prefix + ".diffuse";
+            if (uniformSetter[diffuse] !== undefined) {
+                uniformSetter[diffuse].set(material.color.toArray());
+            }
+
+            const specular = prefix + ".specular";
+            if (uniformSetter[specular] !== undefined) {
+                uniformSetter[specular].set(material.specular.toArray());
+            }
+
+            const shininess = prefix + ".shininess";
+            if (uniformSetter[shininess] !== undefined) {
+                uniformSetter[shininess].set(material.shininess);
+            }
         }
 
-        const specular = prefix + ".specular";
-        if (uniformSetter[specular] !== undefined) {
-            uniformSetter[specular].set(material.specular.toArray());
-        }
+        // Setup texture uniforms (Are common for both predefined materials and custom shader material)
+        let textures = material.maps;
 
-        const shininess = prefix + ".shininess";
-        if (uniformSetter[shininess] !== undefined) {
-            uniformSetter[shininess].set(material.shininess);
-        }
-
-        // Setup texture uniforms
-        var textures = material.maps;
-
-        for (var i = 0; i < textures.length; i++) {
+        for (let i = 0; i < textures.length; i++) {
             const texture = prefix + ".texture" + i;
             if (uniformSetter[texture] !== undefined) {
                 uniformSetter[texture].set(this._glManager.getTexture(textures[i]), i);

@@ -13,5 +13,13 @@
             "vertex": "basic/basic_template.vert",
             "fragment": "basic/basic_template.frag"
         }
+    },
+
+    "custom_testProgram": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/testProgram_template.vert",
+            "fragment": "custom/testProgram_template.frag"
+        }
     }
 }

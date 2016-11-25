@@ -158,73 +158,114 @@ M3D.GLProgramManager = class {
 
         var n = this._gl.getProgramParameter(program, this._gl.ACTIVE_UNIFORMS);
 
-        for (var i = 0; i < n; i++) {
+        // Used for validation if all of the uniforms are set
+        uniformSetter.__validation = {
+            uniforms: {},
+
+            reset() {
+                // Marks all of the uniforms as not set
+                for (let uniformName in this.uniforms) {
+                    if (this.uniforms.hasOwnProperty(uniformName)) {
+                        this.uniforms[uniformName] = false;
+                    }
+                }
+            },
+
+            validate() {
+                let notSet = [];
+
+                // Generates list of uniforms that are not set
+                for (let uniformName in this.uniforms) {
+                    if (this.uniforms.hasOwnProperty(uniformName) && !this.uniforms[uniformName]) {
+                        notSet.push(uniformName);
+                    }
+                }
+
+                return notSet;
+            }
+        };
+
+        for (let i = 0; i < n; i++) {
             // Fetch uniform info and location
             const info = self._gl.getActiveUniform(program, i);
             const location = self._gl.getUniformLocation(program, info.name);
 
             uniformSetter[info.name] = {};
 
+            // Add uniform to validation checker
+            uniformSetter.__validation.uniforms[info.name] = false;
+
             switch (info.type) {
                 case self._gl.FLOAT:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform1f(location, value);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.FLOAT_VEC2:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform2f(location, value[0], value[1]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.FLOAT_VEC3:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform3f(location, value[0], value[1], value[2]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.FLOAT_VEC4:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.FLOAT_MAT3:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniformMatrix3fv(location, false, value);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
                 case self._gl.FLOAT_MAT4:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniformMatrix4fv(location, false, value);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.INT:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform1i(location, value);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
 
                 case self._gl.INT_VEC2:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform2i(location, value[0], value[1]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
                 case self._gl.INT_VEC3:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform3i(location, value[0], value[1], value[2]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
                 case self._gl.INT_VEC4:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform4i(location, value[0], value[1], value[2], value[3]);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
                 case self._gl.BOOL:
                     uniformSetter[info.name]['set'] = function (value) {
                         self._gl.uniform1f(location, value);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
                 case self._gl.SAMPLER_2D:
@@ -232,6 +273,7 @@ M3D.GLProgramManager = class {
                         self._gl.activeTexture(self._gl.TEXTURE0 + index);
                         self._gl.bindTexture(self._gl.TEXTURE_2D, texture);
                         self._gl.uniform1i(location, index);
+                        uniformSetter.__validation.uniforms[info.name] = true;
                     };
                     break;
             }

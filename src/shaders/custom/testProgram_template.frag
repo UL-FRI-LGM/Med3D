@@ -28,10 +28,6 @@ uniform Material material;
     in vec3 fragVPos;
 #fi
 
-#if (VERTEX_COLORS)
-    in vec3 fragVColor;
-#fi
-
 #if (TEXTURE)
     in vec2 fragUV;
 #fi
@@ -52,6 +48,7 @@ out vec4 color;
     }
 #fi
 
+uniform vec4 dimFactor;
 
 void main() {
 
@@ -70,14 +67,12 @@ void main() {
         color = vec4(material.diffuse, 1.0);
     #fi
 
-    #if (COLORS)
-        color *= vec4(fragVColor, 1.0);
-    #fi
-
     #if (TEXTURE)
         // Apply all of the textures
         #for I_TEX in 0 to NUM_TEX
              color *= texture(material.texture##I_TEX, fragUV);
         #end
     #fi
+
+    color *= dimFactor;
 }

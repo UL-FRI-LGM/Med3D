@@ -67,9 +67,9 @@ M3D.GLManager = class {
      */
     updateObjectData(object) {
         // BufferedGeometry
-        var geometry = object.geometry;
+        let geometry = object.geometry;
 
-        // Add geometry indices if it specifies them
+        // region GEOMETRY ATTRIBUTES
         if (geometry.indices !== null) {
             this._attributeManager.updateAttribute(geometry.indices, this._gl.ELEMENT_ARRAY_BUFFER);
         }
@@ -97,16 +97,30 @@ M3D.GLManager = class {
         if (geometry._uv != null) {
             this._attributeManager.updateAttribute(geometry._uv, this._gl.ARRAY_BUFFER);
         }
-        
-        // Material
-        var material = object.material;
+        // endregion
 
-        // Update texture
-        var texture = material.map;
+        // region MATERIAL ATTRIBUTES
+        let material = object.material;
 
-        if (texture) {
-            this._textureManager.updateTexture(texture, false);
+        // Update textures
+        let textures = material.maps;
+
+        for (let i = 0; i < textures.length; i++) {
+            this._textureManager.updateTexture(textures[i], false);
         }
+
+        // CustomShaderMaterial may specify extra attributes
+        if (object.material instanceof M3D.CustomShaderMaterial) {
+            let customAttributes = object.material._attributes;
+
+            // Update GL version of all of the custom attributes
+            for (let name in customAttributes) {
+                if (customAttributes.hasOwnProperty(name)) {
+                    this._attributeManager.updateAttribute(customAttributes[name], this._gl.ARRAY_BUFFER);
+                }
+            }
+        }
+        //endregion
     }
 
     initRenderTarget(renderTarget) {

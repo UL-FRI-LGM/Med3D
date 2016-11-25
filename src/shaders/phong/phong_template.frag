@@ -1,8 +1,6 @@
 #version 300 es
 precision mediump float;
 
-#define MAX_LIGHTS ##NUM_LIGHTS
-
 struct Light {
     bool directional;
     vec3 position;

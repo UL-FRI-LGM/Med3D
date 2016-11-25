@@ -173,12 +173,24 @@ FPS: <span id="fps">N/A</span>
 
 
     loader.load("models/untitled4.obj", function ( obj ) {
+        var displacementBuffer;
+        var verticesLength;
+
         objects = obj;
         for (var i = 0; i < obj.length; i++) {
-            obj[i].position.z = 0;
-            obj[i].material = new M3D.MeshBasicMaterial();
+            obj[i].position.z = -300;
 
-            //obj[i].material.specular = new THREE.Color("#999999");
+            // Fetch vertices length * 3
+            verticesLength = obj[i].geometry.vertices.array.length;
+
+            displacementBuffer = new M3D.BufferAttribute(new Float32Array(verticesLength), 3);
+
+            for (var j = 0; j < verticesLength; j++) {
+                displacementBuffer.array[j] = (Math.random() - 0.5) / 20;
+            }
+
+            obj[i].material = new M3D.CustomShaderMaterial("testProgram", {"dimFactor": [0.5,1.0,0.5,1.0], "material.diffuse": [1.0, 1.0, 1.0]}, {"displacement": displacementBuffer});
+
             obj[i].geometry.drawWireframe = false;
             scene.add(obj[i]);
         }
