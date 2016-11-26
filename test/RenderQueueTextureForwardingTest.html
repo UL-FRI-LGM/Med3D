@@ -77,7 +77,11 @@ PRESS (L) TO TOGGLE THE LIGHTS
 <script src="../src/marching_cubes/MHDReader.js"></script>
 <script src="../src/controls/KeyboardInput.js"></script>
 
+<script src="../src/renderers/RenderPass.js"></script>
+<script src="../src/renderers/RenderQueue.js"></script>
+
 <script>
+    // Initialize loader
     var manager = new M3D.LoadingManager();
     var loader = new M3D.ObjLoader(manager);
 
@@ -140,12 +144,11 @@ PRESS (L) TO TOGGLE THE LIGHTS
     });
     // endregion
 
-    // Renderer setup
+    // Initialize renderer
     var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
     renderer.addShaderLoaderUrls("../src/shaders");
 
-
-    // region RTT SCENE
+    // region CREATE RTT SCENE
     var sceneRtt = new M3D.Scene();
 
     // Lights
@@ -154,9 +157,8 @@ PRESS (L) TO TOGGLE THE LIGHTS
     var pLight = new M3D.PointLight(new THREE.Color("#0000FF"), 1);
     directional.position = new THREE.Vector3(0, 0.3, 0.7);
 
-
+    // Lights toggling
     var lightsOn = false;
-
     window.onkeyup = function(e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
@@ -176,59 +178,40 @@ PRESS (L) TO TOGGLE THE LIGHTS
         }
     };
 
-
     // Camera
     var cameraRtt = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
     cameraRtt.position.x = 1;
-    // RTT
-    var renderTarget = new M3D.RenderTarget(1920, 1080);
-    renderTarget.addDepthTexture();
-    renderTarget.addDrawBuffer(new M3D.Texture());
-    renderTarget.addDrawBuffer(new M3D.Texture());
-    renderTarget.addDrawBuffer(new M3D.Texture());
     // endregion
 
-
-    // Output texture rendering
+    // region CREATE OUTPUT SCENE
     var sceneOut = new M3D.Scene();
 
+    // region TEXTURE OUT QUADS
     var depthQuad = new M3D.Quad(new THREE.Vector2(-470, 260), new THREE.Vector2(475, -265), new M3D.MeshBasicMaterial());
     depthQuad.position = new THREE.Vector3(-480, 270, -5);
     depthQuad.material.lights = false;
-    depthQuad.material.addMap(renderTarget.depthTexture);
-
+    sceneOut.add(depthQuad);
 
     var combinedQuad = new M3D.Quad(new THREE.Vector2(-470, 265), new THREE.Vector2(475, -260), new M3D.MeshBasicMaterial());
     combinedQuad.position = new THREE.Vector3(-480, -270, -5);
     combinedQuad.material.lights = false;
-    combinedQuad.material.addMap(renderTarget.getDrawBuffer(0));
+    sceneOut.add(combinedQuad);
 
     var normalQuad = new M3D.Quad(new THREE.Vector2(-475, 260), new THREE.Vector2(470, -265), new M3D.MeshBasicMaterial());
     normalQuad.position = new THREE.Vector3(480, 270, -5);
     normalQuad.material.lights = false;
-    normalQuad.material.addMap(renderTarget.getDrawBuffer(1));
+    sceneOut.add(normalQuad);
 
     var positionQuad = new M3D.Quad(new THREE.Vector2(-475, 265), new THREE.Vector2(470, -260), new M3D.MeshBasicMaterial());
     positionQuad.position = new THREE.Vector3(480, -270, -5);
     positionQuad.material.lights = false;
-    positionQuad.material.addMap(renderTarget.getDrawBuffer(2));
-
-
-    sceneOut.add(depthQuad);
-    sceneOut.add(normalQuad);
-    sceneOut.add(combinedQuad);
     sceneOut.add(positionQuad);
+    // endregion
 
-    // RTT texture binding
-    //quadOut.material.map = renderTarget.getDrawBuffer(1);
-
-
-    //var cameraOut = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
     var cameraOut = new M3D.OrthographicCamera(-960, 960, 540, -540, 1, 100);
+    // endregion
 
-
-
-    // region Load RTT objects
+    // region OBJECT LOADING
     loader.load("models/untitled3.obj", function ( obj ) {
 
         objects = obj;
@@ -241,51 +224,100 @@ PRESS (L) TO TOGGLE THE LIGHTS
         }
         objects[0].position.x = 1;
 
-        animate();
+        init();
     });
     // endregion
 
-    var prevTime = -1, currTime, dt;
+    var renderQueue = new M3D.RenderQueue(renderer);
+
+    // Initializes render queue
+    function init() {
+
+        var prevTime = -1, currTime, dt;
+
+        var rttRenderPass = new M3D.RenderPass(
+            // Rendering pass type
+            M3D.RenderPass.BASIC,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                // Calculate delta time and update timestamps
+                currTime = new Date();
+                dt = (prevTime !== -1) ? currTime - prevTime : 0;
+                prevTime = currTime;
+
+                keyboardTranslation.reset();
+                keyboardRotation.reset();
+                keyboardInput.update();
+
+                objects[0].rotateY(-dt * 0.001);
+                objects[0].rotateZ(-dt * 0.002);
+                objects[1].rotateY(dt * 0.002);
+                objects[2].rotateY(dt * 0.002);
+                objects[1].rotateZ(dt * 0.002);
+                objects[2].rotateZ(dt * 0.002);
+
+                cameraRtt.translateX(keyboardTranslation.x * dt * 0.01);
+                cameraRtt.translateY(keyboardTranslation.y * dt * 0.01);
+                cameraRtt.translateZ(keyboardTranslation.z * dt * 0.01);
+
+                cameraRtt.rotateX(keyboardRotation.x * dt * 0.001);
+                cameraRtt.rotateY(keyboardRotation.y  * dt * 0.001);
+                cameraRtt.rotateZ(keyboardRotation.z * dt * 0.001);
+
+                pLight.position = cameraRtt.position;
+
+                return {scene: sceneRtt, camera: cameraRtt};
+            },
+            // Target
+            M3D.RenderPass.TEXTURE,
+            // Viewport
+            {width: 1920, height: 1080},
+            // Depth texture id
+            "depthTexture",
+            // Output textures id-s and configs
+            [{id: "color0", textureConfig: M3D.RenderPass.DEFAULT_TEXTURE_CONFIG},
+                {id: "color1", textureConfig: M3D.RenderPass.DEFAULT_TEXTURE_CONFIG},
+                {id: "color2", textureConfig: M3D.RenderPass.DEFAULT_TEXTURE_CONFIG}]
+        );
+
+        var outRenderPass = new M3D.RenderPass(
+            // Rendering pass type
+            M3D.RenderPass.BASIC,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                depthQuad.material.clearMaps();
+                depthQuad.material.addMap(textureMap.depthTexture);
+
+                combinedQuad.material.clearMaps();
+                combinedQuad.material.addMap(textureMap.color0);
+
+                normalQuad.material.clearMaps();
+                normalQuad.material.addMap(textureMap.color1);
+
+                positionQuad.material.clearMaps();
+                positionQuad.material.addMap(textureMap.color2);
+
+                return {scene: sceneOut, camera: cameraOut};
+            },
+            // Target
+            M3D.RenderPass.SCREEN,
+            // Viewport
+            {width: 1920, height: 1080}
+        );
+
+        // Create render pass queue
+        renderQueue.pushRenderPass(rttRenderPass);
+        renderQueue.pushRenderPass(outRenderPass);
+
+        animate();
+    }
+
     function animate() {
         requestAnimationFrame(animate);
 
-        // Calculate delta time and update timestamps
-        currTime = new Date();
-        dt = (prevTime !== -1) ? currTime - prevTime : 0;
-        prevTime = currTime;
-
-        keyboardTranslation.reset();
-        keyboardRotation.reset();
-        keyboardInput.update();
-
-        objects[0].rotateY(-dt * 0.001);
-        objects[0].rotateZ(-dt * 0.002);
-        objects[1].rotateY(dt * 0.002);
-        objects[2].rotateY(dt * 0.002);
-        objects[1].rotateZ(dt * 0.002);
-        objects[2].rotateZ(dt * 0.002);
-
-        cameraRtt.translateX(keyboardTranslation.x * dt * 0.01);
-        cameraRtt.translateY(keyboardTranslation.y * dt * 0.01);
-        cameraRtt.translateZ(keyboardTranslation.z * dt * 0.01);
-
-        cameraRtt.rotateX(keyboardRotation.x * dt * 0.001);
-        cameraRtt.rotateY(keyboardRotation.y  * dt * 0.001);
-        cameraRtt.rotateZ(keyboardRotation.z * dt * 0.001);
-
-        pLight.position = cameraRtt.position;
-
-        renderer.render(sceneRtt, cameraRtt, renderTarget);
-        renderer.render(sceneOut, cameraOut);
+        renderQueue.render();
     }
 
 </script>
-
-
-<!--<script>
-
-
-</script>-->
-
 </body>
 </html>

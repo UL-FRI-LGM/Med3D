@@ -641,6 +641,10 @@ M3D.MeshRenderer = class {
         this._gl.viewport(0, 0, width, height);
     }
 
+    getViewport() {
+        return {width: this._canvas.width, height: this._canvas._height};
+    }
+
     /**
      * Sets the url to shader server & directory from which the shaders source is loaded.
      * @param url Full url to the shader server directory

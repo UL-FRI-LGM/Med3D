@@ -65,39 +65,56 @@ M3D.Texture = class {
 
 	// region SETTERS
 	set image(value) {
-		this._image = value;
-		this._dirty = true;
+		if (value !== this._image) {
+            this._image = value;
+            this._dirty = true;
+        }
 	}
 
 	set wrapS(value) {
-		this._wrapS = value;
-		this._dirty = true;
+        if (value !== this._wrapS) {
+            this._wrapS = value;
+            this._dirty = true;
+        }
 	}
 	set wrapT(value) {
-		this._wrapT = value;
-		this._dirty = true;
+        if (value !== this._wrapT) {
+            this._wrapT = value;
+            this._dirty = true;
+        }
 	}
 
 	set minFilter(value) {
-		this._minFilter = value;
-		this._dirty = true;
+        if (value !== this._minFilter) {
+            this._minFilter = value;
+            this._dirty = true;
+        }
 	}
 	set magFilter(value) {
-		this._magFilter = value;
-		this._dirty = true;
+        if (value !== this._magFilter) {
+            this._magFilter = value;
+            this._dirty = true;
+        }
 	}
 
 	set internalFormat(value) {
-		this._internalFormat = value;
+        if (value !== this._internalFormat) {
+            this._internalFormat = value;
+            this._dirty = true;
+        }
 	}
 	set format(value) {
-		this._format = value;
-		this._dirty = true;
+        if (value !== this._format) {
+            this._format = value;
+            this._dirty = true;
+        }
 	}
 
 	set type(value) {
-		this._type = value;
-		this._dirty = true;
+        if (value !== this._type) {
+            this._type = value;
+            this._dirty = true;
+        }
 	}
 	// endregion
 };

@@ -17,8 +17,7 @@ M3D.RenderTarget = class {
         this._drawBuffers = [];
 
         // Depth texture (if null then depth texture wont be fetched)
-        this._depthTexture = new M3D.Texture(undefined, M3D.Texture.ClampToEdgeWrapping, M3D.Texture.ClampToEdgeWrapping,
-            M3D.Texture.NearestFilter, M3D.Texture.NearestFilter, M3D.Texture.DEPTH_COMPONENT24, M3D.Texture.DEPTH_COMPONENT, M3D.Texture.UNSIGNED_INT);
+        this._depthTexture = null;
     }
 
     get width() {
@@ -41,8 +40,18 @@ M3D.RenderTarget = class {
         // Update viewport
         this._viewport = new THREE.Vector4(0, 0, this._width, this._height);
     }
+
     set depthTexture(texture) {
         this._depthTexture = texture;
+    }
+
+    addDepthTexture() {
+        this._depthTexture = new M3D.Texture(undefined, M3D.Texture.ClampToEdgeWrapping, M3D.Texture.ClampToEdgeWrapping,
+            M3D.Texture.NearestFilter, M3D.Texture.NearestFilter, M3D.Texture.DEPTH_COMPONENT24, M3D.Texture.DEPTH_COMPONENT, M3D.Texture.UNSIGNED_INT);
+    }
+
+    rmDepthTexture() {
+        this._depthTexture = null;
     }
 
     addDrawBuffer(texture) {
@@ -61,7 +70,7 @@ M3D.RenderTarget = class {
         return this._drawBuffers.length;
     }
 
-    clearDrawBuffer() {
+    clearDrawBuffers() {
         this._drawBuffers = [];
     }
 };
