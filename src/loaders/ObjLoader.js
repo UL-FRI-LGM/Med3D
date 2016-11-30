@@ -330,10 +330,9 @@ M3D.ObjLoader = class {
             }
 
             // If specified add texture uv-s
-            //TODO
-            //if ( geometry.uvs.length > 0 ) {
-            //    bufferGeometry.addAttribute('uv', new M3D.BufferAttribute(new Float32Array(geometry.uvs), 2));
-            //}
+            if (geometry.uvs.length > 0) {
+                bufferGeometry.uv = new M3D.BufferAttribute(new Float32Array(geometry.uvs), 2);
+            }
 
             var material = new M3D.MeshBasicMaterial();
 

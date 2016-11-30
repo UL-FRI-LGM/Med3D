@@ -21,5 +21,37 @@
             "vertex": "custom/testProgram_template.vert",
             "fragment": "custom/testProgram_template.frag"
         }
+    },
+
+    "custom_deferredGBuffer": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/deferred/gBuffer_template.vert",
+            "fragment": "custom/deferred/gBuffer_template.frag"
+        }
+    },
+
+    "custom_deferredLightning": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/deferred/lightning_template.vert",
+            "fragment": "custom/deferred/lightning_template.frag"
+        }
+    },
+
+    "custom_drawOnTexture": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/drawToTexture/drawing_template.vert",
+            "fragment": "custom/drawToTexture/drawing_template.frag"
+        }
+    },
+
+    "custom_overlayTextures": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/overlay/overlayTextures.vert",
+            "fragment": "custom/overlay/overlayTextures.frag"
+        }
     }
 }

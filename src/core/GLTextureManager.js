@@ -12,7 +12,7 @@ M3D.GLTextureManager = class {
         this._cached_textures = new Map();
     }
 
-    updateTexture(texture, isRTT, width, height) {
+    updateTexture(texture, isRTT) {
         // Try to fetch texture
         var glTexture = this._cached_textures.get(texture);
 
@@ -39,6 +39,8 @@ M3D.GLTextureManager = class {
         var wrapS = this._wrapToGL(texture._wrapS);
         var wrapT = this._wrapToGL(texture._wrapT);
         var type = this._typeToGL(texture._type);
+        var width = texture._width;
+        var height = texture._height;
 
         // Filters
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, magFilter);
@@ -56,7 +58,12 @@ M3D.GLTextureManager = class {
         // If this texture is not a part of the RTT, load it from the image and unbind the texture.
         if (!isRTT) {
             // Normal texture
-            this._gl.texImage2D(this._gl.TEXTURE_2D, 0, format, format, type, texture.image);
+            if (texture.image === null) {
+                this._gl.texImage2D(this._gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+            }
+            else {
+                this._gl.texImage2D(this._gl.TEXTURE_2D, 0, internalFormat, format, type, texture.image);
+            }
             this._gl.bindTexture(this._gl.TEXTURE_2D, null);
         }
         // Otherwise create empty texture (width * height) and leave the texture unbinding to function caller
@@ -110,6 +117,18 @@ M3D.GLTextureManager = class {
                 break;
             case M3D.Texture.DEPTH_COMPONENT24:
                 return this._gl.DEPTH_COMPONENT24;
+                break;
+            case M3D.Texture.RGB16F:
+                return this._gl.RGB16F;
+                break;
+            case M3D.Texture.RGB32F:
+                return this._gl.RGB32F;
+                break;
+            case M3D.Texture.RGBA16F:
+                return this._gl.RGBA16F;
+                break;
+            case M3D.Texture.RGBA32F:
+                return this._gl.RGBA32F;
                 break;
             default:
                 console.log("Warning: Received unsupported texture format!");
@@ -192,6 +211,12 @@ M3D.GLTextureManager = class {
                 break;
             case M3D.Texture.UNSIGNED_INT:
                 return this._gl.UNSIGNED_INT;
+                break;
+            case M3D.Texture.FLOAT:
+                return this._gl.FLOAT;
+                break;
+            case M3D.Texture.HALF_FLOAT:
+                return this._gl.HALF_FLOAT;
                 break;
             default:
                 console.log("Warning: Received unsupported texture type (using default)!");

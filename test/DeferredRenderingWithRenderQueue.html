@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1920" height="1080"></canvas>
+<br>
+FPS: <span id="fps">N/A</span>
+
+<script src="../libraries/three-math.min.js"></script>
+<script src="lib/jquery.min.js"></script>
+
+<script src="../src/Med3D.js"></script>
+
+<!-- LOADERS -->
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/loaders/ImageLoader.js"></script>
+
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLTextureManager.js"></script>
+<script src="../src/core/GLFrameBufferManager.js"></script>
+<script src="../src/core/GLManager.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
+
+<script src="../src/program_management/ShaderBuilder.js"></script>
+<script src="../src/program_management/MaterialProgramTemplate.js"></script>
+
+
+<!-- MATERIALS -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+<script src="../src/materials/CustomShaderMaterial.js"></script>
+
+<!-- OBJECTS -->
+<script src="../src/objects/Geometry.js"></script>
+<script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Group.js"></script>
+<script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+<script src="../src/objects/Circle.js"></script>
+<script src="../src/objects/Line.js"></script>
+<script src="../src/objects/Cube.js"></script>
+
+<!-- PROGRAM MANAGEMENT -->
+<script src="../src/program_management/GLProgram.js"></script>
+<script src="../src/program_management/GLProgramManager.js"></script>
+
+<!-- RENDERS -->
+<script src="../src/renderers/Renderer.js"></script>
+<script src="../src/renderers/MeshRenderer.js"></script>
+
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<script src="../src/marching_cubes/MHDReader.js"></script>
+<script src="../src/controls/KeyboardInput.js"></script>
+
+<script src="../src/renderers/RenderPass.js"></script>
+<script src="../src/renderers/RenderQueue.js"></script>
+
+<!-- KEYBOARD INITIALIZATION -->
+<script>
+    var renderMode = 1;
+    var renderModeChange = new Date();
+    var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
+    var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
+
+    var keyboardInput = M3D.KeyboardInput.instance;
+    keyboardInput.addListener(function (pressedKeys) {
+        // ROTATIONS
+        if (pressedKeys[65]) {  // A
+            keyboardRotation.y = 1;
+        }
+
+        if (pressedKeys[68]) {  // D
+            keyboardRotation.y = -1;
+        }
+
+        if (pressedKeys[87]) {  // W
+            keyboardRotation.x = 1;
+        }
+
+        if (pressedKeys[83]) {  // S
+            keyboardRotation.x = -1;
+        }
+
+        if (pressedKeys[81]) {  // Q
+            keyboardRotation.z = 1;
+        }
+
+        if (pressedKeys[69]) {  // R
+            keyboardRotation.z = -1;
+        }
+
+
+        // TRANSLATIONS
+        if (pressedKeys[39]) {  // RIGHT - Right
+            keyboardTranslation.x = 1;
+        }
+
+        if (pressedKeys[37]) {  // LEFT - Left
+            keyboardTranslation.x = -1;
+        }
+
+        if (pressedKeys[40]) {  // DOWN - Backward
+            keyboardTranslation.z = 1;
+        }
+
+        if (pressedKeys[38]) {  // UP - Forward
+            keyboardTranslation.z = -1;
+        }
+
+        if (pressedKeys[82]) {  // Q - Upward
+            keyboardTranslation.y = 1;
+        }
+
+        if (pressedKeys[70]) {  // F - Downward
+            keyboardTranslation.y = -1;
+        }
+
+
+        if (pressedKeys[77] && ((new Date()) - renderModeChange) > 500) {  // M - Downward
+            renderMode++;
+            if (renderMode > 5) {
+                renderMode = 1;
+            }
+            renderModeChange = new Date();
+        }
+    });
+
+    var mouseDown = false;
+    var mouseX = -1;
+    var mouseY = -1;
+
+    function getCursorPosition(canvas, event) {
+        var rect = canvas.getBoundingClientRect();
+        mouseX = (event.clientX - rect.left) / 1920;
+        mouseY = 1 - ((event.clientY - rect.top) / 1080);
+    };
+
+    $("canvas").mousemove(function(e){
+        getCursorPosition(canvas, e);
+    });
+
+    $("canvas").mousedown(function(e) {
+        mouseDown = true;
+        e.preventDefault();
+    });
+
+    $("canvas").mouseup(function() {
+        mouseDown = false;
+    });
+
+</script>
+
+<!-- LOADER AND RENDERER INIT -->
+<script>
+    // Initialize .obj loader
+    var loadingManager = new M3D.LoadingManager();
+    var objLoader = new M3D.ObjLoader(loadingManager);
+    var imgLoader = new M3D.ImageLoader(loadingManager);
+
+    // Initialize renderer
+    var renderer = new M3D.MeshRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    renderer.addShaderLoaderUrls("../src/shaders");
+</script>
+
+<!-- LOADING -->
+<script>
+
+    var materialTemplate = {
+        "Visor": {
+            diffuse: new THREE.Color(1, 1, 1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/glass.png"
+        },
+        "Legs": {
+            diffuse: new THREE.Color(1, 1, 1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/leg.png",
+            specMapPath: "textures/nanosuit/leg_spec.png"
+        },
+        "hands": {
+            diffuse: new THREE.Color(1, 1,1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/hand.png",
+            specMapPath: "textures/nanosuit/hand_spec.png"
+        },
+        "Arms": {
+            diffuse: new THREE.Color(1, 1, 1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/arm.png",
+            specMapPath: "textures/nanosuit/arm_spec.png"
+
+        },
+        "Helmet": {
+            diffuse: new THREE.Color(1, 1, 1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/helmet.png",
+            specMapPath: "textures/nanosuit/helmet_spec.png"
+        },
+        "Body": {
+            diffuse: new THREE.Color(1, 1, 1),
+            specular: new THREE.Color(1, 1, 1),
+            diffMapPath: "textures/nanosuit/body.png",
+            specMapPath: "textures/nanosuit/body_spec.png"
+        },
+    };
+
+    function loadObject(callback) {
+        objLoader.load("models/nanosuit.obj", function (obj) {
+
+            let suit = new M3D.Group();
+
+            for (let i = 0; i < obj.length; i++) {
+                if (i == 3) {
+                    continue;
+                }
+
+                obj[i].material = new M3D.CustomShaderMaterial("deferredGBuffer", {"material.shininess": 16, "material.diffuse": [1, 1, 1]});
+
+                let mtl = materialTemplate[obj[i].name];
+                obj[i].material.color = mtl.diffuse;
+                obj[i].material.specular = mtl.specular;
+
+                imgLoader.load(mtl.diffMapPath, function (I) {
+                    // Configure and add texture to material
+                    obj[i].material.addMap(new M3D.Texture(I, M3D.Texture.RepeatWrapping, M3D.Texture.RepeatWrapping,
+                        M3D.Texture.LinearFilter, M3D.Texture.LinearFilter,  M3D.Texture.RGB,  M3D.Texture.RGB, M3D.Texture.UNSIGNED_BYTE));
+
+                    obj[i].material.addSBFlag("DIFFUSE_TEXTURE");
+
+                    if (mtl.specMapPath) {
+                        imgLoader.load(mtl.specMapPath, function (I) {
+                            // Configure and add texture to material
+                            obj[i].material.addMap(new M3D.Texture(I, M3D.Texture.RepeatWrapping, M3D.Texture.RepeatWrapping,
+                                M3D.Texture.LinearFilter, M3D.Texture.LinearFilter, M3D.Texture.RGB, M3D.Texture.RGB, M3D.Texture.UNSIGNED_BYTE));
+
+                            obj[i].material.addSBFlag("SPECULAR_TEXTURE");
+                        });
+                    }
+                });
+
+                suit.add(obj[i]);
+            }
+
+            callback(suit);
+        });
+    }
+
+</script>
+
+<script>
+    var gBufferScene = new M3D.Scene();
+    var gBufferCamera = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
+    gBufferCamera.position = new THREE.Vector3(77.03, 42.56, 37.52);
+    gBufferCamera.rotation = new THREE.Euler(-0.5691, 0.5551, 0.3285, 'XYZ');
+
+    var lightningScene = new M3D.Scene();
+    var lightningQuad = new M3D.Quad(new THREE.Vector2(-1, 1), new THREE.Vector2(1, -1), new M3D.CustomShaderMaterial("deferredLightning"));
+    lightningQuad.frustumCulled = false;
+    lightningScene.add(lightningQuad);
+
+    // Lights
+    var aLight = new M3D.AmbientLight(new THREE.Color("#555555"), 1);
+    var dLight = new M3D.DirectionalLight(new THREE.Color("#FFFFFF"), 0.5);
+    dLight.position = new THREE.Vector3(0, 0.3, 0.7);
+
+    lightningScene.add(aLight);
+
+
+    // region INIT POINT LIGHTS
+    var colorsX = ["#FF0000", "#00FF00", "#0000FF", "#FF00FF"];
+    var xFreeLights = [];
+    var xFreeCubes = [];
+
+    for (var i = 0; i < 4; i++) {
+
+        var pLight = new M3D.PointLight(new THREE.Color(colorsX[i]), 1);
+        var cube = new M3D.Cube(0.5, pLight.color);
+
+        pLight.position = new THREE.Vector3(Math.random() * 60, 7, -8 - (i * 15));
+        cube.position = pLight.position;
+        cube.dir = Math.random() > 0.5;
+
+        xFreeLights.push(pLight);
+        xFreeCubes.push(cube);
+        // Add cube representing the light
+
+        lightningScene.add(pLight);
+        gBufferScene.add(cube);
+    }
+
+    var colorsZ = ["#FFFF00", "#00FFFF", "#FF0000", "#00FF00"];
+    var zFreeLights = [];
+    var zFreeCubes = [];
+
+    for (var i = 0; i < 4; i++) {
+
+        var pLight = new M3D.PointLight(new THREE.Color(colorsZ[i]), 1);
+        var cube = new M3D.Cube(0.5, pLight.color);
+
+        pLight.position = new THREE.Vector3(8 + (i * 15), 7, Math.random() * -60);
+        cube.position = pLight.position;
+        cube.dir = Math.random() > 0.5;
+
+        zFreeLights.push(pLight);
+        zFreeCubes.push(cube);
+
+        lightningScene.add(pLight);
+        gBufferScene.add(cube);
+    }
+
+    // endregion
+
+    // TODO: Implement object cloning ASAP (Currently loading 25 objects)
+    var i = 0;
+    var j = 0;
+    var callback = function (group) {
+
+
+        group.position.z = -15 * i;
+        group.position.x = 15 * j;
+        gBufferScene.add(group);
+
+        i++;
+
+        if (i >= 5) {
+            if (j >= 4) {
+                init();
+            }
+            else {
+                j++;
+                i = 0;
+                loadObject(callback);
+            }
+        }
+        else {
+            loadObject(callback);
+        }
+    };
+
+    loadObject(callback);
+
+
+    var renderQueue = new M3D.RenderQueue(renderer);
+
+    // Initializes render queue
+    function init() {
+
+        /**
+         * G-BUFFER RENDER PASS
+         */
+        var gBufferRenderPass = new M3D.RenderPass(
+            // Rendering pass type
+            M3D.RenderPass.BASIC,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                return {scene: gBufferScene, camera: gBufferCamera};
+            },
+            // Target
+            M3D.RenderPass.TEXTURE,
+            {width: 1920, height: 1080},
+            "depth",
+            [{id: "diffuse", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG},
+                {id: "positions", textureConfig: M3D.RenderPass.FLOAT_RGB_TEXTURE_CONFIG},
+                {id: "normals", textureConfig: M3D.RenderPass.FLOAT_RGB_TEXTURE_CONFIG}]
+        );
+
+        /**
+         * LIGHTNING RENDER PASS
+         */
+        var lightningRenderPass = new M3D.RenderPass(
+            // Rendering pass type
+            M3D.RenderPass.BASIC,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                lightningQuad.material.clearMaps();
+                lightningQuad.material.addMap(textureMap.diffuse);
+                lightningQuad.material.addMap(textureMap.positions);
+                lightningQuad.material.addMap(textureMap.normals);
+
+                lightningQuad.material.setUniform("viewPos", gBufferCamera.position.toArray());
+                lightningQuad.material.setUniform("drawMode", renderMode);
+
+                return {scene: lightningScene, camera: gBufferCamera};
+            },
+            // Target
+            M3D.RenderPass.TEXTURE,
+            {width: 1920, height: 1080},
+            "depth",
+            [{id: "combinedRender", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+        );
+
+
+        /**
+         * DRAW ON SCREEN RENDER PASS
+         */
+        var drawingTexture = new M3D.Texture();
+        var drawingShaderMaterial = new M3D.CustomShaderMaterial("drawOnTexture");
+        drawingShaderMaterial.ligths = false;
+
+        var drawingRenderPass = new M3D.RenderPass(
+            M3D.RenderPass.TEXTURE_MERGE,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                drawingShaderMaterial.setUniform("mouseDown", mouseDown);
+                drawingShaderMaterial.setUniform("mousePos", [mouseX, mouseY]);
+
+
+                return {material: drawingShaderMaterial, textures: [drawingTexture]};
+            },
+            M3D.RenderPass.TEXTURE,
+            {width: 1920, height: 1080},
+            null,
+            [{id: "drawingTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+        );
+
+        /**
+         * TEXTURE BLENDING glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+         */
+
+        var overlayShaderMaterial = new M3D.CustomShaderMaterial("overlayTextures");
+        drawingShaderMaterial.ligths = false;
+
+        var overlayRenderPass = new M3D.RenderPass(
+            M3D.RenderPass.TEXTURE_MERGE,
+            // Preprocess function
+            function (textureMap, additionalData) {
+                return {material: overlayShaderMaterial, textures: [textureMap["combinedRender"], textureMap["drawingTexture"]]};
+            },
+            M3D.RenderPass.SCREEN,
+            {width: 1920, height: 1080}
+        );
+
+        // Create render pass queue
+        renderQueue.pushRenderPass(gBufferRenderPass);
+        renderQueue.pushRenderPass(lightningRenderPass);
+        renderQueue.pushRenderPass(drawingRenderPass);
+        renderQueue.pushRenderPass(overlayRenderPass);
+
+        animate();
+    }
+
+    var prevTime = -1, currTime, dt;
+    function updateCamera() {
+        // Update keyboard
+        keyboardTranslation.reset();
+        keyboardRotation.reset();
+        keyboardInput.update();
+
+        gBufferCamera.translateX(keyboardTranslation.x * dt * 0.01);
+        gBufferCamera.translateY(keyboardTranslation.y * dt * 0.01);
+        gBufferCamera.translateZ(keyboardTranslation.z * dt * 0.01);
+
+        gBufferCamera.rotateX(keyboardRotation.x * dt * 0.001);
+        gBufferCamera.rotateY(keyboardRotation.y  * dt * 0.001);
+        gBufferCamera.rotateZ(keyboardRotation.z * dt * 0.001);
+    }
+
+    function updateLights() {
+        for (var i = 0; i < xFreeCubes.length; i++) {
+            if (xFreeCubes[i].dir) {
+                xFreeCubes[i].position.x += dt * 0.01;
+                xFreeLights[i].position.x += dt * 0.01;
+            }
+            else {
+                xFreeCubes[i].position.x -= dt * 0.01;
+                xFreeLights[i].position.x -= dt * 0.01;
+            }
+
+            if (xFreeCubes[i].position.x > 60) {
+                xFreeCubes[i].dir = false;
+            }
+            if (xFreeCubes[i].position.x < 0) {
+                xFreeCubes[i].dir = true;
+            }
+        }
+
+        for (var i = 0; i < zFreeCubes.length; i++) {
+            if (zFreeCubes[i].dir) {
+                zFreeCubes[i].position.z += dt * 0.01;
+                zFreeLights[i].position.z += dt * 0.01;
+            }
+            else {
+                zFreeCubes[i].position.z -= dt * 0.01;
+                zFreeLights[i].position.z -= dt * 0.01;
+            }
+
+            if (zFreeCubes[i].position.z > 0) {
+                zFreeCubes[i].dir = false;
+            }
+            if (zFreeCubes[i].position.z < -60) {
+                zFreeCubes[i].dir = true;
+            }
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        calculateFps();
+
+        // Calculate delta time and update timestamps
+        currTime = new Date();
+        dt = (prevTime !== -1) ? currTime - prevTime : 0;
+        prevTime = currTime;
+
+        updateCamera();
+        updateLights();
+        renderQueue.render();
+    }
+
+    // FPS calculation
+    var timeNow = 0, timeLast = 0, fps = 0;
+    function calculateFps() {
+        timeNow = new Date();
+        fps++;
+
+        if (timeNow - timeLast >= 1000) {
+            //Write value in HTML
+            //multiply with 1000.0 / (timeNow - timeLast) for accuracy
+            document.getElementById("fps").innerHTML = Number(fps * 1000.0 / (timeNow - timeLast)).toPrecision( 5 );
+
+            //reset
+            timeLast = timeNow;
+            fps = 0;
+        }
+    }
+
+</script>
+
+
+
+</body>
+</html>

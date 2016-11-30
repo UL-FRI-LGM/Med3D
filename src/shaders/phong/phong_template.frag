@@ -42,7 +42,7 @@ vec3 calcPointLight (Light light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(light.position - fragVPos);
 
     // Difuse
-    float diffuseF = max(dot(normal, lightDir), 0.0f);
+    float diffuseF = max(dot(lightDir, normal), 0.0f);
 
     // Specular
     vec3 reflectDir = reflect(-lightDir, normal);

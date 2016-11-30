@@ -187,6 +187,7 @@ M3D.MeshRenderer = class {
         for (var i = 0; i < objects.length; i++) {
 
             var program = this._compiledPrograms.get(objects[i].material.requiredProgram().programID);
+
             program.use();
 
             this._setup_uniforms(program, objects[i], camera);

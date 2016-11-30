@@ -6,7 +6,7 @@
 
 M3D.Texture = class {
 
-	constructor(image, wrapS, wrapT, minFilter, magFilter, internalFormat, format, type) {
+	constructor(image, wrapS, wrapT, minFilter, magFilter, internalFormat, format, type, width = 800, height = 600) {
 		this._uuid = THREE.Math.generateUUID();
 		this.type = "Texture";
 
@@ -29,6 +29,10 @@ M3D.Texture = class {
 
 		// Mipmaps
 		this._generateMipmaps = false;
+
+		// If image is specified this is disregarded (Should be specified when using empty textures)
+		this._width = width;
+		this._height = height;
 
 		this._dirty = true;
 	}
@@ -122,7 +126,7 @@ M3D.Texture = class {
 // region CLASS RELATED CONSTANTS
 
 // STATIC VARIABLES
-M3D.Texture.DefaultImage = undefined;
+M3D.Texture.DefaultImage = null;
 
 // FILTERS
 M3D.Texture.NearestFilter = 0;
@@ -140,15 +144,26 @@ M3D.Texture.LUMINANCE = 9;
 M3D.Texture.LUMINANCE_ALPHA = 10;
 M3D.Texture.DEPTH_COMPONENT = 11;
 M3D.Texture.DEPTH_COMPONENT24 = 12;
+M3D.Texture.RGB16F = 13;
+M3D.Texture.RGB32F = 14;
+M3D.Texture.RGBA16F = 15;
+M3D.Texture.RGBA32F = 16;
+
 
 // WRAPPING
-M3D.Texture.RepeatWrapping = 13;
-M3D.Texture.ClampToEdgeWrapping = 14;
-M3D.Texture.MirroredRepeatWrapping = 15;
+M3D.Texture.RepeatWrapping = 15;
+M3D.Texture.ClampToEdgeWrapping = 16;
+M3D.Texture.MirroredRepeatWrapping = 17;
 
 // TYPE
-M3D.Texture.UNSIGNED_BYTE = 16;			// Color (default)
-M3D.Texture.UNSIGNED_SHORT = 17;		// Depth (default)
-M3D.Texture.UNSIGNED_INT = 18;
+M3D.Texture.UNSIGNED_BYTE = 18;			// Color (default)
+M3D.Texture.UNSIGNED_SHORT = 19;		// Depth (default)
+M3D.Texture.UNSIGNED_INT = 20;
+M3D.Texture.HALF_FLOAT = 21;
+M3D.Texture.FLOAT = 22;
 
+/** NOTE
+ * Only following formats can be added as color attachments
+ * gl.R16F, gl.RG16F, gl.RGBA16F, gl.R32F, gl.RG32F, gl.RGBA32F, gl.R11F_G11F_B10F.
+ */
 // endregion

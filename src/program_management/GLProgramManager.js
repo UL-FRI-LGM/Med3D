@@ -94,6 +94,8 @@ M3D.GLProgramManager = class {
             if (!this._gl.getProgramParameter(compiledProgram.glProgram, this._gl.LINK_STATUS) ) {
                 var info = this._gl.getProgramInfoLog(compiledProgram.glProgram);
                 console.error("Could not compile WebGL program. \n\n" + info);
+                console.log("VERTEX SHADER:\n" + vertexSources + "\n\n\n");
+                console.log("FRAGMENT SHADER:\n" + fragmentSources);
             }
 
             // Delete shaders as they are no longer needed

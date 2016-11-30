@@ -31,6 +31,30 @@ M3D.CustomShaderMaterial = class extends M3D.Material {
         this._requiredProgramTemplate = null;
     }
 
+    addSBFlag(flag) {
+        this._flagsSB.push(flag);
+    }
+
+    rmSBFlag(flag) {
+        this._flagsSB.remove(flag);
+    }
+
+    clearSBFlags() {
+        this._flagsSB.clear();
+    }
+
+    addSBValue(name, value) {
+        this._valuesSB[name] = value;
+    }
+
+    rmSBFlag(flag) {
+        delete this._valuesSB[name];
+    }
+
+    clearSBFlags() {
+        this._valuesSB = {};
+    }
+
     // region MAP MANAGEMENT
     addMap(map) {
         // Invalidate required program template

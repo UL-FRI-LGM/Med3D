@@ -39,6 +39,8 @@ M3D.GLManager = class {
         }
         // endregion
 
+        var ext = this._gl.getExtension("EXT_color_buffer_float");
+
         // region CONSTANTS
         this._FIRST_COLOR_ATTACHMENT = this._gl.COLOR_ATTACHMENT0;
         this._LAST_COLOR_ATTACHMENT = this._gl.COLOR_ATTACHMENT15;
@@ -134,7 +136,7 @@ M3D.GLManager = class {
         // region DEPTH
         if (renderTarget.depthTexture !== null) {
             // Fetch and update the texture
-            glTexture = this._textureManager.updateTexture(renderTarget.depthTexture, true, renderTarget.width, renderTarget.height);
+            glTexture = this._textureManager.updateTexture(renderTarget.depthTexture, true);
 
             // Attach as framebuffer depth attachment
             this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._gl.DEPTH_ATTACHMENT, this._gl.TEXTURE_2D, glTexture, 0);
@@ -153,7 +155,7 @@ M3D.GLManager = class {
 
         // TODO: Is it reasonable to check if there are more than 15 draw buffers?
         for (var i = 0; i < drawBuffersLength; i++) {
-            glTexture = this._textureManager.updateTexture(renderTarget._drawBuffers[i], true, renderTarget.width, renderTarget.height);
+            glTexture = this._textureManager.updateTexture(renderTarget._drawBuffers[i], true);
 
             // Attach draw buffer as color attachment (in specified order)
             this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._FIRST_COLOR_ATTACHMENT + i, this._gl.TEXTURE_2D, glTexture, 0);

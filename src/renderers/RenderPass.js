@@ -107,10 +107,35 @@ M3D.RenderPass.TEXTURE_MERGE = 1;
 M3D.RenderPass.TEXTURE = 2;
 M3D.RenderPass.SCREEN = 3;
 
-M3D.RenderPass.DEFAULT_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapping,
-                                        wrapT: M3D.Texture.ClampToEdgeWrapping,
-                                        minFilter: M3D.Texture.LinearFilter,
-                                        magFilter: M3D.Texture.LinearFilter,
-                                        internalFormat: M3D.Texture.RGBA,
-                                        format: M3D.Texture.RGBA,
-                                        type: M3D.Texture.UNSIGNED_BYTE};
+M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapping,
+                                                wrapT: M3D.Texture.ClampToEdgeWrapping,
+                                                minFilter: M3D.Texture.LinearFilter,
+                                                magFilter: M3D.Texture.LinearFilter,
+                                                internalFormat: M3D.Texture.RGBA,
+                                                format: M3D.Texture.RGBA,
+                                                type: M3D.Texture.UNSIGNED_BYTE,
+                                                width: 1920,
+                                                height: 1080};
+
+
+M3D.RenderPass.FLOAT_RGB_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapping,
+    wrapT: M3D.Texture.ClampToEdgeWrapping,
+    minFilter: M3D.Texture.LinearFilter,
+    magFilter: M3D.Texture.LinearFilter,
+    internalFormat: M3D.Texture.RGBA16F,
+    format: M3D.Texture.RGBA,
+    type: M3D.Texture.HALF_FLOAT,
+    width: 1920,
+    height: 1080};
+
+
+
+M3D.RenderPass.DEFAULT_RGB_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapping,
+                                                wrapT: M3D.Texture.ClampToEdgeWrapping,
+                                                minFilter: M3D.Texture.LinearFilter,
+                                                magFilter: M3D.Texture.LinearFilter,
+                                                internalFormat: M3D.Texture.RGB,
+                                                format: M3D.Texture.RGB,
+                                                type: M3D.Texture.UNSIGNED_BYTE,
+                                                width: 1920,
+                                                height: 1080};

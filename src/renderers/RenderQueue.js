@@ -18,8 +18,9 @@ M3D.RenderQueue = class {
 
         // Init merge texture resources
         this._textureMergeScene = new M3D.Scene();
-        this._textureMergeQuad = new M3D.Quad(new THREE.Vector2(0, 1), new THREE.Vector2(1, 0), new M3D.MeshBasicMaterial());
-        this._textureMergeCamera = new M3D.OrthographicCamera(0, 1, 1, 0, 1, 2);
+        this._textureMergeQuad = new M3D.Quad(new THREE.Vector2(-1, 1), new THREE.Vector2(1, -1), new M3D.MeshBasicMaterial());
+        this._textureMergeQuad.frustumCulled = false;
+        this._textureMergeCamera = new M3D.OrthographicCamera(-1, 1, 1, -1, 1, 2);
 
         this._textureMergeScene.add(this._textureMergeQuad);
 
@@ -72,13 +73,16 @@ M3D.RenderQueue = class {
                 cachedTexture.internalFormat = texConfig.internalFormat;
                 cachedTexture.format = texConfig.format;
                 cachedTexture.type = texConfig.type;
+                cachedTexture.width = texConfig.width;
+                cachedTexture.height = texConfig.height;
 
                 // Add texture ass draw buffer to render target
                 this._renderTarget.addDrawBuffer(cachedTexture);
             }
             else {
                 // Create new texture
-                let texture = new M3D.Texture(undefined, texConfig.wrapS, texConfig.wrapT, texConfig.minFilter, texConfig.magFilter, texConfig.internalFormat, texConfig.format, texConfig.type);
+                let texture = new M3D.Texture(undefined, texConfig.wrapS, texConfig.wrapT, texConfig.minFilter, texConfig.magFilter,
+                    texConfig.internalFormat, texConfig.format, texConfig.type, texConfig.width, texConfig.height);
 
                 this._renderTarget.addDrawBuffer(texture);
                 // Bind depth texture to the given ID ID
