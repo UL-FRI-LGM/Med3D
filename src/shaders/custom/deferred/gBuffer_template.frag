@@ -25,6 +25,7 @@ layout (location = 0) out vec4 albedoSpec;
 layout (location = 1) out vec3 position;
 layout (location = 2) out vec3 normals;
 
+
 void main() {
 
     // Diffuse color and shininess as alpha

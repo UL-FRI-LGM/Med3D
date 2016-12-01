@@ -17,7 +17,7 @@ M3D.ShaderBuilder = class {
 
         // Regular expressions used for template tree building
         // Commend matching
-        this._multiLineCommentRegex = /\/\*[\s\S]*\*\//g;
+        this._multiLineCommentRegex = /\/\*[^*]*(?:\*+[^*\/][^*]*)*\*\//g;
         this._singleLineCommentRegex = /\/\/.*/g;
 
         // Line reducing

@@ -8,6 +8,10 @@
 <canvas id="canvas" width="1920" height="1080"></canvas>
 <br>
 FPS: <span id="fps">N/A</span>
+<br>
+Press (M) for different render modes.
+<br>
+If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float textures.
 
 <script src="../libraries/three-math.min.js"></script>
 <script src="lib/jquery.min.js"></script>
@@ -85,6 +89,12 @@ FPS: <span id="fps">N/A</span>
 <script>
     var renderMode = 1;
     var renderModeChange = new Date();
+
+
+    /**
+     * KEYBOARD INIT
+     */
+
     var keyboardRotation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
     var keyboardTranslation = {x: 0, y: 0, z: 0, reset: function() { this.x = 0; this.y = 0; this.z = 0; }};
 
@@ -155,6 +165,10 @@ FPS: <span id="fps">N/A</span>
     var mouseX = -1;
     var mouseY = -1;
 
+    /**
+     * MOUSE INIT
+     */
+
     function getCursorPosition(canvas, event) {
         var rect = canvas.getBoundingClientRect();
         mouseX = (event.clientX - rect.left) / 1920;
@@ -191,6 +205,9 @@ FPS: <span id="fps">N/A</span>
 <!-- LOADING -->
 <script>
 
+    /**
+     * Maps and colors for different parts of Nanosuit object (hardcoded .mtl)
+     */
     var materialTemplate = {
         "Visor": {
             diffuse: new THREE.Color(1, 1, 1),
@@ -336,12 +353,14 @@ FPS: <span id="fps">N/A</span>
 
     // endregion
 
+    /**
+    * Sorry for this ugly implementation.. Need to implement object cloning
+     */
+
     // TODO: Implement object cloning ASAP (Currently loading 25 objects)
     var i = 0;
     var j = 0;
     var callback = function (group) {
-
-
         group.position.z = -15 * i;
         group.position.x = 15 * j;
         gBufferScene.add(group);
@@ -350,7 +369,7 @@ FPS: <span id="fps">N/A</span>
 
         if (i >= 5) {
             if (j >= 4) {
-                init();
+                renderQueueInit();
             }
             else {
                 j++;
@@ -369,7 +388,7 @@ FPS: <span id="fps">N/A</span>
     var renderQueue = new M3D.RenderQueue(renderer);
 
     // Initializes render queue
-    function init() {
+    function renderQueueInit() {
 
         /**
          * G-BUFFER RENDER PASS
@@ -417,7 +436,7 @@ FPS: <span id="fps">N/A</span>
 
 
         /**
-         * DRAW ON SCREEN RENDER PASS
+         * DRAW ON SCREEN RENDER PASS (Partially working)
          */
         var drawingTexture = new M3D.Texture();
         var drawingShaderMaterial = new M3D.CustomShaderMaterial("drawOnTexture");
@@ -465,6 +484,10 @@ FPS: <span id="fps">N/A</span>
         animate();
     }
 
+    /**
+     * CAMERA UPDATE BASED ON THE KEYBOARD INPUT
+     */
+
     var prevTime = -1, currTime, dt;
     function updateCamera() {
         // Update keyboard
@@ -481,6 +504,9 @@ FPS: <span id="fps">N/A</span>
         gBufferCamera.rotateZ(keyboardRotation.z * dt * 0.001);
     }
 
+    /**
+     * LIGHTS POSITION UPDATE
+     */
     function updateLights() {
         for (var i = 0; i < xFreeCubes.length; i++) {
             if (xFreeCubes[i].dir) {
