@@ -15,6 +15,8 @@ M3D.RenderQueue = class {
 
         // Maps ID (string) to texture
         this._textureMap = {};
+        // Additional data passed through by previous render passe
+        this._forwardedAdditionalData = {};
 
         // Init merge texture resources
         this._textureMergeScene = new M3D.Scene();
@@ -45,6 +47,10 @@ M3D.RenderQueue = class {
             // If texture with this ID is already cached use that texture
             if (cachedTexture !== undefined) {
                 this._renderTarget.depthTexture = cachedTexture;
+
+                // Update dimensions
+                this._renderTarget.depthTexture.width = viewportRP.width;
+                this._renderTarget.depthTexture.height = viewportRP.height;
             }
             else {
                 this._renderTarget.addDepthTexture();
@@ -66,15 +72,11 @@ M3D.RenderQueue = class {
             // If texture with this ID is already cached use that texture
             if (cachedTexture !== undefined) {
                 // Update texture parameters
-                cachedTexture.wrapS = texConfig.wrapS;
-                cachedTexture.wrapT = texConfig.wrapT;
-                cachedTexture.minFilter = texConfig.minFilter;
-                cachedTexture.magFilter = texConfig.magFilter;
-                cachedTexture.internalFormat = texConfig.internalFormat;
-                cachedTexture.format = texConfig.format;
-                cachedTexture.type = texConfig.type;
-                cachedTexture.width = texConfig.width;
-                cachedTexture.height = texConfig.height;
+                cachedTexture.applyConfig(texConfig);
+
+                // Update dimensions
+                cachedTexture.width = viewportRP.width;
+                cachedTexture.height = viewportRP.height;
 
                 // Add texture ass draw buffer to render target
                 this._renderTarget.addDrawBuffer(cachedTexture);
@@ -82,7 +84,7 @@ M3D.RenderQueue = class {
             else {
                 // Create new texture
                 let texture = new M3D.Texture(undefined, texConfig.wrapS, texConfig.wrapT, texConfig.minFilter, texConfig.magFilter,
-                    texConfig.internalFormat, texConfig.format, texConfig.type, texConfig.width, texConfig.height);
+                    texConfig.internalFormat, texConfig.format, texConfig.type, viewportRP.width, viewportRP.height);
 
                 this._renderTarget.addDrawBuffer(texture);
                 // Bind depth texture to the given ID ID
@@ -92,18 +94,22 @@ M3D.RenderQueue = class {
     }
 
     render() {
-        // Additional data passed through by previous render passes
-        let forwardedAdditionalData = {};
-
         // Store current renderer viewport
         let cleanupViewport = this._renderer.getViewport();
 
         for (let i = 0; i < this._renderQueue.length; i++) {
             let renderPass = this._renderQueue[i];
+
+            // Check if the render pass is initialized
+            if (!renderPass._isInitialized) {
+                renderPass._initialize(this._textureMap, this._forwardedAdditionalData);
+                renderPass._isInitialized = true;
+            }
+
             let viewportRP = renderPass.viewport;
 
             // Execute preprocess step
-            let preprocOutput = renderPass.preprocess(this._textureMap, forwardedAdditionalData);
+            let preprocOutput = renderPass.preprocess(this._textureMap, this._forwardedAdditionalData);
 
             // Determine the render pass type
             if (renderPass.type === M3D.RenderPass.BASIC) {
@@ -182,7 +188,7 @@ M3D.RenderQueue = class {
                 }
             }
             else {
-                console.error("Render queue contains RenderPass of unsupported type!")
+                console.error("Render queue contains RenderPass of unsupported type!");
                 return;
             }
         }

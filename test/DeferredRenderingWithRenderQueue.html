@@ -159,11 +159,19 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
             }
             renderModeChange = new Date();
         }
+
+        if (pressedKeys[67]) {
+            brushColor = [Math.random().toFixed(1), Math.random().toFixed(1), Math.random().toFixed(1)]
+        }
     });
 
     var mouseDown = false;
-    var mouseX = -1;
-    var mouseY = -1;
+
+
+    var mouseA = new THREE.Vector2(Infinity, Infinity);
+    var mouseB = new THREE.Vector2(0, 0);
+    var brushColor = [0, 1, 0];
+    var concatPoint = new THREE.Vector2(-1000, -1000);
 
     /**
      * MOUSE INIT
@@ -171,8 +179,9 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
 
     function getCursorPosition(canvas, event) {
         var rect = canvas.getBoundingClientRect();
-        mouseX = (event.clientX - rect.left) / 1920;
-        mouseY = 1 - ((event.clientY - rect.top) / 1080);
+
+        mouseB.x = (event.clientX - rect.left) / 1920;
+        mouseB.y = 1 - ((event.clientY - rect.top) / 1080);
     };
 
     $("canvas").mousemove(function(e){
@@ -186,6 +195,7 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
 
     $("canvas").mouseup(function() {
         mouseDown = false;
+        mouseA.set(Infinity, Infinity);
     });
 
 </script>
@@ -396,6 +406,8 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
         var gBufferRenderPass = new M3D.RenderPass(
             // Rendering pass type
             M3D.RenderPass.BASIC,
+            // Initialize function
+            function() {},
             // Preprocess function
             function (textureMap, additionalData) {
                 return {scene: gBufferScene, camera: gBufferCamera};
@@ -415,13 +427,16 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
         var lightningRenderPass = new M3D.RenderPass(
             // Rendering pass type
             M3D.RenderPass.BASIC,
-            // Preprocess function
-            function (textureMap, additionalData) {
-                lightningQuad.material.clearMaps();
+            // Initialize function
+            function(textureMap, additionalData) {
+                // At this point the G-buffer textures should already be present in the texture map
                 lightningQuad.material.addMap(textureMap.diffuse);
                 lightningQuad.material.addMap(textureMap.positions);
                 lightningQuad.material.addMap(textureMap.normals);
 
+            },
+            // Preprocess function
+            function (textureMap, additionalData) {
                 lightningQuad.material.setUniform("viewPos", gBufferCamera.position.toArray());
                 lightningQuad.material.setUniform("drawMode", renderMode);
 
@@ -438,38 +453,70 @@ If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float
         /**
          * DRAW ON SCREEN RENDER PASS (Partially working)
          */
-        var drawingTexture = new M3D.Texture();
         var drawingShaderMaterial = new M3D.CustomShaderMaterial("drawOnTexture");
         drawingShaderMaterial.ligths = false;
 
         var drawingRenderPass = new M3D.RenderPass(
             M3D.RenderPass.TEXTURE_MERGE,
+            // Initialize function
+            function(textureMap, additionalData) {
+                textureMap['drawingTextureA'] = new M3D.Texture();
+                textureMap['drawingTextureA'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+                textureMap['drawingTextureB'] = new M3D.Texture();
+                textureMap['drawingTextureB'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+            },
             // Preprocess function
             function (textureMap, additionalData) {
-                drawingShaderMaterial.setUniform("mouseDown", mouseDown);
-                drawingShaderMaterial.setUniform("mousePos", [mouseX, mouseY]);
 
 
-                return {material: drawingShaderMaterial, textures: [drawingTexture]};
+                drawingShaderMaterial.setUniform("draw", false);
+
+                if (mouseA.x === Infinity) {
+                    mouseA.copy(mouseB);
+                    drawingShaderMaterial.setUniform("mouseA", mouseA.toArray());
+                    drawingShaderMaterial.setUniform("mouseB", mouseB.toArray());
+                    drawingShaderMaterial.setUniform("brushColor", brushColor);
+
+                    drawingShaderMaterial.setUniform("draw", mouseDown);
+                }
+                else if (mouseA.distanceTo(mouseB) > 0.01) {
+                    drawingShaderMaterial.setUniform("mouseA", mouseA.toArray());
+                    drawingShaderMaterial.setUniform("mouseB", mouseB.toArray());
+                    drawingShaderMaterial.setUniform("brushColor", brushColor);
+
+                    mouseA.copy(mouseB);
+                    drawingShaderMaterial.setUniform("draw", mouseDown);
+                }
+
+                drawingShaderMaterial.setUniform("thickness", 0.003);
+                drawingShaderMaterial.setUniform("hardness", 0.1);
+
+
+                var temp = textureMap['drawingTextureA'];
+                textureMap['drawingTextureA'] = textureMap['drawingTextureB'];
+                textureMap['drawingTextureB'] = temp;
+
+                return {material: drawingShaderMaterial, textures: [textureMap['drawingTextureB']]};
             },
             M3D.RenderPass.TEXTURE,
             {width: 1920, height: 1080},
             null,
-            [{id: "drawingTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+            [{id: "drawingTextureA", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
         );
 
         /**
          * TEXTURE BLENDING glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
          */
-
         var overlayShaderMaterial = new M3D.CustomShaderMaterial("overlayTextures");
         drawingShaderMaterial.ligths = false;
 
         var overlayRenderPass = new M3D.RenderPass(
             M3D.RenderPass.TEXTURE_MERGE,
+            // Initialize function
+            function() {},
             // Preprocess function
             function (textureMap, additionalData) {
-                return {material: overlayShaderMaterial, textures: [textureMap["combinedRender"], textureMap["drawingTexture"]]};
+                return {material: overlayShaderMaterial, textures: [textureMap["combinedRender"], textureMap["drawingTextureA"]]};
             },
             M3D.RenderPass.SCREEN,
             {width: 1920, height: 1080}

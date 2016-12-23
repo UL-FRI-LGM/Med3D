@@ -4,7 +4,7 @@
 
 M3D.RenderPass = class {
 
-    constructor(type, preprocess, target, viewport, outDepthID = null, outTextures = []) {
+    constructor(type, initialize, preprocess, target, viewport, outDepthID = null, outTextures = []) {
 
         /**
          * Can be either:
@@ -15,6 +15,16 @@ M3D.RenderPass = class {
          *                                It then uses the given M3D.CustomShaderMaterial to merge the given textures using (rendering is done on quad).
          */
         this._type = type;
+
+        /**
+         * This is set to true by RenderQueue after the initialize step is executed.
+         */
+        this._isInitialized = false;
+
+        /**
+         * This function is called only once, when the render pass in executed for the first time. In this step you can initialize scene, textures..
+         */
+        this._initialize = initialize;
 
         /**
          * This function is called before the rendering with two parameters (PreviousRPTextures, PreviousRPData). And it should return
@@ -54,6 +64,9 @@ M3D.RenderPass = class {
     get type() {
         return this._type;
     }
+    get initialize() {
+        return this._initialize;
+    }
     get preprocess() {
         return this._preprocess;
     }
@@ -73,6 +86,9 @@ M3D.RenderPass = class {
 
     set type(value) {
         this._type = value;
+    }
+    set initialize(value) {
+        this._initialize = value;
     }
     set preprocess(value) {
         this._preprocess = value;
@@ -113,9 +129,7 @@ M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrap
                                                 magFilter: M3D.Texture.LinearFilter,
                                                 internalFormat: M3D.Texture.RGBA,
                                                 format: M3D.Texture.RGBA,
-                                                type: M3D.Texture.UNSIGNED_BYTE,
-                                                width: 1920,
-                                                height: 1080};
+                                                type: M3D.Texture.UNSIGNED_BYTE};
 
 
 M3D.RenderPass.FLOAT_RGB_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapping,
@@ -124,9 +138,7 @@ M3D.RenderPass.FLOAT_RGB_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrappin
     magFilter: M3D.Texture.LinearFilter,
     internalFormat: M3D.Texture.RGBA16F,
     format: M3D.Texture.RGBA,
-    type: M3D.Texture.HALF_FLOAT,
-    width: 1920,
-    height: 1080};
+    type: M3D.Texture.HALF_FLOAT};
 
 
 
@@ -136,6 +148,4 @@ M3D.RenderPass.DEFAULT_RGB_TEXTURE_CONFIG = {wrapS: M3D.Texture.ClampToEdgeWrapp
                                                 magFilter: M3D.Texture.LinearFilter,
                                                 internalFormat: M3D.Texture.RGB,
                                                 format: M3D.Texture.RGB,
-                                                type: M3D.Texture.UNSIGNED_BYTE,
-                                                width: 1920,
-                                                height: 1080};
+                                                type: M3D.Texture.UNSIGNED_BYTE};

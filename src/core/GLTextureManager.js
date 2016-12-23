@@ -10,21 +10,27 @@ M3D.GLTextureManager = class {
     constructor(gl) {
         this._gl = gl;
         this._cached_textures = new Map();
+
+        this._colorClearFramebuffer = this._gl.createFramebuffer();
     }
 
     updateTexture(texture, isRTT) {
-        // Try to fetch texture
-        var glTexture = this._cached_textures.get(texture);
 
-        // Check if the texture needs to be updated
-        if (!texture.dirty && glTexture !== undefined) {
-            return glTexture;
-        }
+        let newTexture = false;
+
+        // Check if the texture is already created and cached
+        let glTexture = this._cached_textures.get(texture);
 
         // If texture was not found, create a new one and add it to the cached textures
         if (glTexture === undefined) {
             glTexture = this._gl.createTexture();
             this._cached_textures.set(texture, glTexture);
+            newTexture = true;
+        }
+
+        // Check if the texture needs to be updated
+        if (!texture.dirty) {
+            return glTexture;
         }
 
         this._gl.bindTexture(this._gl.TEXTURE_2D, glTexture);
@@ -32,15 +38,15 @@ M3D.GLTextureManager = class {
         this._gl.pixelStorei(this._gl.UNPACK_FLIP_Y_WEBGL, true);
 
         // Parse texture data
-        var internalFormat = this._formatToGL(texture._internalFormat);
-        var format = this._formatToGL(texture._format);
-        var magFilter = this._magFilterToGL(texture._magFilter);
-        var minFilter = this._minFilterToGL(texture._minFilter);
-        var wrapS = this._wrapToGL(texture._wrapS);
-        var wrapT = this._wrapToGL(texture._wrapT);
-        var type = this._typeToGL(texture._type);
-        var width = texture._width;
-        var height = texture._height;
+        let internalFormat = this._formatToGL(texture._internalFormat);
+        let format = this._formatToGL(texture._format);
+        let magFilter = this._magFilterToGL(texture._magFilter);
+        let minFilter = this._minFilterToGL(texture._minFilter);
+        let wrapS = this._wrapToGL(texture._wrapS);
+        let wrapT = this._wrapToGL(texture._wrapT);
+        let type = this._typeToGL(texture._type);
+        let width = texture._width;
+        let height = texture._height;
 
         // Filters
         this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MAG_FILTER, magFilter);
@@ -60,6 +66,7 @@ M3D.GLTextureManager = class {
             // Normal texture
             if (texture.image === null) {
                 this._gl.texImage2D(this._gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+                //this.clearBoundTexture();
             }
             else {
                 this._gl.texImage2D(this._gl.TEXTURE_2D, 0, internalFormat, format, type, texture.image);
@@ -79,9 +86,25 @@ M3D.GLTextureManager = class {
         return glTexture;
     }
 
-
     getTexture(reference) {
         return this._cached_textures.get(reference);
+    }
+
+    clearBoundTexture() {
+        // Clear texture color
+        let currentFramebuffer = this._gl.getParameter(this._gl.DRAW_FRAMEBUFFER_BINDING);
+        let currentClearColor = this._gl.getParameter(this._gl.COLOR_CLEAR_VALUE);
+
+        this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._colorClearFramebuffer);
+        this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._gl.COLOR_ATTACHMENT0, this._gl.TEXTURE_2D, glTexture, 0);
+        this._gl.drawBuffers([this._gl.COLOR_ATTACHMENT0]);
+
+        this._gl.clearColor(0, 0, 0, 0);
+        this._gl.clear(this._gl.COLOR_BUFFER_BIT);
+
+        this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._gl.COLOR_ATTACHMENT0, this._gl.TEXTURE_2D, null, 0);
+        this._gl.bindFramebuffer(this._gl.FRAMEBUFFER, currentFramebuffer);
+        this._gl.clearColor(currentClearColor[0], currentClearColor[1], currentClearColor[2], currentClearColor[3]);
     }
 
     clearTextures() {

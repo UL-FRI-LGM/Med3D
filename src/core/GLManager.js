@@ -39,7 +39,7 @@ M3D.GLManager = class {
         }
         // endregion
 
-        var ext = this._gl.getExtension("EXT_color_buffer_float");
+        let ext = this._gl.getExtension("EXT_color_buffer_float");
 
         // region CONSTANTS
         this._FIRST_COLOR_ATTACHMENT = this._gl.COLOR_ATTACHMENT0;
@@ -57,7 +57,7 @@ M3D.GLManager = class {
         this._clearStencil = null;
 
         // Initialize clear values
-        this.setClearColor(0, 0, 0, 1);
+        this.setClearColor(0, 0, 0, 0);
         this.setClearDepth(1);
         this.setClearStencil(0);
         // endregion
@@ -126,9 +126,9 @@ M3D.GLManager = class {
     }
 
     initRenderTarget(renderTarget) {
-        var glTexture;
-        var drawBuffersLength;
-        var drawAttachments = [];
+        let glTexture;
+        let drawBuffersLength;
+        let drawAttachments = [];
 
         // Bind the framebuffer matching the specified render target
         this._fboManager.bindFramebuffer(renderTarget);
@@ -154,7 +154,7 @@ M3D.GLManager = class {
         drawBuffersLength = renderTarget.sizeDrawBuffers();
 
         // TODO: Is it reasonable to check if there are more than 15 draw buffers?
-        for (var i = 0; i < drawBuffersLength; i++) {
+        for (let i = 0; i < drawBuffersLength; i++) {
             glTexture = this._textureManager.updateTexture(renderTarget._drawBuffers[i], true);
 
             // Attach draw buffer as color attachment (in specified order)
@@ -167,7 +167,7 @@ M3D.GLManager = class {
 
         // Unbind any attachments left from the previous renders
         if (renderTarget.__fboLength !== null && renderTarget.__fboLength > drawBuffersLength) {
-            for (var i = drawBuffersLength; i < renderTarget.__fboLength; i++) {
+            for (let i = drawBuffersLength; i < renderTarget.__fboLength; i++) {
                 this._gl.framebufferTexture2D(this._gl.FRAMEBUFFER, this._FIRST_COLOR_ATTACHMENT + i, this._gl.TEXTURE_2D, null, 0);
             }
         }
@@ -193,18 +193,13 @@ M3D.GLManager = class {
         return this._textureManager.getTexture(reference);
     }
 
-    getBuffer (attribute) {
+    getAttributeBuffer (attribute) {
         return this._attributeManager.getCachedBuffer(attribute);
     }
 
     clearAttributeBuffers() {
         this._attributeManager.clearBuffers();
     }
-
-    clearUniforms() {
-        this._uniformManager.clearUnforms();
-    }
-
 
     //region CLEARING FUNCTIONS
     /**
@@ -268,6 +263,7 @@ M3D.GLManager = class {
      * GETTERS & SETTERS
      */
     get context () { return this._gl; }
+
     get glVersion () { return this._glVersion; }
 
     get cache_programs () { return M3D._ProgramCaching; }

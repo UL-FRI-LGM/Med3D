@@ -135,11 +135,11 @@ M3D.MeshRenderer = class {
     }
 
     _loadPrograms() {
-        var scope = this;
-        var everythingLoaded = true;
+        let scope = this;
+        let everythingLoaded = true;
 
         // Fetch all required programs
-        for (var i = 0; i < this._requiredPrograms.length; i++) {
+        for (let i = 0; i < this._requiredPrograms.length; i++) {
 
             // Fetch program name
             let programName = this._requiredPrograms[i].name;
@@ -149,13 +149,13 @@ M3D.MeshRenderer = class {
                 everythingLoaded = false;
 
                 // Called when the program template is loaded.. Initiates shader compilation
-                var onLoad = function (programTemplateSrc) {
+                let onLoad = function (programTemplateSrc) {
                     scope._glProgramManager.addTemplate(programTemplateSrc);
                     scope._loadingPrograms.delete(programName);
                 };
 
                 // Something went wrong while fetching the program templates
-                var onError = function (event) {
+                let onError = function (event) {
                     console.error("Failed to load program " + programName + ".")
                     scope._loadingPrograms.delete(programName);
                 };
@@ -170,9 +170,9 @@ M3D.MeshRenderer = class {
             }
             else {
                 // Build program for specific number of lights (is disregarded if the shader is not using lights)
-                var numLights = this._lightsCombined.directional.length + this._lightsCombined.point.length;
+                let numLights = this._lightsCombined.directional.length + this._lightsCombined.point.length;
 
-                var program = this._glProgramManager.fetchProgram(this._requiredPrograms[i], numLights);
+                let program = this._glProgramManager.fetchProgram(this._requiredPrograms[i], numLights);
 
                 // Bind required program and compiled program
                 this._compiledPrograms.set(this._requiredPrograms[i].programID, program);
@@ -184,15 +184,15 @@ M3D.MeshRenderer = class {
 
     _renderObjects(objects, camera) {
 
-        for (var i = 0; i < objects.length; i++) {
+        for (let i = 0; i < objects.length; i++) {
 
-            var program = this._compiledPrograms.get(objects[i].material.requiredProgram().programID);
+            let program = this._compiledPrograms.get(objects[i].material.requiredProgram().programID);
 
             program.use();
 
             this._setup_uniforms(program, objects[i], camera);
 
-            var vertices = objects[i].geometry.vertices;
+            let vertices = objects[i].geometry.vertices;
             this._setup_attributes(program, objects[i], vertices);
 
             this._setup_material_settings(objects[i].material);
@@ -202,12 +202,12 @@ M3D.MeshRenderer = class {
                 this._gl.drawArrays(this._gl.LINES, 0, vertices.count());
             }
             else if (objects[i].geometry.drawWireframe) {
-                var buffer = this._glManager.getBuffer(objects[i].geometry.wireframeIndices);
+                let buffer = this._glManager.getAttributeBuffer(objects[i].geometry.wireframeIndices);
                 this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
                 this._gl.drawElements(this._gl.LINES, objects[i].geometry.wireframeIndices.count(), this._gl.UNSIGNED_INT, 0)
             }
             else if (objects[i].geometry.indices) {
-                var buffer = this._glManager.getBuffer(objects[i].geometry.indices);
+                let buffer = this._glManager.getAttributeBuffer(objects[i].geometry.indices);
                 this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
                 this._gl.drawElements(this._gl.TRIANGLES, objects[i].geometry.indices.count(), this._gl.UNSIGNED_INT, 0)
             }
@@ -235,22 +235,22 @@ M3D.MeshRenderer = class {
 
             switch (attributes[i]) {
                 case "VPos":
-                    buffer = this._glManager.getBuffer(vertices);
+                    buffer = this._glManager.getAttributeBuffer(vertices);
                     attributeSetter["VPos"].set(buffer, 3);
                     break;
                 case "VNorm":
                     let normals = object.geometry.normals;
-                    buffer = this._glManager.getBuffer(normals);
+                    buffer = this._glManager.getAttributeBuffer(normals);
                     attributeSetter["VNorm"].set(buffer, 3);
                     break;
                 case "VColor":
                     let vertColor = object.geometry.vertColor;
-                    buffer = this._glManager.getBuffer(vertColor);
+                    buffer = this._glManager.getAttributeBuffer(vertColor);
                     attributeSetter["VColor"].set(buffer, 4);
                     break;
                 case "uv":
                     let uv = object.geometry.uv;
-                    buffer = this._glManager.getBuffer(uv);
+                    buffer = this._glManager.getAttributeBuffer(uv);
                     attributeSetter["uv"].set(buffer, 2);
                     break;
                 default:
@@ -263,7 +263,7 @@ M3D.MeshRenderer = class {
                         // If attribute is defined in the custom attribute object, fetch buffer and bind it to program
                         if (attr !== undefined) {
                             found = true;
-                            buffer = this._glManager.getBuffer(attr);
+                            buffer = this._glManager.getAttributeBuffer(attr);
                             attributeSetter[attributes[i]].set(buffer, 3);
                         }
                     }
@@ -413,7 +413,7 @@ M3D.MeshRenderer = class {
         var index = 0, prefix, light;
 
         // DIRECTIONAL LIGHTS
-        for (var i = 0; i < this._lightsCombined.directional.length; i++) {
+        for (let i = 0; i < this._lightsCombined.directional.length; i++) {
             prefix = "lights[" + index + "]";
             light = this._lightsCombined.directional[i];
 
@@ -431,7 +431,7 @@ M3D.MeshRenderer = class {
         }
 
         // POINT LIGHTS
-        for (var i = 0; i < this._lightsCombined.point.length; i++) {
+        for (let i = 0; i < this._lightsCombined.point.length; i++) {
             prefix = "lights[" + index + "]";
             light = this._lightsCombined.point[i];
 
@@ -466,10 +466,10 @@ M3D.MeshRenderer = class {
             if (object.frustumCulled === false || this._isObjectVisible(object)) {
 
                 // Adds required program to the array of required programs if it's not present in it already
-                var requiredProgram = object.material.requiredProgram();
-                var found = false;
+                let requiredProgram = object.material.requiredProgram();
+                let found = false;
 
-                for (var i = 0; i < this._requiredPrograms; i++) {
+                for (let i = 0; i < this._requiredPrograms; i++) {
                     if (requiredProgram.compare(this._requiredPrograms[i])) {
                         found = true;
                         break;
@@ -508,10 +508,10 @@ M3D.MeshRenderer = class {
         }
 
         // Recursively descend through children and project them
-        var children = object.children;
+        let children = object.children;
 
         // Recurse through the children
-        for (var i = 0, l = children.length; i < l; i++) {
+        for (let i = 0, l = children.length; i < l; i++) {
             this._projectObject(children[i], camera);
         }
     }
@@ -519,7 +519,7 @@ M3D.MeshRenderer = class {
     _initRenderTarget(renderTarget) {
         // Check if the render target is specified
         this._currentRenderTarget = renderTarget;
-        var rttViewport = renderTarget._viewport;
+        let rttViewport = renderTarget._viewport;
 
         // Setup viewport
         this._gl.viewport(rttViewport.x, rttViewport.y, rttViewport.z, rttViewport.w);
@@ -548,15 +548,15 @@ M3D.MeshRenderer = class {
         this._lightsCombined.point.length = 0;
 
         // Light properties
-        var light,
+        let light,
             color,
             intensity,
             distance;
 
         // Light colors
-        var r = 0, g = 0, b = 0;
+        let r = 0, g = 0, b = 0;
 
-        for (var i = 0; i < lights.length; i++) {
+        for (let i = 0; i < lights.length; i++) {
 
             light = lights[i];
 
@@ -570,7 +570,7 @@ M3D.MeshRenderer = class {
             }
             else if (light instanceof M3D.DirectionalLight) {
 
-                var lightProperties = {
+                let lightProperties = {
                     color: new THREE.Color(),
                     direction: new THREE.Vector3()
                 };
@@ -583,7 +583,7 @@ M3D.MeshRenderer = class {
             }
             else if (light instanceof M3D.PointLight) {
 
-                var lightProperties = {
+                let lightProperties = {
                     color: new THREE.Color(),
                     position: new THREE.Vector3()
                 };
@@ -605,7 +605,7 @@ M3D.MeshRenderer = class {
     }
 
     _isObjectVisible(object) {
-        var geometry = object.geometry;
+        let geometry = object.geometry;
 
         // Check if the bounding sphere is calculated
         if (geometry.boundingSphere === null) {
@@ -632,9 +632,9 @@ M3D.MeshRenderer = class {
     }
 
     set clearColor(hexColor) {
-        var components = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor);
+        let components = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor);
         if (components) {
-            this._glManager.setClearColor(parseInt(components[1], 16) / 255, parseInt(components[2], 16) / 255, parseInt(components[3], 16) / 255, 1)
+            this._glManager.setClearColor(parseInt(components[1], 16) / 255, parseInt(components[2], 16) / 255, parseInt(components[3], 16) / 255, parseInt(components[4], 16) / 255)
         }
     }
 

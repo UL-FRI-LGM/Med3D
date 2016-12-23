@@ -37,6 +37,16 @@ M3D.Texture = class {
 		this._dirty = true;
 	}
 
+	applyConfig(texConfig) {
+        this.wrapS = texConfig.wrapS;
+        this.wrapT = texConfig.wrapT;
+        this.minFilter = texConfig.minFilter;
+        this.magFilter = texConfig.magFilter;
+        this.internalFormat = texConfig.internalFormat;
+        this.format = texConfig.format;
+        this.type = texConfig.type;
+	}
+
 	// region GETTERS
 	get dirty() { return this._dirty; }
 	get image() { return this._image; }
@@ -110,6 +120,20 @@ M3D.Texture = class {
 	set format(value) {
         if (value !== this._format) {
             this._format = value;
+            this._dirty = true;
+        }
+	}
+
+	set width(value) {
+        if (value !== this._width) {
+            this._width = value;
+            this._dirty = true;
+        }
+	}
+
+	set height(value) {
+        if (value !== this._height) {
+            this._height = value;
             this._dirty = true;
         }
 	}

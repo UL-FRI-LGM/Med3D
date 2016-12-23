@@ -5,7 +5,7 @@
 
 
 app.service("InputService", function ($interval) {
-    var self = this;
+    let self = this;
 
     // Reference to keyboard controller singleton
     this.keyboardController = M3D.KeyboardInput.instance;
