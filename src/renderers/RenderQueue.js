@@ -111,6 +111,11 @@ M3D.RenderQueue = class {
             // Execute preprocess step
             let preprocOutput = renderPass.preprocess(this._textureMap, this._forwardedAdditionalData);
 
+            // If prepossessing step outputs null skip this render pass.
+            if (preprocOutput === null) {
+                continue;
+            }
+
             // Determine the render pass type
             if (renderPass.type === M3D.RenderPass.BASIC) {
                 // This is a BASIC scene rendering render pass
@@ -140,7 +145,7 @@ M3D.RenderQueue = class {
                     this._renderer.render(preprocOutput.scene, preprocOutput.camera, this._renderTarget)
                 }
                 else {
-                    console.error("Unknown render pass " + i + " target.")
+                    console.error("Unknown render pass " + i + " target.");
                     return;
                 }
             }
@@ -231,6 +236,24 @@ M3D.RenderQueue = class {
         }
 
         this._renderQueue.push(renderPass);
+    }
+
+    /**
+     * Removes the Render Pass from the render queue.
+     */
+    removeRenderPass(renderPass) {
+        let index = this._renderQueue.indexOf(renderPass);
+
+        if (index > -1) {
+            this._renderQueue.splice(index, 1);
+        }
+    }
+
+    /**
+     * Adds render pass at given index.
+     */
+    addRenderPass(renderPass, index) {
+        this._renderQueue.splice(index, 0, renderPass);
     }
 
     /**

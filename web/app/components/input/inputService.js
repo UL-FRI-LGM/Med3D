@@ -16,20 +16,22 @@ app.service("InputService", function ($interval) {
         down: false
     };
 
-    window.addEventListener("mousedown", function () {
-        self.cursor.down = true;
-    });
-
-    window.addEventListener("mouseup", function () {
-        self.cursor.down = false;
-    });
-
     function onMouseMove( event ) {
         self.cursor.position.x = (event.clientX / window.innerWidth) * 2 - 1;
         self.cursor.position.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
 
-    window.addEventListener( 'mousemove', onMouseMove, false );
+    this.initializeCanvasMouseTracking = function (canvas) {
+        canvas.addEventListener("mousedown", function () {
+            self.cursor.down = true;
+        });
+
+        canvas.addEventListener("mouseup", function () {
+            self.cursor.down = false;
+        });
+
+        canvas.addEventListener( 'mousemove', onMouseMove, false );
+    };
 
     // Input bookkeeping
     this.navigatorsInput = {
@@ -115,16 +117,23 @@ app.service("InputService", function ($interval) {
         self.speedMultiplier = pressedKeys[16] ? 4 : 1;
     });
 
+    let ZERO_VEC = new THREE.Vector3(0);
     // Updates and returns combined input values
     this.update = function () {
         // Update keyboard input
         self.keyboardInput.reset();
         self.keyboardController.update();
 
-        // Combine keyboard and navigator rotation/translation.
-        self.combinedInput.rotation.addVectors(self.keyboardInput.rotation, self.navigatorsInput.rotation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
-        self.combinedInput.translation.addVectors(self.keyboardInput.translation, self.navigatorsInput.translation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
+        // Check if the camera is locked
+        if (!this.lockUserCamera) {
+            // Combine keyboard and navigator rotation/translation.
+            self.combinedInput.rotation.addVectors(self.keyboardInput.rotation, self.navigatorsInput.rotation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
+            self.combinedInput.translation.addVectors(self.keyboardInput.translation, self.navigatorsInput.translation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
 
-        return {translation: self.combinedInput.translation, rotation: self.combinedInput.rotation};
+            return {translation: self.combinedInput.translation, rotation: self.combinedInput.rotation};
+        }
+        else {
+            return {translation: ZERO_VEC, rotation: ZERO_VEC};
+        }
     };
 });

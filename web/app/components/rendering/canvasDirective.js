@@ -14,7 +14,7 @@ app.directive("m3dCanvas", function () {
             renderer.addShaderLoaderUrls(attributes.shaderpath);
 
             // Pass the renderer to the controller
-            scope.init(renderer, canvas[0].clientWidth, canvas[0].clientHeight);
+            scope.init(renderer, canvas[0]);
 
             // Canvas resizing
             window.onresize = function(){

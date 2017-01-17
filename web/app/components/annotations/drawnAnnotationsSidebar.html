@@ -1,0 +1,27 @@
+<span>
+    <div class="sidebar-content-title">
+      Drawn Annotations
+    </div>
+
+    <div class="sidebar-content">
+
+        <div class="list-group" style="-webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none;">
+
+            <div class="list-group-item med3d-annotation-list-item" ng-repeat="ann in annotations.drawnAnnotationsList" ng-click="toggleActive($index)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
+
+                <a class="med3d-annotation-sidebar-title">
+                    {{ann.title}}
+                </a>
+
+                <a class="med3d-annotation-list-remove-item" ng-click="rmAnnotation($index)">
+                      <img src="assets/img/bin.png">
+                </a>
+            </div>
+
+            <div class="input-group" style="margin-left: 10px;">
+                <button id="newDrawnAnnotationButton" type="button" class="btn med3d-btn-primary" style="margin-left: 7px; border-radius: 5px 5px 5px 5px" ng-disabled="!publicRenderData.renderingInProgress" ng-click="addAnnotation()">New</button>
+            </div>
+        </div>
+
+    </div>
+</span>

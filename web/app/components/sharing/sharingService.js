@@ -137,7 +137,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 }
             };
 
-            self.annotations.setListener(onAdd, onRm, onClear);
+            self.annotations.addListener("SharingService", onAdd, onRm, onClear);
 
             // Set shared annotations listener
             self.dataPublisher.setMiscListener("sessionAnnotations", self._onSharedAnnotationsChange);
@@ -262,7 +262,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 }
             });
 
-            self.annotations.rmListener();
+            self.annotations.rmListener("SharingService");
             self.dataPublisher.stopPublishing();
             callback({"status": 0, msg: "Successfully stopped session hosting."});
         }
@@ -326,7 +326,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                             }
                         };
 
-                        self.annotations.setListener(onAdd, onRm, function () {});
+                        self.annotations.addListener("SharingService", onAdd, onRm, function () {});
                     }
                     // endregion
 
@@ -424,7 +424,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         self.dataSubscriber.rmMiscListener("chat");
         self.dataSubscriber.rmMiscListener("sessionAnnotations");
         self.dataSubscriber.unsubscribe();
-        self.annotations.rmListener();
+        self.annotations.rmListener("SharingService");
 
         // Delete shared annotations
         $rootScope.$apply(function() {

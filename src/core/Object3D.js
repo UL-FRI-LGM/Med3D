@@ -61,7 +61,13 @@ M3D.Object3D = class {
     get parent() { return this._parent; }
     get children() { return this._children; }
     get position() { return this._position; }
+    get positionX() { return this._position.x; }
+    get positionY() { return this._position.y; }
+    get positionZ() { return this._position.z; }
     get rotation() { return this._rotation; }
+    get rotationX() { return this._rotation.x; }
+    get rotationY() { return this._rotation.y; }
+    get rotationZ() { return this._rotation.z; }
     get quaternion() { return this._quaternion; }
     get scale() { return this._scale; }
     get matrixAutoUpdate() { return this._matrixAutoUpdate; }
@@ -142,6 +148,42 @@ M3D.Object3D = class {
             }
         }
     }
+
+    set rotationX(val) {
+	    if (this._rotation.x !== val) {
+            this._rotation.x = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
+                this._onChangeListener.objectUpdate(update)
+            }
+        }
+	}
+
+    set rotationY(val) {
+        if (this._rotation.y !== val) {
+            this._rotation.y = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
+                this._onChangeListener.objectUpdate(update)
+            }
+        }
+	}
+
+    set rotationZ(val) {
+        if (this._rotation.z !== val) {
+            this._rotation.z = val;
+
+            // Notify onChange subscriber
+            if (this._onChangeListener) {
+                var update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
+                this._onChangeListener.objectUpdate(update)
+            }
+        }
+	}
 
     set quaternion(quat) {
         if (!quat.equals(this._quaternion)) {

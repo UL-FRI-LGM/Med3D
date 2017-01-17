@@ -74,7 +74,7 @@ app.directive("newAnnotationWidget", function () {
                 // Fetch offset for modal positioning
                 scope.annotations.newAnnotation.modalHolderPosition = element.offset();
                 // Push created annotation
-                scope.annotations.finishAnnotation();
+                scope.annotations.finishTextAnnotation();
             }
         },
         templateUrl: function(element, attributes) {

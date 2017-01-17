@@ -44,6 +44,10 @@
 
     <!-- Factory -->
     <script src="app/components/rendering/globalRenderData.js"></script>
+    <script src="app/components/annotations/annotationsGlobalData.js"></script>
+
+    <!-- Helper classes -->
+    <script src="app/components/annotations/DrawnAnnotation.js"></script>
 
     <!-- Controllers -->
     <script src="app/components/input/navigatorController.js"></script>
@@ -69,6 +73,7 @@
     <script src="app/components/modals/misc/basicModalDirective.js"></script>
     <script src="app/components/input/navigatorDirective.js"></script>
     <script src="app/components/annotations/annotationsSidebarDirective.js"></script>
+    <script src="app/components/annotations/drawnAnnotationsSidebarDirective.js"></script>
     <script src="app/components/annotations/annotationWidgetDirective.js"></script>
     <script src="app/components/annotations/newAnnotationWidgetDirective.js"></script>
     <script src="app/components/sharing/sharingHostModalDirective.js"></script>
@@ -179,6 +184,12 @@
                     </li>
 
                     <li>
+                        <a href="" data-target="#drawnAnnotationSidebarContent">
+                            <img class="sidebar-icon" src="assets/img/pen.png"/>
+                        </a>
+                    </li>
+
+                    <li>
                         <a href="" data-target="#camerasSidebarContent">
                             <img class="sidebar-icon" src="assets/img/eye.png"/>
                         </a>
@@ -187,6 +198,8 @@
             </div>
 
             <annotations-sidebar ng-controller="AnnotationsSidebarController" toggle-id="annotationSidebarContent"></annotations-sidebar>
+
+            <drawn-annotations-sidebar ng-controller="AnnotationsSidebarController" toggle-id="drawnAnnotationSidebarContent"></drawn-annotations-sidebar>
 
 
             <cameras-sidebar ng-controller="CamerasSidebarController" toggle-id="camerasSidebarContent"></cameras-sidebar>

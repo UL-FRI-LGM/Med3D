@@ -6,6 +6,7 @@ app.factory('PublicRenderData', function(){
     return {
         contentRenderGroup: null,
         canvasDimensions: {width: 1280, height: 1024},
+        renderingInProgress: false,
 
         // Camera management
         activeCamera: null,

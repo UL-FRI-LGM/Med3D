@@ -41,7 +41,7 @@ app.directive("annotationsSidebar", function () {
             };
 
             scope.rmAnnotation = function (index) {
-                scope.annotations.removeAnnotation(index);
+                scope.annotations.removeTextAnnotation(index);
             };
 
             scope.toggleActive = function (index) {

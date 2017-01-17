@@ -42,8 +42,9 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
      * @param width {number} canvas width
      * @param height {number} canvas height
      */
-    $scope.init = function (renderer, width, height) {
-        $scope.publicRenderData.canvasDimensions = {width: width, height: height};
+    $scope.init = function (renderer, canvas) {
+        $scope.publicRenderData.canvasDimensions = {width: canvas.clientWidth, height: canvas.clientHeight};
+        InputService.initializeCanvasMouseTracking(canvas);
 
         // Store reference to renderer
         self.renderer = renderer;
@@ -70,6 +71,10 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         if (!animationRequestId) {
             self.animate();
         }
+
+        $scope.$apply(function () {
+            $scope.publicRenderData.renderingInProgress = true;
+        });
     };
 
     /**
@@ -80,6 +85,10 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             cancelAnimationFrame(self.animationRequestId);
             self.animationRequestId = null;
         }
+
+        $scope.$apply(function () {
+            $scope.publicRenderData.renderingInProgress = false;
+        });
     };
 
 
@@ -199,6 +208,8 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             }
         }
     }();
+
+
     // endregion
 
 
@@ -235,7 +246,12 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
 
             // Add camera to public render data
             $scope.publicRenderData.cameras.push(camera);
-            $scope.publicRenderData.activeCamera = camera
+            $scope.publicRenderData.activeCamera = camera;
+
+
+            // HELPER VARIABLES
+            this.__axisDiffVec = new THREE.Vector3();
+            this.__rotDiffVec = new THREE.Vector3();
         },
 
         // Preprocess function
@@ -258,15 +274,69 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             // UPDATE CAMERA AND SCENE DATA
             let transformation = InputService.update();
 
-            // If own camera update it's position based on the input
-            if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
-                $scope.publicRenderData.activeCamera.translateX(transformation.translation.x * dt * 0.01);
-                $scope.publicRenderData.activeCamera.translateY(transformation.translation.y * dt * 0.01);
-                $scope.publicRenderData.activeCamera.translateZ(transformation.translation.z * dt * 0.01);
+            // Only update camera if no annotation is selected
+            if ($scope.annotations.selectedDrawnAnnotation === undefined) {
+                // If own camera and update it's position based on the input
+                if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
+                    $scope.publicRenderData.activeCamera.translateX(transformation.translation.x * dt * 0.01);
+                    $scope.publicRenderData.activeCamera.translateY(transformation.translation.y * dt * 0.01);
+                    $scope.publicRenderData.activeCamera.translateZ(transformation.translation.z * dt * 0.01);
 
-                $scope.publicRenderData.activeCamera.rotateX(transformation.rotation.x * dt * 0.001);
-                $scope.publicRenderData.activeCamera.rotateY(transformation.rotation.y * dt * 0.001);
-                $scope.publicRenderData.activeCamera.rotateZ(transformation.rotation.z * dt * 0.001);
+                    $scope.publicRenderData.activeCamera.rotateX(transformation.rotation.x * dt * 0.001);
+                    $scope.publicRenderData.activeCamera.rotateY(transformation.rotation.y * dt * 0.001);
+                    $scope.publicRenderData.activeCamera.rotateZ(transformation.rotation.z * dt * 0.001);
+                }
+            }
+            else {
+                // If the annotation is selected. Animate translate/rotate camera to match the annotation position
+
+                this.__axisDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraPosition, $scope.publicRenderData.activeCamera.position);
+                this.__rotDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraRotation, $scope.publicRenderData.activeCamera.rotation.toVector3());
+
+
+
+                if (this.__axisDiffVec.length() !== 0 || this.__rotDiffVec.length() !== 0) {
+                    // Translate the camera to match the annotation position
+                    if (this.__axisDiffVec.length() < 0.02) {
+                        $scope.publicRenderData.activeCamera.positionX += this.__axisDiffVec.x;
+                        $scope.publicRenderData.activeCamera.positionY += this.__axisDiffVec.y;
+                        $scope.publicRenderData.activeCamera.positionZ += this.__axisDiffVec.z;
+                    }
+                    else {
+                        this.__axisDiffVec.multiplyScalar(dt * 0.002);
+
+                        if (this.__axisDiffVec.length() < 0.02) {
+                            this.__axisDiffVec.multiplyScalar(0.02 / this.__axisDiffVec.length());
+                        }
+
+                        $scope.publicRenderData.activeCamera.positionX += this.__axisDiffVec.x;
+                        $scope.publicRenderData.activeCamera.positionY += this.__axisDiffVec.y;
+                        $scope.publicRenderData.activeCamera.positionZ += this.__axisDiffVec.z;
+                    }
+
+                    // Rotate the camera to match the annotation rotation
+                    if (this.__rotDiffVec.length() < 0.001) {
+                        $scope.publicRenderData.activeCamera.rotationX += this.__rotDiffVec.x;
+                        $scope.publicRenderData.activeCamera.rotationY += this.__rotDiffVec.y;
+                        $scope.publicRenderData.activeCamera.rotationZ += this.__rotDiffVec.z;
+                    }
+                    else {
+                        this.__rotDiffVec.multiplyScalar(dt * 0.003);
+
+                        if (this.__rotDiffVec.length() < 0.001) {
+                            this.__rotDiffVec.multiplyScalar(0.001 / this.__rotDiffVec.length());
+                        }
+
+                        $scope.publicRenderData.activeCamera.rotationX += this.__rotDiffVec.x;
+                        $scope.publicRenderData.activeCamera.rotationY += this.__rotDiffVec.y;
+                        $scope.publicRenderData.activeCamera.rotationZ += this.__rotDiffVec.z;
+                    }
+
+                    additionalData['cameraInPositionDA'] = false;
+                }
+                else {
+                    additionalData['cameraInPositionDA'] = true;
+                }
             }
 
             // Always update world matrix
@@ -300,13 +370,24 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             additionalData['prevMouseState'] = false;
             additionalData['mouseTexPos'] = new THREE.Vector2();
 
-            textureMap['DrawingTextureA'] = new M3D.Texture();
-            textureMap['DrawingTextureA'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
-            textureMap['DrawingTextureB'] = new M3D.Texture();
-            textureMap['DrawingTextureB'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+            textureMap['HelperTexture'] = new M3D.Texture();
+            textureMap['HelperTexture'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+
+            textureMap['DrawingTextureA'] = null;
+            textureMap['DrawingTextureB'] = null;
         },
         // Preprocess function
         function (textureMap, additionalData) {
+
+            if ($scope.annotations.selectedDrawnAnnotation === undefined || !additionalData['cameraInPositionDA']) {
+                textureMap['DrawingTextureA'] = null;
+                textureMap['DrawingTextureB'] = null;
+                return null;
+            }
+            else if (textureMap['DrawingTextureA'] == null) {
+                textureMap['DrawingTextureA'] = $scope.annotations.selectedDrawnAnnotation.texture;
+                textureMap['DrawingTextureB'] = textureMap['HelperTexture'];
+            }
 
             let mouseTexPos = additionalData['mouseTexPos'];
             mouseTexPos.set((InputService.cursor.position.x + 1) / 2, (InputService.cursor.position.y + 1) / 2);
@@ -375,7 +456,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             // Update renderer viewport
             this.viewport = $scope.publicRenderData.canvasDimensions;
 
-            return {material: additionalData['OverlayTextureMaterial'], textures: [textureMap["MainRenderTex"], textureMap["DrawingTextureA"]]};
+            let textures = [textureMap["MainRenderTex"]];
+
+            if (textureMap["DrawingTextureA"] !== null) {
+                textures.push(textureMap["DrawingTextureA"]);
+            }
+
+            return {material: additionalData['OverlayTextureMaterial'], textures: textures};
         },
         M3D.RenderPass.SCREEN,
         $scope.publicRenderData.canvasDimensions
