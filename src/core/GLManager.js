@@ -181,7 +181,27 @@ M3D.GLManager = class {
 
         // Validation
         if (this._gl.checkFramebufferStatus(this._gl.FRAMEBUFFER) !== this._gl.FRAMEBUFFER_COMPLETE) {
-            console.error("Framebuffer not complete!")
+            console.error("Render target: framebuffer not complete!")
+
+            switch (this._gl.checkFramebufferStatus(this._gl.FRAMEBUFFER)) {
+                case this._gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                    console.error("FRAMEBUFFER_INCOMPLETE_ATTACHMENT: The attachment types are mismatched or not all framebuffer attachment points are framebuffer attachment complete.");
+                    break;
+                case this._gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                    console.error("FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: There is no attachment.");
+                    break;
+                case this._gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                    console.error("FRAMEBUFFER_INCOMPLETE_DIMENSIONS: Problem with the texture dimensions.");
+                    break;
+                case this._gl.FRAMEBUFFER_UNSUPPORTED:
+                    console.error("FRAMEBUFFER_UNSUPPORTED: The format of the attachment is not supported or if depth and stencil attachments are not the same renderbuffer.");
+                    break;
+                case this._gl.FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+                    console.error("FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: The values of gl.RENDERBUFFER_SAMPLES are different among attached renderbuffers, or are non-zero if the attached images are a mix of renderbuffers and textures.");
+                    break;
+                default:
+                    console.error("Unknown error! Abandon hope all ye who enter here.")
+            }
         }
     }
 

@@ -3,9 +3,7 @@ precision highp float;
 
 struct Material {
     #if (TEXTURE)
-        #for I_TEX in 0 to NUM_TEX
-            sampler2D texture##I_TEX;
-        #end
+        sampler2D texture0;
     #fi
 };
 

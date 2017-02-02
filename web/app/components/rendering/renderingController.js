@@ -9,6 +9,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     // Private renderer components
     this.renderer = null;
     this.renderQueue = null;
+    this.redrawQueue = null;
     this.raycaster = null;
     this.scene = null;
 
@@ -213,7 +214,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     // endregion
 
 
-    // region RENDER PASSES
+    // region RENDER QUEUE RENDER PASSES
     let prevTime = -1, currTime;
     let MainRenderPass = new M3D.RenderPass(
         // Rendering pass type
@@ -373,48 +374,69 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             textureMap['HelperTexture'] = new M3D.Texture();
             textureMap['HelperTexture'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
 
-            textureMap['DrawingTextureA'] = null;
-            textureMap['DrawingTextureB'] = null;
+            textureMap['OutTexture'] = null;
         },
         // Preprocess function
         function (textureMap, additionalData) {
+            let passSelf = this;
 
-            if ($scope.annotations.selectedDrawnAnnotation === undefined || !additionalData['cameraInPositionDA']) {
-                textureMap['DrawingTextureA'] = null;
-                textureMap['DrawingTextureB'] = null;
+            let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+
+            // Check if there is a layer selected and the camera is in position
+            if (selectedAnnotation == null || selectedAnnotation.drawLayer == null || !additionalData['cameraInPositionDA']) {
+                textureMap['OutTexture'] = null;
+                textureMap['TargetTexture'] = null;
+                // Skip this render pass
                 return null;
             }
-            else if (textureMap['DrawingTextureA'] == null) {
-                textureMap['DrawingTextureA'] = $scope.annotations.selectedDrawnAnnotation.texture;
-                textureMap['DrawingTextureB'] = textureMap['HelperTexture'];
+            else {
+                textureMap['OutTexture'] = textureMap['HelperTexture'];
+                textureMap['TargetTexture'] = selectedAnnotation.drawLayer.texture;
             }
 
-            let mouseTexPos = additionalData['mouseTexPos'];
-            mouseTexPos.set((InputService.cursor.position.x + 1) / 2, (InputService.cursor.position.y + 1) / 2);
-
-            this.viewport = $scope.publicRenderData.canvasDimensions;
-            self.renderer.clearColor = "#00000000";
-
             let drawingShaderMaterial = additionalData['DrawingShaderMaterial'];
-            let draw = InputService.cursor.down;
+            let draw = true;
 
             let mouseA = additionalData['mouseA'];
             let mouseB = additionalData['mouseB'];
 
             let normalisedThickness = ($scope.publicRenderData.lineThickness / this.viewport.width);
 
+            let mouseTexPos = additionalData['mouseTexPos'];
+            mouseTexPos.set((InputService.cursor.position.x + 1) / 2, (InputService.cursor.position.y + 1) / 2);
+
             // Check if this is first iteration after mouse press
-            if (!additionalData['prevMouseState'] && InputService.cursor.down) {
-                mouseA.copy(mouseTexPos);
-                mouseB.copy(mouseTexPos);
-            }
-            else if (InputService.cursor.down && mouseA.distanceTo(mouseTexPos) > normalisedThickness) {
-                mouseA.copy(mouseB);
-                mouseB.copy(mouseTexPos);
-            }
-            else {
-                draw = false;
-            }
+            $scope.$apply(function () {
+                if (InputService.cursor.down) {
+                    if (!additionalData['prevMouseState']) {
+                        mouseA.copy(mouseTexPos);
+                        mouseB.copy(mouseTexPos);
+
+                        // Convert to aspect ratio 1:1
+                        mouseTexPos.x = (mouseTexPos.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+                        selectedAnnotation.drawLayer.createNewLineEntry(mouseTexPos, $scope.publicRenderData.lineThickness, $scope.publicRenderData.lineHardness, $scope.publicRenderData.lineColor);
+                    }
+                    else {
+                        mouseA.copy(mouseB);
+                        mouseB.copy(mouseTexPos);
+
+                        // Convert to aspect ratio 1:1
+                        mouseTexPos.x = (mouseTexPos.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+                        selectedAnnotation.drawLayer.addLinePoint(mouseTexPos);
+                    }
+                }
+                else {
+                    draw = false;
+                }
+            });
+
+            // Store mouse state
+            additionalData['prevMouseState'] = InputService.cursor.down;
+
+            // Update the viewport
+            this.viewport = $scope.publicRenderData.canvasDimensions;
+
+            self.renderer.clearColor = "#00000000";
 
             // Set uniforms
             drawingShaderMaterial.setUniform("draw", draw);
@@ -424,21 +446,36 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             drawingShaderMaterial.setUniform("mouseA", mouseA.toArray());
             drawingShaderMaterial.setUniform("mouseB", mouseB.toArray());
 
-
-            // Store mouse state
-            additionalData['prevMouseState'] = InputService.cursor.down;
-
-
-            let temp = textureMap['DrawingTextureA'];
-            textureMap['DrawingTextureA'] = textureMap['DrawingTextureB'];
-            textureMap['DrawingTextureB'] = temp;
-
-            return {material: drawingShaderMaterial, textures: [textureMap['DrawingTextureB']]};
+            return {material: drawingShaderMaterial, textures: [textureMap['TargetTexture']]};
         },
         M3D.RenderPass.TEXTURE,
         $scope.publicRenderData.canvasDimensions,
         null,
-        [{id: "DrawingTextureA", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+        [{id: "OutTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+    );
+
+    let CopyDrawingTexturePass = new M3D.RenderPass(
+        M3D.RenderPass.TEXTURE_MERGE,
+        // Initialize function
+        function(textureMap, additionalData) {
+            additionalData['CopyTextureMaterial'] = new M3D.CustomShaderMaterial("copyTexture");
+        },
+        // Preprocess function
+        function (textureMap, additionalData) {
+            // Set the viewport to match the desired resolution
+            this.viewport = $scope.publicRenderData.canvasDimensions;
+
+            // Do not copy texture if there was nothing drawn
+            if (textureMap["OutTexture"] == null) {
+                return null;
+            }
+
+            return {material: additionalData['CopyTextureMaterial'] , textures: [textureMap["OutTexture"]]};
+        },
+        M3D.RenderPass.TEXTURE,
+        $scope.publicRenderData.canvasDimensions,
+        null,
+        [{id: "TargetTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
 
 
@@ -453,13 +490,77 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         },
         // Preprocess function
         function (textureMap, additionalData) {
-            // Update renderer viewport
-            this.viewport = $scope.publicRenderData.canvasDimensions;
+
+            let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+
+            // If the viewport had changed significantly redraw the lines
+            let canvasDim = $scope.publicRenderData.canvasDimensions;
+
+            // Redraw on canvas resize
+            if (Math.abs(this.viewport.width - canvasDim.width) > 10 || Math.abs(this.viewport.height - canvasDim.height) > 10) {
+                let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+                this.viewport = canvasDim;
+
+                if (selectedAnnotation != null) {
+                    for (let i = 0; i < selectedAnnotation.layers.length; i++) {
+                        let layer = selectedAnnotation.layers[i];
+
+                        if (layer.lines.length <= 0) {
+                            continue;
+                        }
+
+                        self.redrawQueue.addTexture("RedrawTexture", layer.texture);
+                        self.redrawQueue.setDataValue("lines", layer.lines);
+                        self.redrawQueue.setDataValue("viewport", canvasDim);
+
+                        // Redraw all of the lines
+                        let data;
+                        do {
+                            data = self.redrawQueue.render();
+                        } while (!data.additionalData["finished"]);
+
+                        layer.dirty = false;
+                    }
+
+                    textureMap['OutTexture'] = null;
+                    textureMap['TargetTexture'] = null;
+                }
+            }
+
+            // Redraw dirty layers
+            if (selectedAnnotation != null) {
+                for (let i = 0; i < selectedAnnotation.layers.length; i++) {
+                    let layer = selectedAnnotation.layers[i];
+
+                    if (!layer.dirty) {
+                        continue;
+                    }
+
+                    self.redrawQueue.addTexture("RedrawTexture", layer.texture);
+                    self.redrawQueue.setDataValue("lines", layer.lines);
+                    self.redrawQueue.setDataValue("viewport", canvasDim);
+
+                    // Redraw all of the lines
+                    let data;
+                    do {
+                        data = self.redrawQueue.render();
+                    } while (!data.additionalData["finished"]);
+
+                    layer.dirty = false;
+                }
+            }
 
             let textures = [textureMap["MainRenderTex"]];
 
-            if (textureMap["DrawingTextureA"] !== null) {
-                textures.push(textureMap["DrawingTextureA"]);
+            // Add draw layers if the camera is in position
+            if (selectedAnnotation != null && additionalData['cameraInPositionDA']) {
+                for (let i = selectedAnnotation.layers.length - 1; i >= 0; i--) {
+                    let layer = selectedAnnotation.layers[i];
+
+                    if (layer.isDisplayed && layer.lines.length > 0) {
+                        textures.push(layer.texture);
+                    }
+                }
             }
 
             return {material: additionalData['OverlayTextureMaterial'], textures: textures};
@@ -469,12 +570,138 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     );
     // endregion
 
+    // region REDRAW QUEUE
+    const MAX_POINTS = 500;
+
+    let RedrawRenderPass = new M3D.RenderPass(
+        M3D.RenderPass.TEXTURE_MERGE,
+        // Initialize function
+        function(textureMap, additionalData) {
+            additionalData['RedrawingShaderMaterial'] = new M3D.CustomShaderMaterial("redrawOnTexture");
+
+            textureMap['HelperTexture'] = new M3D.Texture();
+            textureMap['HelperTexture'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+
+            additionalData['indices'] = {line: 0, points: 0}
+        },
+        // Preprocess function
+        function (textureMap, additionalData) {
+            // Reset finished flag
+            additionalData['finished'] = false;
+
+            // Set the viewport to match the desired resolution
+            this.viewport = additionalData['viewport'];
+
+            // Set clear color to transparent
+            self.renderer.clearColor = "#00000000";
+
+            // Fetch line colors
+            let lines = additionalData['lines'];
+            let indices = additionalData['indices'];
+
+            // Current line
+            let currentLine = lines[indices.line];
+
+            let normalisedThickness = 0,
+                hardness = 0,
+                color = [0, 0, 0],
+                firstRender = indices.line === 0 && indices.points === 0,
+                selectedPoints = [0, 0],
+                numPoints = 0;
+
+
+            if (currentLine != null) {
+                // Calculate normalised thicknes
+                normalisedThickness = (currentLine.thickness / this.viewport.width);
+                hardness = lines[indices.line].hardness;
+                color = lines[indices.line].color;
+
+                // Points
+                let upperBoundary = Math.min(indices.points + MAX_POINTS * 2, currentLine.points.length);
+                selectedPoints = currentLine.points.slice(indices.points, upperBoundary);
+                numPoints = selectedPoints.length / 2; // Each point is represented by two values
+
+                // Check if line is fully drawn
+                if (upperBoundary === currentLine.points.length) {
+                    indices.points = 0;
+                    indices.line++;
+
+                    // If we have drawn all of the lines set the finished flag.
+                    if (indices.line >= lines.length) {
+                        additionalData['finished'] = true;
+
+                        // Reset values for the next redraw
+                        indices.points = 0;
+                        indices.line = 0;
+                    }
+                }
+                else {
+                    // Move starting point forward
+                    indices.points = upperBoundary - 2;
+                }
+            }
+            else {
+                additionalData['finished'] = true;
+            }
+
+            let redrawingShaderMaterial = additionalData['RedrawingShaderMaterial'];
+
+            // Set uniforms
+            redrawingShaderMaterial.setUniform("thickness", normalisedThickness);
+            redrawingShaderMaterial.setUniform("hardness", hardness);
+            redrawingShaderMaterial.setUniform("linePoints[0]", selectedPoints);
+            redrawingShaderMaterial.setUniform("numPoints", numPoints);
+            redrawingShaderMaterial.setUniform("brushColor", color);
+            redrawingShaderMaterial.setUniform("canvasWidth", this.viewport.width);
+            redrawingShaderMaterial.setUniform("canvasHeight", this.viewport.height);
+
+            let textures = [];
+
+            // If this is not a first render input the previous texture to use it as a base
+            if (!firstRender) {
+                textures.push(textureMap['RedrawTexture'])
+            }
+
+            return {material: redrawingShaderMaterial, textures: textures};
+        },
+        M3D.RenderPass.TEXTURE,
+        $scope.publicRenderData.canvasDimensions,
+        null,
+        [{id: "HelperTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+    );
+
+    let RedrawCopyTexturePass = new M3D.RenderPass(
+        M3D.RenderPass.TEXTURE_MERGE,
+        // Initialize function
+        function(textureMap, additionalData) {
+            additionalData['CopyTextureMaterial'] = new M3D.CustomShaderMaterial("copyTexture");
+        },
+        // Preprocess function
+        function (textureMap, additionalData) {
+            // Set the viewport to match the desired resolution
+            this.viewport = additionalData['viewport'];
+
+            return {material: additionalData['CopyTextureMaterial'] , textures: [textureMap["HelperTexture"]]};
+        },
+        M3D.RenderPass.TEXTURE,
+        $scope.publicRenderData.canvasDimensions,
+        null,
+        [{id: "RedrawTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
+    );
+
+    // endregion
 
     this.initializeRenderQueues = function () {
         self.renderQueue = new M3D.RenderQueue(self.renderer);
+        self.redrawQueue = new M3D.RenderQueue(self.renderer);
+
         self.renderQueue.pushRenderPass(MainRenderPass);
         self.renderQueue.pushRenderPass(DrawingRenderPass);
+        self.renderQueue.pushRenderPass(CopyDrawingTexturePass);
         self.renderQueue.pushRenderPass(OverlayRenderPass);
+
+        self.redrawQueue.pushRenderPass(RedrawRenderPass);
+        self.redrawQueue.pushRenderPass(RedrawCopyTexturePass);
     };
 
 

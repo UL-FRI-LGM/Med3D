@@ -19,6 +19,9 @@ app.directive("annotationsSidebar", function () {
             element.find('[data-toggle="tooltip"]').tooltip();
             element.find('[data-toggle="popover"]').popover();
 
+            // Configure scrollbar
+            element.find('.mCustomScrollbar').mCustomScrollbar({ alwaysShowScrollbar: 1, updateOnContentResize: true});
+
             // Toggle display tooltip and button enabling
             var newAnnotationButton = $("#newAnnotationButton");
             var newAnnotationButtonWrapper = newAnnotationButton.parent();

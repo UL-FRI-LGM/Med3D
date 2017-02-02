@@ -200,6 +200,17 @@ M3D.RenderQueue = class {
 
         // Restore viewport to original value
         this._renderer.updateViewport(cleanupViewport.width, cleanupViewport.height);
+
+        return {textures: this._textureMap,
+                additionalData: this._forwardedAdditionalData};
+    }
+
+    addTexture(name, texture) {
+        this._textureMap[name] = texture;
+    }
+
+    setDataValue(name, value) {
+        this._forwardedAdditionalData[name] = value;
     }
 
     // region QUEUE CONSTRUCTION

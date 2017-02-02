@@ -199,31 +199,71 @@ M3D.GLProgramManager = class {
 
             switch (info.type) {
                 case self._gl.FLOAT:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform1f(location, value);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform1fv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform1f(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
 
                 case self._gl.FLOAT_VEC2:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform2f(location, value[0], value[1]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform2fv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        // Single value
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform2f(location, value[0], value[1]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+
                     break;
 
                 case self._gl.FLOAT_VEC3:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform3f(location, value[0], value[1], value[2]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform3fv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform3f(location, value[0], value[1], value[2]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
 
                 case self._gl.FLOAT_VEC4:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform4f(location, value[0], value[1], value[2], value[3]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform4fv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform4f(location, value[0], value[1], value[2], value[3]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
 
                 case self._gl.FLOAT_MAT3:
@@ -240,29 +280,65 @@ M3D.GLProgramManager = class {
                     break;
 
                 case self._gl.INT:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform1i(location, value);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform1iv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform1i(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
 
                 case self._gl.INT_VEC2:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform2i(location, value[0], value[1]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform2iv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform2i(location, value[0], value[1]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
                 case self._gl.INT_VEC3:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform3i(location, value[0], value[1], value[2]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform3iv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform3i(location, value[0], value[1], value[2]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
                 case self._gl.INT_VEC4:
-                    uniformSetter[info.name]['set'] = function (value) {
-                        self._gl.uniform4i(location, value[0], value[1], value[2], value[3]);
-                        uniformSetter.__validation.uniforms[info.name] = true;
-                    };
+                    if (info.size > 1) {
+                        // Array
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform4iv(location, value);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
+                    else {
+                        uniformSetter[info.name]['set'] = function (value) {
+                            self._gl.uniform4i(location, value[0], value[1], value[2], value[3]);
+                            uniformSetter.__validation.uniforms[info.name] = true;
+                        };
+                    }
                     break;
                 case self._gl.BOOL:
                     uniformSetter[info.name]['set'] = function (value) {

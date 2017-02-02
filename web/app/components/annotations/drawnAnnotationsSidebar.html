@@ -5,22 +5,117 @@
 
     <div class="sidebar-content">
 
-        <div class="list-group" style="-webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none;">
+        <div class="list-group mCustomScrollbar" data-mcs-axis="y" style="-webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; height: calc(100vh - 425px);">
 
-            <div class="list-group-item med3d-annotation-list-item" ng-repeat="ann in annotations.drawnAnnotationsList" ng-click="toggleActive($index)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
+            <div ng-repeat="ann in annotations.drawnAnnotationsList" class="animate-drawn-ann" style="overflow: hidden">
 
-                <a class="med3d-annotation-sidebar-title">
-                    {{ann.title}}
-                </a>
+                <div class="med3d-annotation-list-item" ng-click="toggleAnnotationActive($index)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
 
-                <a class="med3d-annotation-list-remove-item" ng-click="rmAnnotation($index)">
-                      <img src="assets/img/bin.png">
-                </a>
+                    <a class="med3d-annotation-sidebar-title" ng-show="!ann.__editingTitle" on-long-press="ann.__editingTitle = true" prevent-click="true">
+                        {{ann.title}}
+                    </a>
+
+                    <input maxlength="25" focus-me="ann.__editingTitle" class="med3d-annotation-sidebar-edit-title" ng-show="ann.__editingTitle" ng-model="ann.title" ng-keyup="$event.keyCode == 13 && stopEditingTitle(ann)" ng-click="$event.stopPropagation()" ng-blur="stopEditingTitle(ann)"/>
+
+
+                    <a class="med3d-annotation-list-remove-item" ng-click="rmAnnotation($index)">
+                          <img src="assets/img/bin.png">
+                    </a>
+                </div>
+
+                <div class="animate-drawn-ann-sub" ng-show="ann == annotations.selectedDrawnAnnotation" style="overflow: hidden">
+
+                    <div class="animate-layer-list" ng-repeat="layer in ann.layers" style="height: 40px;">
+
+                        <svg width="45" height="40">
+                            <line stroke-linecap="round" x1="25" y1="0" x2="25" y2="40" stroke="gray" stroke-width="3"></line>
+                            <line stroke-linecap="round" x1="27" y1="20" x2="40" y2="20" stroke="gray" stroke-width="3"></line>
+                        </svg>
+
+                        <div class="med3d-layer-list-item" style="display: inline-block; width: calc(100% - 70px);" ng-click="toggleLayerDisplayed(ann, layer)" ng-style="!layer.isDisplayed && {'background-color': '#888888'}">
+
+                            <a class="med3d-layer-sidebar-title" ng-show="!layer.__editingTitle" on-long-press="layer.__editingTitle = true" prevent-click="true">
+                            {{layer.title}}
+                            </a>
+
+                            <input maxlength="15" focus-me="layer.__editingTitle" class="med3d-layer-sidebar-edit-title" ng-show="layer.__editingTitle" ng-model="layer.title" ng-keyup="$event.keyCode == 13 && stopEditingTitle(layer)" ng-click="$event.stopPropagation()" ng-blur="stopEditingTitle(layer)"/>
+
+                            <a ng-show="layer.owner == null" class="med3d-layer-list-remove-item" ng-click="removeDrawingLayer($event, ann, layer)">
+                                  <img src="assets/img/bin.png">
+                            </a>
+
+                            <a class="med3d-layer-list-draw-on" ng-click="toggleDrawingLayer($event, ann, layer)" ng-show="layer.isDisplayed && layer.owner == null">
+                                  <img ng-src="{{ann.drawLayer === layer && 'assets/img/pen_selected.png' || 'assets/img/pen_unselected.png'}}">
+                            </a>
+
+
+
+                            <span href="" ng-show="layer.owner != null" class="med3d-layer-list-other-user tooltip-wrapper" data-toggle="tooltip" ng-init="initTooltip(layer.owner)" ng-click="userDisplayClicked()" ng-blur="test()">
+                                <img ng-src="assets/img/user.png"/>
+                            </span>
+
+                        </div>
+
+                        <svg class="up-down-layer-arrows" height="30px" width="12px" style="margin-left: 3px; margin-bottom: 5px;">
+                            <polygon points="6,2 11,12 1,12 6,2" ng-click="moveLayer(ann, layer, true)"></polygon>
+                            <polygon points="1,18 11,18 6,28 1,18" ng-click="moveLayer(ann, layer, false)"></polygon>
+                        </svg>
+
+                    </div>
+
+
+                    <div >
+                        <svg width="45" height="40" style="float: left">
+                            <line stroke-linecap="round" x1="25" y1="0" x2="25" y2="19" stroke="gray" stroke-width="3"></line>
+                            <line stroke-linecap="round" x1="25" y1="20" x2="40" y2="20" stroke="gray" stroke-width="3"></line>
+                        </svg>
+
+                        <div class="input-group" style="overflow: hidden; padding-bottom: 10px; padding-left: 5px; padding-top: 5px;">
+                            <button id="newLayerButton" type="button" class="btn med3d-btn-primary" style="font-size: 12px; line-height: 30px; padding: 0 9px; height: 30px; border-radius: 5px 5px 5px 5px" ng-click="ann.addLayer()" on-long-press="ann.emulateOwner()" prevent-click="true">New</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="input-group" style="margin-left: 10px;">
+            <div class="input-group" style="margin-left: 10px; padding-bottom: 10px;">
                 <button id="newDrawnAnnotationButton" type="button" class="btn med3d-btn-primary" style="margin-left: 7px; border-radius: 5px 5px 5px 5px" ng-disabled="!publicRenderData.renderingInProgress" ng-click="addAnnotation()">New</button>
             </div>
+
+            <hr class="med3d-sidebar-hr">
+
+        </div>
+
+        <hr class="med3d-sidebar-hr">
+
+        <div class="sidebar-sub-content-title">
+                Brush settings
+
+            <a href="" id="drawing-undo-button" ng-click="undoLine()" ng-show="annotations.selectedDrawnAnnotation.drawLayer.lines.length > 0">
+                <img class="sidebar-icon" src="assets/img/undo.png" style="height: 22px; width: 22px"/>
+            </a>
+        </div>
+        
+
+
+        <div style="margin-left: 16px; margin-top: 3px">
+            <b style="color: white; font-size: 14px; font-weight: 500;">Color</b>
+
+            <div style="margin-bottom: 5px;">
+            <div id="lineColorPicker" style="display: inline-block;"></div>
+            </div>
+
+            <b style="color: white; font-size: 14px; font-weight: 500;">Thickness</b>
+            <div id="thicknessSlider" class="med3d-slider">
+                <div id="thicknessHandle"  class="ui-slider-handle med3d-slider-handle"></div>
+            </div>
+
+
+
+            <b style="color: white; font-size: 14px; font-weight: 500;">Hardness</b>
+            <div id="hardnessSlider" class="med3d-slider">
+                <div id="hardnessHandle" class="ui-slider-handle med3d-slider-handle"></div>
+            </div>
+
         </div>
 
     </div>

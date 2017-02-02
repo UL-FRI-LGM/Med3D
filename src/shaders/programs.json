@@ -47,6 +47,22 @@
         }
     },
 
+    "custom_redrawOnTexture": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/drawToTexture/redrawing_template.vert",
+            "fragment": "custom/drawToTexture/redrawing_template.frag"
+        }
+    },
+
+    "custom_copyTexture": {
+        "description": "Default gl2 program used for testing.",
+        "shaders": {
+            "vertex": "custom/drawToTexture/copy_texture_template.vert",
+            "fragment": "custom/drawToTexture/copy_texture_template.frag"
+        }
+    },
+
     "custom_overlayTextures": {
         "description": "Default gl2 program used for testing.",
         "shaders": {

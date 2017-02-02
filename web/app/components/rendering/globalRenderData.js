@@ -14,7 +14,7 @@ app.factory('PublicRenderData', function(){
         sharedCameras: {},
 
         // Drawing parameters
-        lineColor: new THREE.Vector3(1, 1, 1),
+        lineColor: new THREE.Color(1, 1, 1),
         lineThickness: 5, // px
         lineHardness: 0.1,
 

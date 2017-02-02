@@ -13,22 +13,47 @@ DrawnAnnotation = class{
         this._cameraPosition = cameraPosition;
         this._cameraRotation = cameraRotation;
 
-        /** Line representation of the drawing. This is a list of arrays where each sub-array represents a line that was
-        drawn on the image */
-        this._lines = [];
+        // Drawing layers
+        this._layers = [];
 
-        this._texture = new M3D.Texture();
-        this._texture.applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
+        this._layerCounter = 1;
 
-        /**
-         * Determines if the annotation is actually drawn and beeing drawn to.
-         */
-        this._renderAnnotation = true;
+        // Add initial layer
+        this.addLayer();
+
+        // Index of the selected layer
+        this._drawLayer = this._layers[0];
+    }
+
+    addLayer() {
+        let layer = new DrawingLayer("Layer " + this._layerCounter++);
+
+        this._layers.unshift(layer);
+    }
+
+    removeLayer(layer) {
+        let index = this._layers.indexOf(layer);
+
+        if (this._drawLayer === layer) {
+            this._drawLayer = null;
+        }
+
+        this._layers.splice(index, 1);
+    }
+
+    emulateOwner() {
+        let layer = new DrawingLayer("Layer " + this._layerCounter++, "John Doe");
+
+        this._layers.unshift(layer);
     }
 
     get cameraPosition() { return this._cameraPosition; }
     get cameraRotation() { return this._cameraRotation; }
-    get texture() { return this._texture; }
+    get layers() { return this._layers; }
     get title() { return this._title; }
     set title(value) { this._title = value; }
+
+    set drawLayer(layer) { this._drawLayer = layer; }
+    get drawLayer() { return this._drawLayer; }
+
 };
