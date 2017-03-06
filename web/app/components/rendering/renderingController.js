@@ -6,6 +6,9 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     // Context
     let self = this;
 
+    // Required programs
+    this.requiredPrograms = ['phong', 'custom_overlayTextures', 'custom_drawOnTexture', 'custom_copyTexture', 'custom_redrawOnTexture'];
+
     // Private renderer components
     this.renderer = null;
     this.renderQueue = null;
@@ -49,6 +52,9 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
 
         // Store reference to renderer
         self.renderer = renderer;
+
+        // Pre-download the programs that will likely be used
+        self.renderer.preDownloadPrograms(self.requiredPrograms);
 
         self.raycaster = new M3D.Raycaster();
 

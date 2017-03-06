@@ -19,7 +19,7 @@ M3D.GLAttributeManager = class {
      */
     updateAttribute (attribute, bufferType) {
         // Check if this attribute is already defined in the global properties
-        var cachedBuffer = this.getCachedBuffer(attribute);
+        let cachedBuffer = this.getCachedBuffer(attribute);
 
         // If the WebGL buffer property is undefined, create a new buffer (attribute not found in properties)
         if (attribute.dirty) {
@@ -50,12 +50,13 @@ M3D.GLAttributeManager = class {
      */
     getCachedBuffer (attribute) {
         // Check if the buffer is already cached for this object
-        var buffer = this._cached_buffers.get(attribute);
+        let buffer = this._cached_buffers.get(attribute);
 
         // If the buffer for this object was not found. Create a new buffer and cache it.
         if (buffer === undefined) {
             buffer = this._gl.createBuffer();
             this._cached_buffers.set(attribute, buffer);
+            attribute.dirty = true;
         }
 
         return buffer;

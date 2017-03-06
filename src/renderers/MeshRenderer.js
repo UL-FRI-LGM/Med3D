@@ -93,7 +93,7 @@ M3D.MeshRenderer = class {
         this._setupLights(this._lights, camera);
 
         // Programs need to be loaded after the lights
-        if (!this._loadPrograms()) {
+        if (!this._loadRequiredPrograms()) {
             return;
         }
 
@@ -134,11 +134,35 @@ M3D.MeshRenderer = class {
         }
     }
 
-    _loadPrograms() {
+    _downloadProgram(programName) {
         let scope = this;
+
+        // Called when the program template is loaded.. Initiates shader compilation
+        let onLoad = function (programTemplateSrc) {
+            scope._glProgramManager.addTemplate(programTemplateSrc);
+            scope._loadingPrograms.delete(programName);
+        };
+
+        // Something went wrong while fetching the program templates
+        let onError = function (event) {
+            console.error("Failed to load program " + programName + ".")
+            scope._loadingPrograms.delete(programName);
+        };
+
+        // Check if the program is already loading
+        if (!this._loadingPrograms.has(programName)) {
+            this._loadingPrograms.add(programName);
+
+            console.log(programName);
+            // Initiate loading
+            this._shaderLoader.loadProgramSources(programName, onLoad, undefined, onError);
+        }
+    }
+
+    _loadRequiredPrograms() {
         let everythingLoaded = true;
 
-        // Fetch all required programs
+        // Fetch the required programs
         for (let i = 0; i < this._requiredPrograms.length; i++) {
 
             // Fetch program name
@@ -148,25 +172,7 @@ M3D.MeshRenderer = class {
             if (!this._glProgramManager.isTemplateDownloaded(programName)) {
                 everythingLoaded = false;
 
-                // Called when the program template is loaded.. Initiates shader compilation
-                let onLoad = function (programTemplateSrc) {
-                    scope._glProgramManager.addTemplate(programTemplateSrc);
-                    scope._loadingPrograms.delete(programName);
-                };
-
-                // Something went wrong while fetching the program templates
-                let onError = function (event) {
-                    console.error("Failed to load program " + programName + ".")
-                    scope._loadingPrograms.delete(programName);
-                };
-
-                // Check if the program is already loading
-                if (!this._loadingPrograms.has(programName)) {
-                    this._loadingPrograms.add(programName);
-
-                    // Initiate loading
-                    this._shaderLoader.loadProgramSources(programName, onLoad, undefined, onError);
-                }
+                this._downloadProgram(programName);
             }
             else {
                 // Build program for specific number of lights (is disregarded if the shader is not using lights)
@@ -180,6 +186,15 @@ M3D.MeshRenderer = class {
         }
 
         return everythingLoaded;
+    }
+
+    preDownloadPrograms(programList) {
+
+        for (let i = 0; i < programList.length; i++) {
+            if (!this._glProgramManager.isTemplateDownloaded(programList[i])) {
+                this._downloadProgram(programList[i]);
+            }
+        }
     }
 
     _renderObjects(objects, camera) {

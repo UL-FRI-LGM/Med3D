@@ -13,4 +13,4 @@ M3D.Renderer = class {
 	constructor() {}
 
 	render(scene, camera) {}
-}
+};
