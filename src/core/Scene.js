@@ -25,7 +25,7 @@ M3D.Scene = class extends M3D.Object3D {
     }
 
     toJson() {
-        var obj = super.toJson();
+        let obj = super.toJson();
 
         // Export auto update setting
         obj.autoUpdate = this._autoUpdate;
@@ -34,7 +34,7 @@ M3D.Scene = class extends M3D.Object3D {
     }
 
     static fromJson(data) {
-        var scene = new M3D.Scene();
+        let scene = new M3D.Scene();
 
         // Import Object3D parameters
         scene = super.fromJson(data, scene);
@@ -48,7 +48,7 @@ M3D.Scene = class extends M3D.Object3D {
     update(data) {
         super.update(data);
 
-        for (var prop in data) {
+        for (let prop in data) {
             switch (prop) {
                 case "autoUpdate":
                     this._autoUpdate = data.autoUpdate;

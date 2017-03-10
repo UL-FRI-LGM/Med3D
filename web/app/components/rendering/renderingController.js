@@ -29,11 +29,34 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         $scope.$apply($scope.annotations.clear);
 
         // Add new render content
-        for (var i = 0; i < objects.length; i++) {
+        for (let i = 0; i < objects.length; i++) {
             $scope.publicRenderData.contentRenderGroup.add(objects[i]);
         }
+
+        // If own camera set it to contain whole object
+        if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
+            // Calculate content bounding sphere
+            let contentSphere = $scope.publicRenderData.contentRenderGroup.computeBoundingSphere();
+
+            // Convert camera fov degrees to radians
+            let fov = $scope.publicRenderData.activeCamera.fov * (Math.PI / 180);
+
+            // Calculate the required camera distance
+            let distance = Math.abs(contentSphere.radius / Math.sin(fov / 2));
+
+            // Offset the camera from the center of the sphere
+            let offsetVector = new THREE.Vector3(0.577, 0.577, 0.577);
+            offsetVector.multiplyScalar(distance);
+            offsetVector.add(contentSphere.center);
+
+            $scope.publicRenderData.activeCamera.position = offsetVector;
+
+            $scope.publicRenderData.activeCamera.lookAt(contentSphere.center, new THREE.Vector3(0, 1, 0));
+        }
+
         $scope.startAnimation();
     };
+
     $scope.publicRenderData.setActiveCamera = function (camera) {
         $scope.publicRenderData.activeCamera = camera;
         $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height;
@@ -56,7 +79,16 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Pre-download the programs that will likely be used
         self.renderer.preDownloadPrograms(self.requiredPrograms);
 
+        // Initialize raycaster
         self.raycaster = new M3D.Raycaster();
+
+        // Camera initialization
+        let camera = new M3D.PerspectiveCamera(60, $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height, 0.1, 2000);
+        camera.position = new THREE.Vector3(0, 0, 200);
+
+        // Add camera to public render data
+        $scope.publicRenderData.cameras.push(camera);
+        $scope.publicRenderData.activeCamera = camera;
 
         self.initializeRenderQueues();
     };
@@ -247,15 +279,6 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             self.scene.add($scope.publicRenderData.contentRenderGroup);
             self.scene.add(self.annotationRenderGroup);
 
-            // Camera initialization
-            let camera = new M3D.PerspectiveCamera(60, $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height, 0.1, 2000);
-            camera.position = new THREE.Vector3(0, 0, 200);
-
-            // Add camera to public render data
-            $scope.publicRenderData.cameras.push(camera);
-            $scope.publicRenderData.activeCamera = camera;
-
-
             // HELPER VARIABLES
             this.__axisDiffVec = new THREE.Vector3();
             this.__rotDiffVec = new THREE.Vector3();
@@ -264,7 +287,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Preprocess function
         function (textureMap, additionalData) {
             // Update camera aspect ratio and renderer viewport
-            $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width/ $scope.publicRenderData.canvasDimensions.height;
+            $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height;
 
             // Update renderer viewport
             this.viewport = $scope.publicRenderData.canvasDimensions;
@@ -296,11 +319,8 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             }
             else {
                 // If the annotation is selected. Animate translate/rotate camera to match the annotation position
-
                 this.__axisDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraPosition, $scope.publicRenderData.activeCamera.position);
                 this.__rotDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraRotation, $scope.publicRenderData.activeCamera.rotation.toVector3());
-
-
 
                 if (this.__axisDiffVec.length() !== 0 || this.__rotDiffVec.length() !== 0) {
                     // Translate the camera to match the annotation position

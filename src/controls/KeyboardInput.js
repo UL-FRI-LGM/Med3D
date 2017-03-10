@@ -2,16 +2,13 @@
  * Created by Primoz on 26. 06. 2016.
  */
 
-let singleton = Symbol();
-let singletonEnforcer = Symbol();
-
 M3D.KeyboardInput = class {
 
     constructor(enforcer) {
         // Do not allow singleton duplicates
         if(enforcer != singletonEnforcer) throw "Cannot construct singleton";
 
-        var self = this;
+        let self = this;
         this._pressedKeys = {};
         this._listeners = [];
         
@@ -35,7 +32,7 @@ M3D.KeyboardInput = class {
     }
 
     rmListener(listener) {
-        var i = this._listeners.indexOf(listener);
+        let i = this._listeners.indexOf(listener);
 
         if (i > -1) {
             this._listeners.splice(i, 1);
@@ -47,7 +44,7 @@ M3D.KeyboardInput = class {
     }
 
     update() {
-        for (var i = 0; i < this._listeners.length; i++) {
+        for (let i = 0; i < this._listeners.length; i++) {
             this._listeners[i](this._pressedKeys)
         }
     }

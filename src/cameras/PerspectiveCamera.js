@@ -29,12 +29,12 @@ M3D.PerspectiveCamera = class extends M3D.Camera {
 	* Updates projection matrix based on current values of properties.
 	*/
 	updateProjectionMatrix() {
-		var top = this._near * Math.tan((Math.PI/180) * 0.5 * this._fov),
+		let top = this._near * Math.tan((Math.PI/180) * 0.5 * this._fov),
 			height = 2 * top,
 			width = this._aspect * height,
 			left = - 0.5 * width;
 
-		this.projectionMatrix.makeFrustum(left, left + width, top - height, top, this._near, this._far );
+		this.projectionMatrix.makeFrustum(left, left + width, top - height, top, this._near, this._far);
 	}
 
 	get fov() { return this._fov; }

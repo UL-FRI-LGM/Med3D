@@ -76,19 +76,19 @@ M3D.Mesh = class extends M3D.Object3D {
 };
 
 
-var _raycast = (function () {
+let _raycast = (function () {
 
-	var vA = new THREE.Vector3();
-	var vB = new THREE.Vector3();
-	var vC = new THREE.Vector3();
+    let vA = new THREE.Vector3();
+    let vB = new THREE.Vector3();
+    let vC = new THREE.Vector3();
 
-	var inverseMatrix = new THREE.Matrix4();
-	var ray = new THREE.Ray();
-	var sphere = new THREE.Sphere();
+    let inverseMatrix = new THREE.Matrix4();
+    let ray = new THREE.Ray();
+    let sphere = new THREE.Sphere();
 
 	// Intersection points
-	var intersectionPoint = new THREE.Vector3();
-	var intersectionPointWorld = new THREE.Vector3();
+    let intersectionPoint = new THREE.Vector3();
+    let intersectionPointWorld = new THREE.Vector3();
 
 	function checkTriangleIntersection( object, raycaster, ray, vertices, a, b, c ) {
 
@@ -97,8 +97,8 @@ var _raycast = (function () {
 		vB.fromArray(vertices.array, b * 3);
 		vC.fromArray(vertices.array, c * 3);
 
-		var intersect;
-		var material = object.material;
+        let intersect;
+        let material = object.material;
 
 		// Check triangle intersection
 		if (material.side === M3D.BackSide) {
@@ -117,7 +117,7 @@ var _raycast = (function () {
 		intersectionPointWorld.applyMatrix4(object.matrixWorld);
 
 		// Get distance to intersection point
-		var distance = raycaster.ray.origin.distanceTo(intersectionPointWorld);
+        let distance = raycaster.ray.origin.distanceTo(intersectionPointWorld);
 
 		// Check if the distance is out of bounds
 		if (distance < raycaster.near || distance > raycaster.far)
@@ -133,9 +133,9 @@ var _raycast = (function () {
 	}
 
 	return function raycast(raycaster, intersects) {
-		var geometry = this.geometry;
-		var material = this.material;
-		var matrixWorld = this.matrixWorld;
+        let geometry = this.geometry;
+        let material = this.material;
+        let matrixWorld = this.matrixWorld;
 
 		// Check if object has material
 		if (material === undefined || geometry === undefined)
@@ -162,14 +162,14 @@ var _raycast = (function () {
 		}
 
 
-		var intersection;
-		var a, b, c;
-		var indices = geometry.indices;
-		var vertices = geometry.vertices;
+        let intersection;
+        let a, b, c;
+        let indices = geometry.indices;
+        let vertices = geometry.vertices;
 
 		// Geometry is indexed
 		if (indices !== null) {
-			for (var i = 0; i < indices.array.length; i += 3) {
+			for (let i = 0; i < indices.array.length; i += 3) {
 
 				// Triangle indices
 				a = indices[i];
@@ -187,7 +187,7 @@ var _raycast = (function () {
 		}
 		// Non indexed geometry
 		else {
-			for (var i = 0; i < geometry.vertices.array.length; i += 9) {
+			for (let i = 0; i < geometry.vertices.array.length; i += 9) {
 
 				// Triangle indices
 				a = i / 3;

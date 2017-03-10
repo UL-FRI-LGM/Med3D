@@ -1,29 +1,29 @@
 /**
  * Created by Primoz on 26. 07. 2016.
  */
-var volumeLoadingController = function($scope, TaskManagerService) {
+let volumeLoadingController = function($scope, TaskManagerService) {
 
     TaskManagerService.addResultCallback("MarchingCubes", function (mhdMeta, values, isoValue) {
-        var runnable = function (onLoad, onProgress, onError) {
-            var nThreads = 8;
+        let runnable = function (onLoad, onProgress, onError) {
+            let nThreads = 8;
 
-            var privateOnLoad = function(data) {
-                var group = new M3D.Group();
+            let privateOnLoad = function(data) {
+                let group = new M3D.Group();
 
                 // Form mesh objects
-                for (var i = 0; i < data.length; i++) {
-                    var bufferGeometry = new M3D.Geometry();
+                for (let i = 0; i < data.length; i++) {
+                    let bufferGeometry = new M3D.Geometry();
                     bufferGeometry.vertices = new M3D.BufferAttribute(data[i], 3);
                     bufferGeometry.computeVertexNormals();
                     bufferGeometry.computeBoundingSphere();
 
-                    var mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
+                    let mesh = new M3D.Mesh(bufferGeometry, new M3D.MeshPhongMaterial());
                     mesh.material = new M3D.MeshPhongMaterial();
                     mesh.material.specular = new THREE.Color("#444444");
                     mesh.material.color = new THREE.Color("#8A0707");
                     mesh.material.shininess = 8;
                     mesh.scale = new THREE.Vector3(100, 100, 100);
-                    mesh.position = (new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
+                    mesh.position.subVectors(new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
 
                     group.add(mesh);
                 }
@@ -32,18 +32,18 @@ var volumeLoadingController = function($scope, TaskManagerService) {
                 onLoad(group);
             };
 
-            var privateOnError = function(errorMsg) {
+            let privateOnError = function(errorMsg) {
                 onError({code: 1, msg: errorMsg});
             };
 
-            var dim = mhdMeta.dimensions;
-            var voxelDim = mhdMeta.elementSpacing;
+            let dim = mhdMeta.dimensions;
+            let voxelDim = mhdMeta.elementSpacing;
 
             // Start execution
             MC.extractMesh({dimensions: {x: dim[0], y: dim[1], z: dim[2]}, voxelDimensions: {x: voxelDim[0], y: voxelDim[1], z: voxelDim[2]}, isoLevel: isoValue}, values, nThreads, privateOnLoad, onProgress, privateOnError);
         };
 
-        var task = {
+        let task = {
             uuid: THREE.Math.generateUUID(),
             meta: {
                 name: "Marching cubes",

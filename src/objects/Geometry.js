@@ -155,7 +155,6 @@ M3D.Geometry = class {
         }
     }
 
-
     computeBoundingBox() {
 
         // Check if the bounding box already exist
@@ -177,37 +176,35 @@ M3D.Geometry = class {
     }
 
     computeBoundingSphere() {
-        var box = new THREE.Box3();
-        var vector = new THREE.Vector3();
+        let box = new THREE.Box3();
+        let vector = new THREE.Vector3();
 
         // Check if the sphere already exists
-        if ( this._boundingSphere === null ) {
+        if (this._boundingSphere === null) {
             this._boundingSphere = new THREE.Sphere();
         }
 
         if (this._vertices) {
-
-            var array = this._vertices.array;
-            var center = this._boundingSphere.center;
+            let array = this._vertices.array;
+            let center = this._boundingSphere.center;
 
             // Set initial bounding sphere based on the bounding box
             box.setFromArray(array);
             box.center(center);
 
             // Optimize sphere radius
-            var maxRadiusSq = 0;
+            let maxRadiusSq = 0;
 
-            for ( var i = 0, il = array.length; i < il; i += 3 ) {
+            for (let i = 0; i < array.length; i += 3) {
                 vector.fromArray(array, i);
                 maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
             }
 
-            this._boundingSphere.radius = Math.sqrt( maxRadiusSq );
+            this._boundingSphere.radius = Math.sqrt(maxRadiusSq);
 
             if (isNaN(this._boundingSphere.radius)) {
                 console.error('Geometry error: Bounding sphere radius is NaN.');
             }
-
         }
     }
 
@@ -220,7 +217,14 @@ M3D.Geometry = class {
     get wireframeIndices() { return this._wireframeIndices; }
     get drawWireframe() { return this._drawWireframe; }
     get boundingBox() { return this._boundingBox; }
-    get boundingSphere() { return this._boundingSphere; }
+    get boundingSphere() {
+	    // If the bounding sphere was not jet computed compute it
+	    if (this._boundingSphere === null) {
+	        this.computeBoundingSphere();
+        }
+
+	    return this._boundingSphere;
+	}
     // endregion
 
     // region SETTERS

@@ -10,7 +10,7 @@ app.service("InputService", function ($interval) {
     // Reference to keyboard controller singleton
     this.keyboardController = M3D.KeyboardInput.instance;
 
-    // Cursor
+    // region MOUSE/CURSOR
     this.cursor = {
         position: new THREE.Vector2(),
         down: false
@@ -32,6 +32,7 @@ app.service("InputService", function ($interval) {
 
         canvas.addEventListener( 'mousemove', onMouseMove, false );
     };
+    // endregion
 
     // Input bookkeeping
     this.navigatorsInput = {

@@ -2,52 +2,50 @@
  * Created by Primoz on 20.7.2016.
  */
 
-var meshLoadingController = function($scope, TaskManagerService) {
+let meshLoadingController = function($scope, TaskManagerService) {
 
     TaskManagerService.addResultCallback("");
 
     $scope.loadLocalObjFile = function (file) {
         // Create task
-        var runnable = function (onLoad, onProgress, onError) {
+        let runnable = function (onLoad, onProgress, onError) {
             // Init .obj loader
-            var objLoader = new M3D.ObjLoader();
-    
-            var privateOnLoad = function(data) {
-                var group = new M3D.Group();
+            let objLoader = new M3D.ObjLoader();
 
-                var boundingBox = new THREE.Box3();
-                for (var i = 0; i < data.length; i++) {
+            let privateOnLoad = function(data) {
+                let group = new M3D.Group();
+
+                let boundingBox = new THREE.Box3();
+                for (let i = 0; i < data.length; i++) {
                     data[i].material = new M3D.MeshPhongMaterial();
                     data[i].material.specular = new THREE.Color("#444444");
                     data[i].material.color = new THREE.Color("#8A0707");
                     data[i].material.shininess = 8;
 
-                    var tempBox = new THREE.Box3();
+                    let tempBox = new THREE.Box3();
                     tempBox.setFromArray(data[i].geometry.vertices.array);
                     boundingBox.union(tempBox);
 
                     group.add(data[i]);
                 }
 
-                group.position.subVectors(new THREE.Vector3(0, 0, 0), boundingBox.center());
-
                 // Pass group to onLoad callback
                 onLoad(group);
             };
-    
-            var privateOnProgress = function(event) {
+
+            let privateOnProgress = function(event) {
                 // Calculate finished percentage
                 onProgress(event.loaded / event.total * 100);
             };
 
-            var privateOnError = function () {
+            let privateOnError = function () {
                 onError({code: 1, msg: "Failed to load .obj file!"})
             };
 
             objLoader.loadFile(file, privateOnLoad, privateOnProgress, privateOnError);
         };
 
-        var task = {
+        let task = {
             uuid: THREE.Math.generateUUID(),
             meta: {
                 name: "Wavefront OBJ loading",
@@ -64,13 +62,13 @@ var meshLoadingController = function($scope, TaskManagerService) {
     };
 
     $scope.loadServerObjFile = function (filename) {
-        var runnable = function (onLoad, onProgress, onError) {
+        let runnable = function (onLoad, onProgress, onError) {
             // Init .obj loader
-            var objLoader = new M3D.ObjLoader();
+            let objLoader = new M3D.ObjLoader();
 
             $.ajax({
                 xhr: function() {
-                    var xhr = new window.XMLHttpRequest();
+                    let xhr = new window.XMLHttpRequest();
                     xhr.upload.addEventListener("progress", function(event) {
                         if (event.lengthComputable) {
                             // Track downloading progress
@@ -96,22 +94,22 @@ var meshLoadingController = function($scope, TaskManagerService) {
                 },
                 success: function(res){
                     if (res.status === 0) {
-                        var group = new M3D.Group();
+                        let group = new M3D.Group();
 
                         try {
                             // Try to parse the response data
-                            var data = objLoader.parse(res.data);
+                            let data = objLoader.parse(res.data);
 
-                            var boundingBox = new THREE.Box3();
+                            let boundingBox = new THREE.Box3();
 
                             // Create objects group
-                            for (var i = 0; i < data.length; i++) {
+                            for (let i = 0; i < data.length; i++) {
                                 data[i].material = new M3D.MeshPhongMaterial();
                                 data[i].material.specular = new THREE.Color("#444444");
                                 data[i].material.color = new THREE.Color("#8A0707");
                                 data[i].material.shininess = 8;
 
-                                var tempBox = new THREE.Box3();
+                                let tempBox = new THREE.Box3();
                                 tempBox.setFromArray(data[i].geometry.vertices.array);
                                 boundingBox.union(tempBox);
 

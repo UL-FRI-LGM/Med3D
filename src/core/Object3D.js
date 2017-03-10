@@ -251,7 +251,7 @@ M3D.Object3D = class {
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            var update = {uuid: this._uuid, changes: {position: this._position.toArray(), quaternion: this._quaternion.toArray(), scale: this._scale.toArray()}};
+            let update = {uuid: this._uuid, changes: {position: this._position.toArray(), quaternion: this._quaternion.toArray(), scale: this._scale.toArray()}};
             this._onChangeListener.objectUpdate(update)
         }
 	}
@@ -314,7 +314,7 @@ M3D.Object3D = class {
 	}
 
 	clear() {
-        var self = this;
+        let self = this;
 
         this._children = this._children.filter(function (child) {
             // Notify onChange subscriber
@@ -329,7 +329,7 @@ M3D.Object3D = class {
 
 	traverse(callback) {
 		callback(this);
-		for (var i = 0, l = this._children.length; i < l; i++) {
+		for (let i = 0, l = this._children.length; i < l; i++) {
 			this._children[i].traverse(callback);
 		}
 	}
@@ -337,6 +337,30 @@ M3D.Object3D = class {
 
     // region RAYCASTING
     raycast() {}
+    // endregion
+
+    // region BOUNDING SPHERE
+    computeBoundingSphere() {
+        let spheres = [];
+
+        // Fetch bounding spheres of all of the children
+        this.traverse(function (object) {
+            if (object instanceof M3D.Mesh && object.geometry != null) {
+                let bSphere = object.geometry.boundingSphere;
+
+                if (!isNaN(bSphere.radius) && bSphere.radius > 0) {
+                    spheres.push(bSphere);
+                }
+            }
+        });
+
+        if (spheres.length > 0) {
+            return M3D.Math.computeSpheresBoundingSphere(spheres);
+        }
+        else {
+            return new THREE.Sphere();
+        }
+    }
     // endregion
 
     //region EXPORT/IMPORT JSON FUNCTIONS
@@ -601,11 +625,11 @@ var rotateZ = (function () {
 
 var lookAt = (function () {
     // Private static
-    var m = new THREE.Matrix4();
-    var q = new THREE.Quaternion();
+    let m = new THREE.Matrix4();
+    let q = new THREE.Quaternion();
 
     return function(vector, up) {
-        m.lookAt(vector, this._position, up);
+        m.lookAt(this._position, vector, up);
         q.setFromRotationMatrix(m);
 
         if (!q.equals(this._quaternion)) {
@@ -613,7 +637,7 @@ var lookAt = (function () {
 
             // Notify onChange subscriber
             if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
+                let update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
                 this._onChangeListener.objectUpdate(update)
             }
         }

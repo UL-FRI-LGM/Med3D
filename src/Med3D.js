@@ -4,6 +4,9 @@
  * @namespace
  */
 
+const singleton = Symbol();
+const singletonEnforcer = Symbol();
+
 var M3D = {
 	revision: 1,
 
