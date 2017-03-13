@@ -7,8 +7,11 @@
 app.service("InputService", function ($interval) {
     let self = this;
 
-    // Reference to keyboard controller singleton
+    // Reference to the keyboard controller singleton
     this.keyboardController = M3D.KeyboardInput.instance;
+
+    // Reference to the gamepad controller singleton
+    this.gamepadController = M3D.GamepadInput.instance;
 
     // region MOUSE/CURSOR
     this.cursor = {
@@ -54,13 +57,14 @@ app.service("InputService", function ($interval) {
     };
 
     // Max combined input values
-    var MAX_INPUT = new THREE.Vector3(1, 1, 1);
+    let MAX_INPUT = new THREE.Vector3(1, 1, 1);
+    let MIN_INPUT = new THREE.Vector3(-1, -1, -1);
     this.combinedInput = {
         rotation: new THREE.Vector3(),
         translation: new THREE.Vector3()
     };
 
-    this.speedMultiplier = 1;
+    this.speedMultiplier = 3;
 
     // Add keyboard listener
     this.keyboardController.addListener(function (pressedKeys) {
@@ -114,8 +118,6 @@ app.service("InputService", function ($interval) {
         if (pressedKeys[70]) {  // F - Downward
             self.keyboardInput.translation.y = -1;
         }
-
-        self.speedMultiplier = pressedKeys[16] ? 4 : 1;
     });
 
     let ZERO_VEC = new THREE.Vector3(0);
@@ -125,11 +127,17 @@ app.service("InputService", function ($interval) {
         self.keyboardInput.reset();
         self.keyboardController.update();
 
+        // Update gamepad input
+        this.gamepadController.update();
+        let gamepadInput = this.gamepadController.getTranslationAndRotation();
+
         // Check if the camera is locked
         if (!this.lockUserCamera) {
             // Combine keyboard and navigator rotation/translation.
-            self.combinedInput.rotation.addVectors(self.keyboardInput.rotation, self.navigatorsInput.rotation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
-            self.combinedInput.translation.addVectors(self.keyboardInput.translation, self.navigatorsInput.translation).min(MAX_INPUT).multiplyScalar(self.speedMultiplier);
+            self.combinedInput.rotation.addVectors(self.keyboardInput.rotation, self.navigatorsInput.rotation).add(gamepadInput.rotation).min(MAX_INPUT).max(MIN_INPUT).multiplyScalar(self.speedMultiplier);
+            self.combinedInput.translation.addVectors(self.keyboardInput.translation, self.navigatorsInput.translation).add(gamepadInput.translation).min(MAX_INPUT).max(MIN_INPUT).multiplyScalar(self.speedMultiplier);
+
+            console.log("Combined: " + self.combinedInput.translation.toArray() + "  Gamepad: " + gamepadInput.translation.toArray());
 
             return {translation: self.combinedInput.translation, rotation: self.combinedInput.rotation};
         }
