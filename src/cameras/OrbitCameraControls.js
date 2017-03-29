@@ -291,7 +291,7 @@ let _animateHandle = (function () {
         centerOffset.applyQuaternion(this._cameraQuaternionInverse);
 
         // Offset the camera using the updated center offset
-        this._camera.position.copy(this._orbitCenter).add(centerOffset);
+        this._camera.position = this._orbitCenter.clone().add(centerOffset);
 
         // Look at the orbit center
         this._camera.lookAt(this._orbitCenter, this._camera.up);
@@ -365,7 +365,7 @@ let _updateHandle = function () {
         centerOffset.applyQuaternion(this._cameraQuaternionInverse);
 
         // Offset the camera using the updated center offset
-        this._camera.position.copy(this._orbitCenter).add(centerOffset);
+        this._camera.position = this._orbitCenter.clone().add(centerOffset);
 
         // Look at the orbit center
         this._camera.lookAt(this._orbitCenter, this._camera.up);

@@ -23,9 +23,13 @@ CameraManager = class {
 
     update(inputData, deltaT) {
         // Update active camera
-        if (this._activeCamera != null && this.isOwnCamera(this._activeCamera)) {
+        if (this._activeCamera != null) {
+            // Update aspect ratio for both own and shared cameras
             this._activeCamera.aspect = this._aspectRatio;
-            this._cameraControls[this._activeCamera._uuid].update(inputData, deltaT);
+
+            if (this.isOwnCamera(this._activeCamera)) {
+                this._cameraControls[this._activeCamera._uuid].update(inputData, deltaT);
+            }
         }
 
         // Update animations of non-active cameras

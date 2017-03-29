@@ -92,7 +92,7 @@ app.factory('Annotations', function(){
             // Notify subscribers
             for (let listener in this._onChangeListeners) {
                 if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    listener.add(jsonCompatibleAnnotation);
+                    this._onChangeListeners[listener].add(jsonCompatibleAnnotation);
                 }
             }
         };
@@ -107,7 +107,7 @@ app.factory('Annotations', function(){
             // Notify subscribers
             for (let listener in this._onChangeListeners) {
                 if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    listener.rm(index)
+                    this._onChangeListeners[listener].rm(index)
                 }
             }
         };
@@ -121,7 +121,7 @@ app.factory('Annotations', function(){
             // Notify subscribers
             for (let listener in this._onChangeListeners) {
                 if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    listener.clear();
+                    this._onChangeListeners[listener].clear();
                 }
             }
         };

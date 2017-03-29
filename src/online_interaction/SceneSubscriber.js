@@ -16,7 +16,7 @@ M3D.SceneSubscriber = class {
         this._sessionID = null;
         this._username = username;
 
-        var self = this;
+        let self = this;
         this._objects = {};
         this._geometries = {};
         this._materials = {};
@@ -37,15 +37,15 @@ M3D.SceneSubscriber = class {
         this._lastUpdate = null;
         this._dirty = false;
 
-        var onCameraUpdate = function(update) {
+        let onCameraUpdate = function(update) {
             self._dirty = true;
             // Update previous update entry
-            var changes = update.changes;
+            let changes = update.changes;
 
-            var entry = self._scheduledCameraUpdates[update.uuid];
+            let entry = self._scheduledCameraUpdates[update.uuid];
 
             if (entry !== undefined) {
-                for (var prop in changes) {
+                for (let prop in changes) {
                     entry[prop] = changes[prop];
                 }
             }
@@ -63,16 +63,16 @@ M3D.SceneSubscriber = class {
         //region SOCKET.IO
         this._socket.on("connectResponse", function(response) {
             if (response && response.status === 0) {
-                var objectsJson = response.initialData.objects;
-                var geometriesJson = response.initialData.geometries;
-                var materialsJson = response.initialData.materials;
+                let objectsJson = response.initialData.objects;
+                let geometriesJson = response.initialData.geometries;
+                let materialsJson = response.initialData.materials;
 
                 // Import the received data, returns reference to all root objects (data may contain more hierarchies or parentless objects)
                 self._rootObjects = M3D.Object3D.importHierarchy(objectsJson, geometriesJson, materialsJson);
 
 
                 // Store reference to all updatable objects in hierarchy for fast access on update
-                for (var i = 0; i < self._rootObjects.length; i++) {
+                for (let i = 0; i < self._rootObjects.length; i++) {
                     self._rootObjects[i].traverse(function (object) {
                         self._objects[object._uuid] = object;
 
@@ -88,12 +88,12 @@ M3D.SceneSubscriber = class {
 
                     // Check if the fetch was successful
                     if (response.status === 0) {
-                        var camerasOwners = response.data;
+                        let camerasOwners = response.data;
 
                         // Fetch cameras
                         for (let userId in camerasOwners) {
 
-                            var userCamerasList = camerasOwners[userId].list;
+                            let userCamerasList = camerasOwners[userId].list;
 
                             // If user does not own the camera array create it
                             if (!self._cameras[userId]) {
@@ -132,22 +132,22 @@ M3D.SceneSubscriber = class {
         });
 
         this._socket.on("sessionDataUpdate", function(request) {
-            var object, geometry, material;
-            var newObjects = request.newObjects;
-            var updates = request.updates;
+            let object, geometry, material;
+            let newObjects = request.newObjects;
+            let updates = request.updates;
 
             // Parse new objects
             if (newObjects) {
                 // Construct newly received geometries if any
                 if (newObjects.geometries) {
-                    for (var uuid in newObjects.geometries) {
+                    for (let uuid in newObjects.geometries) {
                         self._geometries[uuid] = M3D.Geometry.fromJson(newObjects.geometries[uuid]);
                     }
                 }
 
                 // Construct newly received materials if any
                 if (newObjects.materials) {
-                    for (var uuid in newObjects.materials) {
+                    for (let uuid in newObjects.materials) {
                         switch (newObjects.materials[uuid].type) {
                             case "MeshPhongMaterial":
                                 self._materials[uuid] = M3D.MeshPhongMaterial.fromJson(newObjects.materials[uuid]);
@@ -168,9 +168,9 @@ M3D.SceneSubscriber = class {
 
                 // Construct newly received objects if any
                 if (newObjects.objects) {
-                    for (var uuid in newObjects.objects) {
+                    for (let uuid in newObjects.objects) {
                         object = newObjects.objects[uuid];
-                        var rebuiltObject;
+                        let rebuiltObject;
 
                         if (object.type === "Mesh") {
                             // If the received new object is mesh add geometry and material to it
@@ -192,7 +192,7 @@ M3D.SceneSubscriber = class {
 
                         // Hierarchy modification
                         if (object.parentUuid) {
-                            var parent = self._objects[object.parentUuid];
+                            let parent = self._objects[object.parentUuid];
 
                             if (parent) {
                                 parent.children.push(rebuiltObject);
@@ -213,7 +213,7 @@ M3D.SceneSubscriber = class {
             // Parse updates
             if (updates) {
                 if (updates.objects) {
-                    for (var uuid in updates.objects) {
+                    for (let uuid in updates.objects) {
                         object = self._objects[uuid];
 
                         if (object) {
@@ -221,7 +221,7 @@ M3D.SceneSubscriber = class {
                             // Check if object is being removed
                             if (updates.objects[uuid].remove === true) {
                                 // Remove the object from the hierarchy
-                                var currentParent = object.parent;
+                                let currentParent = object.parent;
 
                                 // Remove the modified object from the current parent children
                                 if (currentParent) {
@@ -232,7 +232,7 @@ M3D.SceneSubscriber = class {
                                 delete self._objects[uuid];
 
                                 // If the removed object is in root objects group.. Remove it
-                                for(var i = self._rootObjects.length - 1; i >= 0; i--) {
+                                for(let i = self._rootObjects.length - 1; i >= 0; i--) {
                                     if(self._rootObjects[i]._uuid === uuid) {
                                         self._rootObjects.splice(i,1);
                                         break;
@@ -246,10 +246,10 @@ M3D.SceneSubscriber = class {
                             object.update(updates.objects[uuid]);
 
                             // Check if hierarchy modification
-                            var newParentUuid = updates.objects[uuid].parentUuid;
+                            let newParentUuid = updates.objects[uuid].parentUuid;
 
                             if (newParentUuid) {
-                                var currentParent = object.parent;
+                                let currentParent = object.parent;
 
                                 // Remove the modified object from the current parent children
                                 if (currentParent) {
@@ -269,7 +269,7 @@ M3D.SceneSubscriber = class {
                 }
 
                 if (updates.geometries) {
-                    for (var uuid in updates.geometries) {
+                    for (let uuid in updates.geometries) {
                         geometry = self._geometries[uuid];
 
                         if (geometry) {
@@ -285,7 +285,7 @@ M3D.SceneSubscriber = class {
                 }
 
                 if (updates.materials) {
-                    for (var uuid in updates.materials) {
+                    for (let uuid in updates.materials) {
                         material = self._materials[uuid];
 
                         if (material) {
@@ -302,13 +302,10 @@ M3D.SceneSubscriber = class {
             }
         });
 
-        var avg = 0;
-        var N = 0;
-
         this._socket.on("sessionCameras", function (request) {
             if (request.type === "add") {
 
-                var userCamerasList = request.data.list;
+                let userCamerasList = request.data.list;
 
                 // If user does not own the camera array create it
                 if (self._cameras[request.userId] === undefined) {
@@ -317,7 +314,7 @@ M3D.SceneSubscriber = class {
 
                 // Create cameras
                 for (let uuid in userCamerasList) {
-                    var newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
+                    let newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
                     self._cameras[request.userId].list.push(newCamera);
 
                     // Notify subscriber
@@ -328,24 +325,16 @@ M3D.SceneSubscriber = class {
             }
             else if (request.type === "update") {
 
-                if (request.timestamp !== undefined) {
-                    N++;
-                    avg = avg * (N-1)/N + ((new Date().getTime() - request.timestamp) / 1000) / N;
-                    if (N % 100 === 0) {
-                        console.log(avg);
-                    }
-                }
-
                 // Fetch user camera list
-                var userCameras = self._cameras[request.userId];
+                let userCameras = self._cameras[request.userId];
 
                 // Update cameras
                 if (userCameras !== undefined) {
                     // Iterate through updates
-                    for (var uuid in request.updates) {
+                    for (let uuid in request.updates) {
 
                         // Try to find targeted camera
-                        var camera = userCameras.list.find(cam => cam._uuid === uuid);
+                        let camera = userCameras.list.find(cam => cam._uuid === uuid);
 
                         if (camera) {
                             camera.update(request.updates[uuid]);
@@ -377,20 +366,20 @@ M3D.SceneSubscriber = class {
 
     // region CAMERA HOSTING
     addCameras(cameras, callback) {
-        var self = this;
+        let self = this;
 
         // Export the cameras
-        var camerasJson = {};
-        for (var i = 0; i < cameras.length; i++) {
+        let camerasJson = {};
+        for (let i = 0; i < cameras.length; i++) {
             camerasJson[cameras[i]._uuid] = cameras[i].toJson();
         }
 
         // Forming request
-        var request = {type: "add", sessionId: this._sessionID, cameras: camerasJson};
+        let request = {type: "add", sessionId: this._sessionID, cameras: camerasJson};
 
         // When successfully uploaded add change listeners
         this._socket.emit("sessionCameras", request, function () {
-            for (var i = 0; i < cameras.length; i++) {
+            for (let i = 0; i < cameras.length; i++) {
                 cameras[i].addOnChangeListener(self._cameraChangeListener, false);
             }
 
@@ -402,7 +391,7 @@ M3D.SceneSubscriber = class {
 
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
-            var request = {type: "update", sessionId: this._sessionID, updates: this._scheduledCameraUpdates};
+            let request = {type: "update", sessionId: this._sessionID, updates: this._scheduledCameraUpdates};
 
             this._scheduledCameraUpdates = {};
             this._socket.emit("sessionCameras", request, callback);
@@ -477,7 +466,7 @@ M3D.SceneSubscriber = class {
 
 
     update() {
-        var currentTime = new Date();
+        let currentTime = new Date();
 
         if (!this._dirty || currentTime - this._lastUpdate < this._updateInterval || this._updateInProgress) {
             return;
@@ -486,7 +475,7 @@ M3D.SceneSubscriber = class {
         this._lastUpdate = currentTime;
         this._updateInProgress = true;
 
-        var self = this;
+        let self = this;
 
         // Implement timeout mechanism
         this._updateCameras(function () {

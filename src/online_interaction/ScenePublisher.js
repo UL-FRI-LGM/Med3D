@@ -6,7 +6,7 @@ M3D.ScenePublisher = class {
     
     constructor(username, rootObjects, onConnectionChange) {
 
-        var self = this;
+        let self = this;
 
         this._username = username;
 
@@ -27,12 +27,12 @@ M3D.ScenePublisher = class {
         this._lastUpdate = null;
         this._dirty = false;
 
-        var onCameraUpdate = function(update) {
+        let onCameraUpdate = function(update) {
             self._dirty = true;
             // Update previous update entry
-            var changes = update.changes;
+            let changes = update.changes;
 
-            var entry = self._scheduledCameraUpdates[update.uuid];
+            let entry = self._scheduledCameraUpdates[update.uuid];
 
             if (entry !== undefined) {
                 for (var prop in changes) {
@@ -45,15 +45,15 @@ M3D.ScenePublisher = class {
             }
         };
 
-        var onObjectUpdate = function(update) {
+        let onObjectUpdate = function(update) {
             self._dirty = true;
             // Update previous update entry
-            var changes = update.changes;
+            let changes = update.changes;
 
-            var entry = self._scheduledObjectsUpdates[update.uuid];
+            let entry = self._scheduledObjectsUpdates[update.uuid];
 
             if (entry !== undefined) {
-                for (var prop in changes) {
+                for (let prop in changes) {
                     entry[prop] = changes[prop];
                 }
             }
@@ -63,11 +63,11 @@ M3D.ScenePublisher = class {
             }
         };
 
-        var onHierarchyUpdate = function(update) {
+        let onHierarchyUpdate = function(update) {
             self._dirty = true;
 
-            var changes = update.changes;
-            var object = changes.objectRef;
+            let changes = update.changes;
+            let object = changes.objectRef;
 
             if (self._synchronizedObjects.has(update.uuid)) {
                 // Schedule parent change update
@@ -97,7 +97,7 @@ M3D.ScenePublisher = class {
 
                 // If the object is mesh also synchronize material and geometry
                 if (object.type === "Mesh") {
-                    var syncGeometry = self._synchronizedObjects.get(object.geometry._uuid);
+                    let syncGeometry = self._synchronizedObjects.get(object.geometry._uuid);
                     if (syncGeometry === undefined) {
                         self._newObjects.geometries[object.geometry._uuid] = object.geometry.toJson();
                         self._synchronizedObjects.set(object.geometry._uuid, {usages: 1});
@@ -106,7 +106,7 @@ M3D.ScenePublisher = class {
                         syncGeometry.usages ++;
                     }
 
-                    var syncMaterial = self._synchronizedObjects.get(object.material._uuid);
+                    let syncMaterial = self._synchronizedObjects.get(object.material._uuid);
                     if (syncMaterial === undefined) {
                         self._newObjects.materials[object.material._uuid] = object.material.toJson();
                         self._synchronizedObjects.set(object.material._uuid, {usages: 1});
@@ -117,22 +117,22 @@ M3D.ScenePublisher = class {
                 }
 
                 // Add whole hierarchy
-                for (var i = 0; i < object.children.length; i++) {
+                for (let i = 0; i < object.children.length; i++) {
                     onHierarchyUpdate({uuid: object.children[i]._uuid, changes: {parentUuid: object._uuid, objectRef: object.children[i]}})
                 }
             }
         };
 
-        var onMaterialUpdate = function(update) {
+        let onMaterialUpdate = function(update) {
             self._dirty = true;
 
-            var entry = self._scheduledMaterialsUpdates[update.uuid];
+            let entry = self._scheduledMaterialsUpdates[update.uuid];
 
             if (entry !== undefined) {
                 // Update previous update entry
-                var changes = update.changes;
+                let changes = update.changes;
 
-                for (var prop in changes) {
+                for (let prop in changes) {
                     entry[prop] = changes[prop];
                 }
             }
@@ -142,16 +142,16 @@ M3D.ScenePublisher = class {
             }
         };
 
-        var onGeometryUpdate = function(update) {
+        let onGeometryUpdate = function(update) {
             self._dirty = true;
 
-            var entry = self._scheduledGeometriesUpdates[update.uuid];
+            let entry = self._scheduledGeometriesUpdates[update.uuid];
 
             if (entry !== undefined) {
                 // Update previous update entry
-                var changes = update.changes;
+                let changes = update.changes;
 
-                for (var prop in changes) {
+                for (let prop in changes) {
                     entry[prop] = changes[prop];
                 }
             }
@@ -187,7 +187,7 @@ M3D.ScenePublisher = class {
         this._socket.on('connect', function() {
             self._updateInProgress = true;
 
-            var serverCallback = function() {
+            let serverCallback = function() {
                 self._updateInProgress = false;
                 self._onConnectionChange({status: 0, session_uuid: self._socket.id});
             };
@@ -218,20 +218,20 @@ M3D.ScenePublisher = class {
     // region SCENE DATA MANAGEMENT
     // Uploads the shared objects to the server
     _uploadData(callback) {
-        var data = {objects: {}, geometries: {}, materials: {}};
+        let data = {objects: {}, geometries: {}, materials: {}};
 
         // Export all root objects and their hierarchies to Json and add update listener
-        for (var i = 0; i < this._rootObjects.length; i++) {
+        for (let i = 0; i < this._rootObjects.length; i++) {
             this._rootObjects[i].exportHierarchy(data);
             this._rootObjects[i].addOnChangeListener(this._dataChangeListener, true);
         }
 
         // Mark data as synchronized
-        for (var uuid in data.objects) {
+        for (let uuid in data.objects) {
             this._synchronizedObjects.set(uuid, {});
         }
-        for (var uuid in data.geometries) {
-            var syncGeometry = this._synchronizedObjects.get(uuid);
+        for (let uuid in data.geometries) {
+            let syncGeometry = this._synchronizedObjects.get(uuid);
             if (syncGeometry === undefined) {
                 this._synchronizedObjects.set(uuid, {usages: 1});
             }
@@ -239,8 +239,8 @@ M3D.ScenePublisher = class {
                 syncGeometry.usages ++;
             }
         }
-        for (var uuid in data.materials) {
-            var syncMaterial = this._synchronizedObjects.get(uuid);
+        for (let uuid in data.materials) {
+            let syncMaterial = this._synchronizedObjects.get(uuid);
             if (syncMaterial === undefined) {
                 this._synchronizedObjects.set(uuid, {usages: 1});
             }
@@ -250,21 +250,21 @@ M3D.ScenePublisher = class {
         }
 
         // Form the request and forward it to server via socket.io
-        var request = {type: "create", username: this._username, data: data};
+        let request = {type: "create", username: this._username, data: data};
 
         this._socket.emit("session", request, callback);
     }
 
     _updateData(callback) {
-        var self = this;
-        var updateData = {updates: {}, newObjects: {}};
-        var updateEmpty = true;
+        let self = this;
+        let updateData = {updates: {}, newObjects: {}};
+        let updateEmpty = true;
 
         // Add object updates
         if (Object.keys(this._scheduledObjectsUpdates).length > 0) {
 
             // Remove deleted objects from the synchronized objects group
-            for (var uuid in this._scheduledObjectsUpdates) {
+            for (let uuid in this._scheduledObjectsUpdates) {
                 if (this._scheduledObjectsUpdates[uuid].parentUuid === null) {
 
                     // Remove the object and all of its children
@@ -273,13 +273,13 @@ M3D.ScenePublisher = class {
 
                         // If the object is instance of mesh also delete its material or geometry
                         if (child instanceof M3D.Mesh) {
-                            var syncGeometry = self._synchronizedObjects.get(child.geometry._uuid);
+                            let syncGeometry = self._synchronizedObjects.get(child.geometry._uuid);
                             if (--syncGeometry.usages <= 0) {
                                 self._scheduledGeometriesUpdates[child.geometry._uuid] = { remove: true };
                                 self._synchronizedObjects.delete(child.geometry._uuid);
                             }
 
-                            var syncMaterial = self._synchronizedObjects.get(child.material._uuid);
+                            let syncMaterial = self._synchronizedObjects.get(child.material._uuid);
                             if (--syncMaterial.usages <= 0) {
                                 self._scheduledMaterialsUpdates[child.material._uuid] = { remove: true };
                                 self._synchronizedObjects.delete(child.material._uuid);
@@ -344,20 +344,20 @@ M3D.ScenePublisher = class {
 
     // region CAMERA HOSTING
     addCameras(cameras, callback) {
-        var self = this;
+        let self = this;
 
         // Export the cameras
-        var camerasJson = {};
-        for (var i = 0; i < cameras.length; i++) {
+        let camerasJson = {};
+        for (let i = 0; i < cameras.length; i++) {
             camerasJson[cameras[i]._uuid] = cameras[i].toJson();
         }
 
         // Forming request
-        var request = {type: "add", sessionId: this._socket.io.engine.id, cameras: camerasJson};
+        let request = {type: "add", sessionId: this._socket.io.engine.id, cameras: camerasJson};
 
         // When successfully uploaded add change listeners
         this._socket.emit("sessionCameras", request, function () {
-            for (var i = 0; i < cameras.length; i++) {
+            for (let i = 0; i < cameras.length; i++) {
                 cameras[i].addOnChangeListener(self._cameraChangeListener, false);
             }
 
@@ -369,7 +369,7 @@ M3D.ScenePublisher = class {
 
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
-            var request = {type: "update", sessionId: this._socket.io.engine.id, updates: this._scheduledCameraUpdates};
+            let request = {type: "update", sessionId: this._socket.io.engine.id, updates: this._scheduledCameraUpdates};
             request.timestamp = new Date().getTime();
 
             this._scheduledCameraUpdates = {};
@@ -384,11 +384,11 @@ M3D.ScenePublisher = class {
 
     // region CAMERA LISTENING
     _setupSubscriberCameraListener() {
-        var self = this;
+        let self = this;
 
         this._socket.on("sessionCameras", function (request) {
             if (request.type === "add") {
-                var userCamerasList = request.data.list;
+                let userCamerasList = request.data.list;
 
                 // If user does not own the camera array create it
                 if (self._subscribersCameras[request.userId] === undefined) {
@@ -397,7 +397,7 @@ M3D.ScenePublisher = class {
 
                 // Create cameras
                 for (let uuid in userCamerasList) {
-                    var newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
+                    let newCamera = M3D[userCamerasList[uuid].type].fromJson(userCamerasList[uuid]);
                     self._subscribersCameras[request.userId].list.push(newCamera);
 
                     // Notify subscriber
@@ -408,15 +408,15 @@ M3D.ScenePublisher = class {
             }
             else if (request.type === "update") {
                 // Fetch user camera list
-                var userCameras = self._subscribersCameras[request.userId];
+                let userCameras = self._subscribersCameras[request.userId];
 
                 // Update cameras
                 if (userCameras !== undefined) {
                     // Iterate through updates
-                    for (var uuid in request.updates) {
+                    for (let uuid in request.updates) {
 
                         // Try to find targeted camera
-                        var camera = userCameras.list.find(cam => cam._uuid === uuid);
+                        let camera = userCameras.list.find(cam => cam._uuid === uuid);
 
                         if (camera) {
                             camera.update(request.updates[uuid]);
@@ -498,7 +498,7 @@ M3D.ScenePublisher = class {
 
 
     update() {
-        var currentTime = new Date();
+        let currentTime = new Date();
 
         if (!this._dirty || currentTime - this._lastUpdate < this._updateInterval || this._updateInProgress) {
             return;
@@ -507,7 +507,7 @@ M3D.ScenePublisher = class {
         this._lastUpdate = currentTime;
         this._updateInProgress = true;
 
-        var self = this;
+        let self = this;
 
         // Implement timeout mechanism
         this._updateCameras(function () {

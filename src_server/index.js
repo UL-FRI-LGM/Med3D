@@ -7,23 +7,23 @@ var port = 8080;
 var path = require('path');
 var bodyParser = require('body-parser');
 // Init express
-var express = require('express');
-var app = express();
+let express = require('express');
+let app = express();
 // Init express path
 app.use(express.static(path.resolve(__dirname + "\\..\\")));
 app.use(bodyParser.json());
 
 // Create server and link it to express
-var server = require("http").createServer(app);
+let server = require("http").createServer(app);
 // Socket usage
-var io = require("socket.io")(server);
+let io = require("socket.io")(server);
 
 // Init database
-var DatabaseManager = require('./DatabaseManager');
-var databaseManager = new DatabaseManager("mongodb://localhost:27017/med3d_db", true);
+let DatabaseManager = require('./DatabaseManager');
+let databaseManager = new DatabaseManager("mongodb://localhost:27017/med3d_db", true);
 
-var SessionManager = require('./SessionManager');
-var sessionManager = new SessionManager();
+let SessionManager = require('./SessionManager');
+let sessionManager = new SessionManager();
 
 app.post('/api/file-management', function(req, res) {
     // Response will be json
@@ -111,8 +111,8 @@ app.post('/api/session-info', function (req, res) {
 
 // Sockets
 io.sockets.on('connection', function(socket) {
-    var sessionId;
-    var username;
+    let sessionId;
+    let username;
 
     socket.on('session', function(request, callback) {
 
@@ -128,7 +128,7 @@ io.sockets.on('connection', function(socket) {
             }
 
             console.log("Socket id: " + socket.id.substring(2));
-            var session = sessionManager.createNewSession(socket.id.substring(2), request.username, request.data);
+            let session = sessionManager.createNewSession(socket.id.substring(2), request.username, request.data);
 
             if (!session) {
                 console.warn("This host already owns a session!");
@@ -146,7 +146,7 @@ io.sockets.on('connection', function(socket) {
         else if (request.type === "join") {
             console.log("Join session request by user: " + request.username);
 
-            var session = sessionManager.fetchSession(request.sessionId);
+            let session = sessionManager.fetchSession(request.sessionId);
 
             if (!session) {
                 console.warn("Tried to create a new session without initial data!");
@@ -163,7 +163,7 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('sessionDataUpdate', function(request, callback) {
-        var hostId = socket.id.substring(2);
+        let hostId = socket.id.substring(2);
         if (sessionManager.updateSessionData(hostId, request)) {
             socket.broadcast.to(hostId).emit('sessionDataUpdate', request);
         }
@@ -171,11 +171,8 @@ io.sockets.on('connection', function(socket) {
         callback();
     });
 
-    var N = 0;
-    var avg = 0;
-
     socket.on('sessionCameras', function (request, callback) {
-        var forward;
+        let forward;
         if (request.type === "add") {
             console.log(console.log(request.sessionId));
 
@@ -188,14 +185,6 @@ io.sockets.on('connection', function(socket) {
 
         else if (request.type === "update") {
             sessionManager.updateSessionCameras(request.sessionId, socket.id.substring(2), request.updates);
-
-            if (request.timestamp !== undefined) {
-                N++;
-                avg = avg * (N-1)/N + ((new Date().getTime() - request.timestamp) / 1000) / N;
-                if (N % 100 === 0) {
-                    console.log(avg);
-                }
-            }
 
             // Forward to subscribers
             forward = {type: request.type, userId: socket.id.substring(2), timestamp: request.timestamp, updates: request.updates, data: {ownerUsername: username, list: request.newCameras}};
@@ -215,7 +204,7 @@ io.sockets.on('connection', function(socket) {
             console.log("Received fetch request!");
 
             // Fetch cameras and return them in the callback
-            var cameras = sessionManager.fetchSessionCameras(request.sessionId, socket.id.substring(2));
+            let cameras = sessionManager.fetchSessionCameras(request.sessionId, socket.id.substring(2));
             callback({status: (cameras !== null) ? 0 : 1, data: cameras});
         }
 
@@ -223,7 +212,7 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('sessionAnnotations', function (request, callback) {
-        var forward;
+        let forward;
 
         if (request.type === "add") {
             sessionManager.addAnnotationsToSession(request.sessionId, socket.id.substring(2), username, request.data);
@@ -240,7 +229,7 @@ io.sockets.on('connection', function(socket) {
             socket.broadcast.to(request.sessionId).emit('sessionAnnotations', forward);
         }
         else if (request.type === "fetch") {
-            var annotations = sessionManager.fetchSessionAnnotations(request.sessionId, socket.id.substring(2));
+            let annotations = sessionManager.fetchSessionAnnotations(request.sessionId, socket.id.substring(2));
             callback({status: (annotations !== null) ? 0 : 1, data: annotations});
         }
         // Clear all of the data
@@ -259,7 +248,7 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('disconnect', function() {
-        var hostId = socket.id.substring(2);
+        let hostId = socket.id.substring(2);
 
         // On unexpected disconnect clear all annotation data
         if (sessionId !== undefined) {

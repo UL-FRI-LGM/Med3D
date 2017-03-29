@@ -5,7 +5,7 @@
 
 app.service("SharingService", function ($rootScope, PublicRenderData, Annotations, Messages) {
 
-    var self = this;
+    let self = this;
 
     // Reference to render data and annotations
     this.renderData = PublicRenderData;
@@ -30,7 +30,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
     // region HELPER FUNCTIONS
     this._buildAnnotation = function (data) {
-        var annotation = {
+        let annotation = {
             title: data.title,
             content: data.content,
             windowPosition: {
@@ -147,7 +147,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             if (self.dataPublisher !== null) {
                 // If no active annotations or annotation sharing is disabled do not send init batch to the server
                 if (self.annotations.list.length > 0 && self.settings.shareAnnotations) {
-                    var request = {
+                    let request = {
                         type: "add",
                         sessionId: self.dataPublisher.getSessionID(),
                         data: self.annotations.toJson()
@@ -207,7 +207,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             return
         }
 
-        var sharedRootObjects = [self.renderData.contentRenderGroup];
+        let sharedRootObjects = [self.renderData.contentRenderGroup];
 
         // Create new data publisher
         self.dataPublisher = new M3D.ScenePublisher(username, sharedRootObjects, function (event) {
@@ -263,7 +263,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         // Check if the data subscriber is alive
         if (this.dataSubscriber !== null) {
             // Form fetch request
-            var request = {type: "fetch", sessionId: this.dataSubscriber.getSessionID()};
+            let request = {type: "fetch", sessionId: this.dataSubscriber.getSessionID()};
 
             // Fetch annotations from the server
             this.dataSubscriber.miscRequestEmit("sessionAnnotations", request, function (response) {
@@ -291,7 +291,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                     // region SETUP LOCAL ANNOTATIONS ON CHANGE LISTENER
                     // Check if annotation sharing is enabled
                     if (self.settings.shareAnnotations) {
-                        var onAdd = function (annotation) {
+                        let onAdd = function (annotation) {
                             if (self.dataSubscriber !== null) {
                                 self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
                                     type: "add",
@@ -302,7 +302,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                             }
                         };
 
-                        var onRm = function (index) {
+                        let onRm = function (index) {
                             if (self.dataSubscriber !== null) {
                                 self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
                                     type: "rm",
@@ -361,9 +361,9 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     };
 
     this.joinSession = function () {
-        var callbackRef;
+        let callbackRef;
 
-        var onConnected = function (status, rootObjects, cameras) {
+        let onConnected = function (status, rootObjects, cameras) {
             if (status === 0) {
                 self.renderData.replaceRenderContent.apply(this, rootObjects);
 
@@ -379,7 +379,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             callbackRef({status: status});
         };
 
-        var onTerminated = function () {
+        let onTerminated = function () {
             self.leaveSession(function () {});
             $rootScope.$apply(function() {
                 self.state.listeningInProgress = false;
@@ -388,7 +388,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
 
         // Setup connection listener
-        var listener = new M3D.SceneSubscriberListener(onConnected, onTerminated);
+        let listener = new M3D.SceneSubscriberListener(onConnected, onTerminated);
 
         return function (username, uuid, callback) {
             callbackRef = callback;
