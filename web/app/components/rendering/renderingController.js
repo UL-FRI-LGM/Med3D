@@ -9,10 +9,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     // Required programs
     this.requiredPrograms = ['phong', 'custom_overlayTextures', 'custom_drawOnTexture', 'custom_copyTexture', 'custom_redrawOnTexture'];
 
+    $scope.annotations = Annotations;
+
     // Private renderer components
     this.renderer = null;
     this.renderQueue = null;
     this.redrawQueue = null;
+    this.cameraManager = PublicRenderData.cameraManager;
     this.raycaster = null;
     this.scene = null;
 
@@ -20,48 +23,32 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     this.animationRequestId = null;
 
     // Public rendering data (used in scene sharing)
-    $scope.publicRenderData = PublicRenderData;
-    $scope.publicRenderData.contentRenderGroup = new M3D.Group();
-    $scope.publicRenderData.replaceRenderContent = function (...objects) {
-        $scope.stopAnimation();
-        $scope.publicRenderData.contentRenderGroup.clear();
+    PublicRenderData.contentRenderGroup = new M3D.Group();
+
+    let offsetDir = new THREE.Vector3(0.577, 0.577, 0.577);
+    /**
+     * Make function to replace content on the scene publicly available in the PublicRenderData
+     * @param objects
+     */
+    PublicRenderData.replaceRenderContent = function (...objects) {
+        $scope.stopRenderLoop();
+        PublicRenderData.contentRenderGroup.clear();
         self.renderer.clearCache();
-        $scope.$apply($scope.annotations.clear);
+        $scope.$apply(Annotations.clear);
 
         // Add new render content
         for (let i = 0; i < objects.length; i++) {
-            $scope.publicRenderData.contentRenderGroup.add(objects[i]);
+            PublicRenderData.contentRenderGroup.add(objects[i]);
         }
 
-        // If own camera set it to contain whole object
-        if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
-            // Calculate content bounding sphere
-            let contentSphere = $scope.publicRenderData.contentRenderGroup.computeBoundingSphere();
+        // Calculate content bounding sphere
+        let contentSphere = PublicRenderData.contentRenderGroup.computeBoundingSphere();
 
-            // Convert camera fov degrees to radians
-            let fov = $scope.publicRenderData.activeCamera.fov * (Math.PI / 180);
+        // Focus all of the cameras on the newly added object
+        self.cameraManager.focusCamerasOn(contentSphere, offsetDir);
 
-            // Calculate the required camera distance
-            let distance = Math.abs(contentSphere.radius / Math.sin(fov / 2));
-
-            // Offset the camera from the center of the sphere
-            let offsetVector = new THREE.Vector3(0.577, 0.577, 0.577);
-            offsetVector.multiplyScalar(distance);
-            offsetVector.add(contentSphere.center);
-
-            $scope.publicRenderData.activeCamera.position = offsetVector;
-
-            $scope.publicRenderData.activeCamera.lookAt(contentSphere.center, new THREE.Vector3(0, 1, 0));
-        }
-
-        $scope.startAnimation();
+        $scope.startRenderLoop();
     };
-
-    $scope.publicRenderData.setActiveCamera = function (camera) {
-        $scope.publicRenderData.activeCamera = camera;
-        $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height;
-    };
-
 
     /**
      * Initializes and stores the renderer instance created by the canvas directive.
@@ -70,8 +57,8 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
      * @param height {number} canvas height
      */
     $scope.init = function (renderer, canvas) {
-        $scope.publicRenderData.canvasDimensions = {width: canvas.clientWidth, height: canvas.clientHeight};
-        InputService.initializeCanvasMouseTracking(canvas);
+        PublicRenderData.canvasDimensions = {width: canvas.clientWidth, height: canvas.clientHeight};
+        InputService.setMouseSourceObject(canvas);
 
         // Store reference to renderer
         self.renderer = renderer;
@@ -83,12 +70,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         self.raycaster = new M3D.Raycaster();
 
         // Camera initialization
-        let camera = new M3D.PerspectiveCamera(60, $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height, 0.1, 2000);
+        let camera = new M3D.PerspectiveCamera(60, PublicRenderData.canvasDimensions.width / PublicRenderData.canvasDimensions.height, 0.1, 2000);
         camera.position = new THREE.Vector3(0, 0, 200);
 
         // Add camera to public render data
-        $scope.publicRenderData.cameras.push(camera);
-        $scope.publicRenderData.activeCamera = camera;
+        //self.cameraManager.addRegularCamera(camera);
+        self.cameraManager.addOrbitCamera(camera, new THREE.Vector3(0, 0, 0));
+        self.cameraManager.setActiveCamera(camera);
 
         self.initializeRenderQueues();
     };
@@ -100,39 +88,11 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
      * @param height New height of the canvas
      */
     $scope.resizeCanvas = function (width, height) {
-        $scope.publicRenderData.canvasDimensions = {width: width, height: height};
+        PublicRenderData.canvasDimensions = {width: width, height: height};
+        self.cameraManager.aspectRatio = width/height;
     };
-
-    /**
-     * Starts rendering loop if it's not running already.
-     */
-    $scope.startAnimation = function () {
-        if (!animationRequestId) {
-            self.animate();
-        }
-
-        $scope.$apply(function () {
-            $scope.publicRenderData.renderingInProgress = true;
-        });
-    };
-
-    /**
-     * Stops rendering loop.
-     */
-    $scope.stopAnimation = function () {
-        if (self.animationRequestId) {
-            cancelAnimationFrame(self.animationRequestId);
-            self.animationRequestId = null;
-        }
-
-        $scope.$apply(function () {
-            $scope.publicRenderData.renderingInProgress = false;
-        });
-    };
-
 
     // region Annotations
-    $scope.annotations = Annotations;
     this.annotationRenderGroup = new M3D.Group();
 
     this.createMarker = function () {
@@ -153,29 +113,29 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
 
     $scope.newAnnotationClick = function () {
 
-        var intersectionNormal = new THREE.Vector3();
+        let intersectionNormal = new THREE.Vector3();
 
         return function() {
             // Set raycaster parameters
-            self.raycaster.setFromCamera(InputService.cursor.position, $scope.publicRenderData.activeCamera);
+            self.raycaster.setFromCamera(InputService.getInputData().mouse.position, self.cameraManager.activeCamera);
 
             // Fetch object intersections
-            var intersects = self.raycaster.intersectObjects($scope.publicRenderData.contentRenderGroup.children, true);
+            let intersects = self.raycaster.intersectObjects(PublicRenderData.contentRenderGroup.children, true);
 
             // Do not continue if there aren't any intersects
             if (intersects.length > 0) {
                 // Check if marker needs to be created
-                if ($scope.annotations.newAnnotation.marker === undefined) {
-                    $scope.annotations.newAnnotation.marker = self.createMarker();
+                if (Annotations.newAnnotation.marker === undefined) {
+                    Annotations.newAnnotation.marker = self.createMarker();
                 }
 
-                var marker = $scope.annotations.newAnnotation.marker;
+                let marker = Annotations.newAnnotation.marker;
 
                 // Calculate intersected triangle normal
                 intersectionNormal = intersectionNormal.crossVectors((new THREE.Vector3()).subVectors(intersects[0].triangle[1], intersects[0].triangle[0]), (new THREE.Vector3()).subVectors(intersects[0].triangle[2], intersects[0].triangle[0])).normalize();
 
                 // Store marker position and normal
-                $scope.annotations.newAnnotation.markerMeta = { position: marker.point.position, normal: intersectionNormal.clone() };
+                Annotations.newAnnotation.markerMeta = { position: marker.point.position, normal: intersectionNormal.clone() };
 
                 // Look at intersected triangle normal
                 marker.point.position = new THREE.Vector3(0, 0, 0);
@@ -187,19 +147,24 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
 
     this.updateAnnotations = function () {
 
-        var updateMarker = function (annItem) {
+        let updateMarker = function (annItem) {
+
+            let activeCamera = self.cameraManager.activeCamera;
+
+            // Update camera matrix so we can correctly un-project the modal position
+            activeCamera.updateMatrixWorld();
 
             // Calculate modal 3D position
-            var modalPos = new THREE.Vector3(
+            let modalPos = new THREE.Vector3(
                 (annItem.windowPosition.offset.left / window.innerWidth) * 2 - 1,   //x
                 -(annItem.windowPosition.offset.top / window.innerHeight) * 2 + 1,  //y
                 0.5);
 
-            modalPos.unproject($scope.publicRenderData.activeCamera);
+            modalPos.unproject(activeCamera);
 
-            var dir = modalPos.sub($scope.publicRenderData.activeCamera.position).normalize();
-            var distance = -0.2 / -Math.abs(dir.z);
-            var pos = $scope.publicRenderData.activeCamera.position.clone().add(dir.multiplyScalar(distance));
+            let dir = modalPos.sub(activeCamera.position).normalize();
+            let distance = -0.2 / -Math.abs(dir.z);
+            let pos = activeCamera.position.clone().add(dir.multiplyScalar(distance));
 
             // Check if marker exists
             if (annItem.marker === undefined) {
@@ -222,13 +187,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             self.annotationRenderGroup.clear();
 
             // New annotation
-            if ($scope.annotations.newAnnotation && $scope.annotations.newAnnotation.marker) {
-                updateMarker($scope.annotations.newAnnotation);
+            if (Annotations.newAnnotation && Annotations.newAnnotation.marker) {
+                updateMarker(Annotations.newAnnotation);
             }
 
             // Own annotations
-            for (var i = 0; i < $scope.annotations.list.length; i++) {
-                var annItem = $scope.annotations.list[i];
+            for (let i = 0; i < Annotations.list.length; i++) {
+                let annItem = Annotations.list[i];
 
                 if (annItem.active && annItem.markerMeta !== undefined) {
                     updateMarker(annItem);
@@ -236,10 +201,10 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             }
 
             // Shared annotations
-            for (var userId in $scope.annotations.sharedList) {
-                var annList = $scope.annotations.sharedList[userId].list;
+            for (let userId in Annotations.sharedList) {
+                let annList = Annotations.sharedList[userId].list;
 
-                for (var i = 0; i < annList.length; i++) {
+                for (let i = 0; i < annList.length; i++) {
                     if (annList[i].active && annList[i].markerMeta !== undefined) {
                         updateMarker(annList[i]);
                     }
@@ -248,12 +213,39 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         }
     }();
 
+    /**
+     * Animates and locks the camera in place to align with the selected drawn annotation.
+     */
+    $scope.$watch(function(){ return Annotations.selectedDrawnAnnotation; },
+            function (selectedAnnotation) {
+                let activeCamera = self.cameraManager.activeCamera;
 
+                self.cameraManager.cancelAnimation(activeCamera, "drawnAnnotationAnimation");
+
+                if (selectedAnnotation != null) {
+                    // If the camera is already in position just lock it
+                    if (self.cameraManager.isActiveCameraInPosition(selectedAnnotation._cameraPosition, selectedAnnotation._cameraRotation)) {
+                        self.cameraManager.lockCamera(activeCamera);
+                    }
+                    else {
+                        // Animate the camera in place
+                        self.cameraManager.animateCameraTo(activeCamera, "drawnAnnotationAnimation",
+                            selectedAnnotation._cameraPosition, selectedAnnotation._cameraRotation, 1500,
+                            function () {
+                                self.cameraManager.lockCamera(activeCamera);
+                            })
+                    }
+                }
+                else if (self.cameraManager.isCameraLocked(activeCamera)) {
+                    // Unlock the camera if no annotation is selected
+                    self.cameraManager.unlockCamera(activeCamera);
+                }
+
+            });
     // endregion
 
-
-    // region RENDER QUEUE RENDER PASSES
-    let prevTime = -1, currTime;
+    // region RENDER QUEUE
+    // region MAIN RENDER PASS
     let MainRenderPass = new M3D.RenderPass(
         // Rendering pass type
         M3D.RenderPass.BASIC,
@@ -276,115 +268,34 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             self.scene.add(dLightFirst);
             self.scene.add(dLightSecond);
             self.scene.add(dLightThird);
-            self.scene.add($scope.publicRenderData.contentRenderGroup);
+            self.scene.add(PublicRenderData.contentRenderGroup);
             self.scene.add(self.annotationRenderGroup);
-
-            // HELPER VARIABLES
-            this.__axisDiffVec = new THREE.Vector3();
-            this.__rotDiffVec = new THREE.Vector3();
         },
 
         // Preprocess function
         function (textureMap, additionalData) {
-            // Update camera aspect ratio and renderer viewport
-            $scope.publicRenderData.activeCamera.aspect = $scope.publicRenderData.canvasDimensions.width / $scope.publicRenderData.canvasDimensions.height;
 
             // Update renderer viewport
-            this.viewport = $scope.publicRenderData.canvasDimensions;
+            this.viewport = PublicRenderData.canvasDimensions;
             self.renderer.clearColor = "#C8C7C7FF";
-
-            // Calculate delta time and update timestamps
-            currTime = new Date();
-            let dt = (prevTime !== -1) ? currTime - prevTime : 0;
-            prevTime = currTime;
-
-            // Pass delta time to following render passes
-            additionalData['dt'] = dt;
-
-            // UPDATE CAMERA AND SCENE DATA
-            let transformation = InputService.update();
-
-            // Only update camera if no annotation is selected
-            if ($scope.annotations.selectedDrawnAnnotation === undefined) {
-                // If own camera and update it's position based on the input
-                if ($scope.publicRenderData.cameras.indexOf($scope.publicRenderData.activeCamera) >= 0) {
-                    $scope.publicRenderData.activeCamera.translateX(transformation.translation.x * dt * 0.01);
-                    $scope.publicRenderData.activeCamera.translateY(transformation.translation.y * dt * 0.01);
-                    $scope.publicRenderData.activeCamera.translateZ(transformation.translation.z * dt * 0.01);
-
-                    $scope.publicRenderData.activeCamera.rotateX(transformation.rotation.x * dt * 0.001);
-                    $scope.publicRenderData.activeCamera.rotateY(transformation.rotation.y * dt * 0.001);
-                    $scope.publicRenderData.activeCamera.rotateZ(transformation.rotation.z * dt * 0.001);
-                }
-            }
-            else {
-                // If the annotation is selected. Animate translate/rotate camera to match the annotation position
-                this.__axisDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraPosition, $scope.publicRenderData.activeCamera.position);
-                this.__rotDiffVec.subVectors($scope.annotations.selectedDrawnAnnotation.cameraRotation, $scope.publicRenderData.activeCamera.rotation.toVector3());
-
-                if (this.__axisDiffVec.length() !== 0 || this.__rotDiffVec.length() !== 0) {
-                    // Translate the camera to match the annotation position
-                    if (this.__axisDiffVec.length() < 0.02) {
-                        $scope.publicRenderData.activeCamera.positionX += this.__axisDiffVec.x;
-                        $scope.publicRenderData.activeCamera.positionY += this.__axisDiffVec.y;
-                        $scope.publicRenderData.activeCamera.positionZ += this.__axisDiffVec.z;
-                    }
-                    else {
-                        this.__axisDiffVec.multiplyScalar(dt * 0.002);
-
-                        if (this.__axisDiffVec.length() < 0.02) {
-                            this.__axisDiffVec.multiplyScalar(0.02 / this.__axisDiffVec.length());
-                        }
-
-                        $scope.publicRenderData.activeCamera.positionX += this.__axisDiffVec.x;
-                        $scope.publicRenderData.activeCamera.positionY += this.__axisDiffVec.y;
-                        $scope.publicRenderData.activeCamera.positionZ += this.__axisDiffVec.z;
-                    }
-
-                    // Rotate the camera to match the annotation rotation
-                    if (this.__rotDiffVec.length() < 0.001) {
-                        $scope.publicRenderData.activeCamera.rotationX += this.__rotDiffVec.x;
-                        $scope.publicRenderData.activeCamera.rotationY += this.__rotDiffVec.y;
-                        $scope.publicRenderData.activeCamera.rotationZ += this.__rotDiffVec.z;
-                    }
-                    else {
-                        this.__rotDiffVec.multiplyScalar(dt * 0.003);
-
-                        if (this.__rotDiffVec.length() < 0.001) {
-                            this.__rotDiffVec.multiplyScalar(0.001 / this.__rotDiffVec.length());
-                        }
-
-                        $scope.publicRenderData.activeCamera.rotationX += this.__rotDiffVec.x;
-                        $scope.publicRenderData.activeCamera.rotationY += this.__rotDiffVec.y;
-                        $scope.publicRenderData.activeCamera.rotationZ += this.__rotDiffVec.z;
-                    }
-
-                    additionalData['cameraInPositionDA'] = false;
-                }
-                else {
-                    additionalData['cameraInPositionDA'] = true;
-                }
-            }
-
-            // Always update world matrix
-            $scope.publicRenderData.activeCamera.updateMatrixWorld();
 
             // Annotation render group update
             self.updateAnnotations();
 
-            return {scene: self.scene, camera: $scope.publicRenderData.activeCamera};
+            return {scene: self.scene, camera: self.cameraManager.activeCamera};
         },
 
         // Target
         M3D.RenderPass.TEXTURE,
         // Viewport
-        $scope.publicRenderData.canvasDimensions,
+        PublicRenderData.canvasDimensions,
         // Bind depth texture to this ID
         "MainRenderDepth",
         [{id: "MainRenderTex", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
+    // endregion
 
-
+    // region DRAWING RENDER PASS
     let DrawingRenderPass = new M3D.RenderPass(
         M3D.RenderPass.TEXTURE_MERGE,
         // Initialize function
@@ -392,10 +303,12 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             additionalData['DrawingShaderMaterial'] = new M3D.CustomShaderMaterial("drawOnTexture");
 
             // Mouse start and end position
-            additionalData['mouseA'] = new THREE.Vector2(Infinity, Infinity);
-            additionalData['mouseB'] = new THREE.Vector2(Infinity, Infinity);
             additionalData['prevMouseState'] = false;
-            additionalData['mouseTexPos'] = new THREE.Vector2();
+            additionalData['mousePrevTex'] = new THREE.Vector2();
+            additionalData['mouseCurrTex'] = new THREE.Vector2();
+            additionalData['mouseTexNorm'] = new THREE.Vector2();
+
+            additionalData['drawnAnnCamInPosition'] = false;
 
             textureMap['HelperTexture'] = new M3D.Texture();
             textureMap['HelperTexture'].applyConfig(M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG);
@@ -404,82 +317,92 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         },
         // Preprocess function
         function (textureMap, additionalData) {
+            // Render pass self reference
             let passSelf = this;
 
-            let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+            // Fetch the currently selected drawn annotation
+            let selectedAnnotation = Annotations.selectedDrawnAnnotation;
 
-            // Check if there is a layer selected and the camera is in position
-            if (selectedAnnotation == null || selectedAnnotation.drawLayer == null || !additionalData['cameraInPositionDA']) {
-                textureMap['OutTexture'] = null;
-                textureMap['TargetTexture'] = null;
-                // Skip this render pass
-                return null;
-            }
-            else {
-                textureMap['OutTexture'] = textureMap['HelperTexture'];
-                textureMap['TargetTexture'] = selectedAnnotation.drawLayer.texture;
-            }
+            // Reset textures
+            textureMap.OutTexture = null;
+            textureMap.TargetTexture = null;
 
-            let drawingShaderMaterial = additionalData['DrawingShaderMaterial'];
-            let draw = true;
+            if (selectedAnnotation != null) {
+                additionalData.drawnAnnCamInPosition = self.cameraManager.isActiveCameraInPosition(selectedAnnotation._cameraPosition, selectedAnnotation._cameraRotation);
 
-            let mouseA = additionalData['mouseA'];
-            let mouseB = additionalData['mouseB'];
+                // Do the animation
+                if (!additionalData.drawnAnnCamInPosition) {
+                    return null;
+                }
 
-            let normalisedThickness = ($scope.publicRenderData.lineThickness / this.viewport.width);
-
-            let mouseTexPos = additionalData['mouseTexPos'];
-            mouseTexPos.set((InputService.cursor.position.x + 1) / 2, (InputService.cursor.position.y + 1) / 2);
-
-            // Check if this is first iteration after mouse press
-            $scope.$apply(function () {
-                if (InputService.cursor.down) {
-                    if (!additionalData['prevMouseState']) {
-                        mouseA.copy(mouseTexPos);
-                        mouseB.copy(mouseTexPos);
-
-                        // Convert to aspect ratio 1:1
-                        mouseTexPos.x = (mouseTexPos.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
-                        selectedAnnotation.drawLayer.createNewLineEntry(mouseTexPos, $scope.publicRenderData.lineThickness, $scope.publicRenderData.lineHardness, $scope.publicRenderData.lineColor);
-                    }
-                    else {
-                        mouseA.copy(mouseB);
-                        mouseB.copy(mouseTexPos);
-
-                        // Convert to aspect ratio 1:1
-                        mouseTexPos.x = (mouseTexPos.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
-                        selectedAnnotation.drawLayer.addLinePoint(mouseTexPos);
-                    }
+                // If the drawing is enabled setup the textures otherwise skip this pass
+                if (selectedAnnotation.drawLayer != null) {
+                    textureMap.OutTexture = textureMap.HelperTexture;
+                    textureMap.TargetTexture = selectedAnnotation.drawLayer.texture;
                 }
                 else {
-                    draw = false;
+                    return null;
+                }
+            }
+            else {
+                additionalData.drawnAnnCamInPosition = false;
+                return null;
+            }
+
+            // Fetch the drawing CustomShaderMaterial
+            let drawingShaderMaterial = additionalData['DrawingShaderMaterial'];
+
+            // Fetch mouse input data
+            let mouseInput = InputService.getInputData().mouse;
+
+            // Check if the left button was pressed in the previous pass
+            $scope.$apply(function () {
+                // Normalize mouse position for storage
+                additionalData.mouseTexNorm.copy(additionalData.mouseCurrTex);
+                additionalData.mouseTexNorm.x = (additionalData.mouseTexNorm.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+
+                if (additionalData.prevMouseState) {
+                    additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
+                    additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
+
+                    selectedAnnotation.drawLayer.addLinePoint(additionalData.mouseTexNorm);
+                }
+                else {
+                    additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
+                    additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
+                    selectedAnnotation.drawLayer.createNewLineEntry(additionalData.mouseTexNorm, PublicRenderData.lineThickness, PublicRenderData.lineHardness, PublicRenderData.lineColor);
                 }
             });
 
-            // Store mouse state
-            additionalData['prevMouseState'] = InputService.cursor.down;
+            // Update prev mouse state for the next pass
+            additionalData.prevMouseState = mouseInput.buttons.left;
+
+            // Make line thickness resolution independent
+            let normalisedThickness = (PublicRenderData.lineThickness / this.viewport.width);
 
             // Update the viewport
-            this.viewport = $scope.publicRenderData.canvasDimensions;
+            this.viewport = PublicRenderData.canvasDimensions;
 
             self.renderer.clearColor = "#00000000";
 
             // Set uniforms
-            drawingShaderMaterial.setUniform("draw", draw);
+            drawingShaderMaterial.setUniform("draw", mouseInput.buttons.left);
             drawingShaderMaterial.setUniform("thickness", normalisedThickness);
-            drawingShaderMaterial.setUniform("hardness", $scope.publicRenderData.lineHardness);
-            drawingShaderMaterial.setUniform("brushColor", $scope.publicRenderData.lineColor.toArray());
-            drawingShaderMaterial.setUniform("mouseA", mouseA.toArray());
-            drawingShaderMaterial.setUniform("mouseB", mouseB.toArray());
+            drawingShaderMaterial.setUniform("hardness", PublicRenderData.lineHardness);
+            drawingShaderMaterial.setUniform("brushColor", PublicRenderData.lineColor.toArray());
+            drawingShaderMaterial.setUniform("mouseA", additionalData.mousePrevTex.toArray());
+            drawingShaderMaterial.setUniform("mouseB", additionalData.mouseCurrTex.toArray());
 
             return {material: drawingShaderMaterial, textures: [textureMap['TargetTexture']]};
         },
         M3D.RenderPass.TEXTURE,
-        $scope.publicRenderData.canvasDimensions,
+        PublicRenderData.canvasDimensions,
         null,
         [{id: "OutTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
+    // endregion
 
+    // region COPY TEXTURE PASS
     let CopyDrawingTexturePass = new M3D.RenderPass(
         M3D.RenderPass.TEXTURE_MERGE,
         // Initialize function
@@ -489,7 +412,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Preprocess function
         function (textureMap, additionalData) {
             // Set the viewport to match the desired resolution
-            this.viewport = $scope.publicRenderData.canvasDimensions;
+            this.viewport = PublicRenderData.canvasDimensions;
 
             // Do not copy texture if there was nothing drawn
             if (textureMap["OutTexture"] == null) {
@@ -499,12 +422,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             return {material: additionalData['CopyTextureMaterial'] , textures: [textureMap["OutTexture"]]};
         },
         M3D.RenderPass.TEXTURE,
-        $scope.publicRenderData.canvasDimensions,
+        PublicRenderData.canvasDimensions,
         null,
         [{id: "TargetTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
+    // endregion
 
-
+    // region OVERLAY TEXTURES PASS
     let OverlayRenderPass = new M3D.RenderPass(
         M3D.RenderPass.TEXTURE_MERGE,
         // Initialize function
@@ -517,14 +441,14 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Preprocess function
         function (textureMap, additionalData) {
 
-            let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+            let selectedAnnotation = Annotations.selectedDrawnAnnotation;
 
             // If the viewport had changed significantly redraw the lines
-            let canvasDim = $scope.publicRenderData.canvasDimensions;
+            let canvasDim = PublicRenderData.canvasDimensions;
 
             // Redraw on canvas resize
             if (Math.abs(this.viewport.width - canvasDim.width) > 10 || Math.abs(this.viewport.height - canvasDim.height) > 10) {
-                let selectedAnnotation = $scope.annotations.selectedDrawnAnnotation;
+                let selectedAnnotation = Annotations.selectedDrawnAnnotation;
                 this.viewport = canvasDim;
 
                 if (selectedAnnotation != null) {
@@ -579,7 +503,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             let textures = [textureMap["MainRenderTex"]];
 
             // Add draw layers if the camera is in position
-            if (selectedAnnotation != null && additionalData['cameraInPositionDA']) {
+            if (selectedAnnotation != null && additionalData.drawnAnnCamInPosition) {
                 for (let i = selectedAnnotation.layers.length - 1; i >= 0; i--) {
                     let layer = selectedAnnotation.layers[i];
 
@@ -592,13 +516,15 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             return {material: additionalData['OverlayTextureMaterial'], textures: textures};
         },
         M3D.RenderPass.SCREEN,
-        $scope.publicRenderData.canvasDimensions
+        PublicRenderData.canvasDimensions
     );
+    // endregion
     // endregion
 
     // region REDRAW QUEUE
     const MAX_POINTS = 500;
 
+    // region REDRAW RENDER PASS
     let RedrawRenderPass = new M3D.RenderPass(
         M3D.RenderPass.TEXTURE_MERGE,
         // Initialize function
@@ -691,11 +617,13 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             return {material: redrawingShaderMaterial, textures: textures};
         },
         M3D.RenderPass.TEXTURE,
-        $scope.publicRenderData.canvasDimensions,
+        PublicRenderData.canvasDimensions,
         null,
         [{id: "HelperTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
+    // endregion
 
+    // region COPY RENDER PASS
     let RedrawCopyTexturePass = new M3D.RenderPass(
         M3D.RenderPass.TEXTURE_MERGE,
         // Initialize function
@@ -710,11 +638,11 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             return {material: additionalData['CopyTextureMaterial'] , textures: [textureMap["HelperTexture"]]};
         },
         M3D.RenderPass.TEXTURE,
-        $scope.publicRenderData.canvasDimensions,
+        PublicRenderData.canvasDimensions,
         null,
         [{id: "RedrawTexture", textureConfig: M3D.RenderPass.DEFAULT_RGBA_TEXTURE_CONFIG}]
     );
-
+    // endregion
     // endregion
 
     this.initializeRenderQueues = function () {
@@ -730,12 +658,53 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         self.redrawQueue.pushRenderPass(RedrawCopyTexturePass);
     };
 
+    // region RENDER LOOP
+    /**
+     * Starts rendering loop if it's not running already.
+     */
+    $scope.startRenderLoop = function () {
+        if (!animationRequestId) {
+            self.renderLoop();
+        }
+
+        $scope.$apply(function () {
+            PublicRenderData.renderingInProgress = true;
+        });
+    };
+
+    /**
+     * Stops rendering loop.
+     */
+    $scope.stopRenderLoop = function () {
+        if (self.animationRequestId) {
+            cancelAnimationFrame(self.animationRequestId);
+            self.animationRequestId = null;
+        }
+
+        prevTime = -1;
+
+        $scope.$apply(function () {
+            PublicRenderData.renderingInProgress = false;
+        });
+    };
 
     /**
      * Main animation loop.
      */
-    this.animate = function() {
-        self.animationRequestId = requestAnimationFrame(self.animate);
+    let prevTime = -1, currTime;
+    this.renderLoop = function() {
+        self.animationRequestId = requestAnimationFrame(self.renderLoop);
+
+        // Update input data
+        let inputData = InputService.update();
+
+        // Calculate delta time and update timestamps
+        currTime = new Date();
+        let deltaT = (prevTime !== -1) ? currTime - prevTime : 0;
+        prevTime = currTime;
+
+        // Update the camera
+        self.cameraManager.update(inputData, deltaT);
 
         // Render the scene
         self.renderQueue.render();
@@ -743,9 +712,10 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Update scene sharing
         SharingService.update();
     };
+    // endregion
 
-    TaskManagerService.addResultCallback("ObjLoader", $scope.publicRenderData.replaceRenderContent);
-    TaskManagerService.addResultCallback("MHDLoader", $scope.publicRenderData.replaceRenderContent);
+    TaskManagerService.addResultCallback("ObjLoader", PublicRenderData.replaceRenderContent);
+    TaskManagerService.addResultCallback("MHDLoader", PublicRenderData.replaceRenderContent);
     // endregion
 };
 

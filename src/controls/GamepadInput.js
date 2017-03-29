@@ -26,8 +26,14 @@ M3D.GamepadInput = class {
 
     update() {
         this._scanGamepads(true);
+        return this._gamepads;
     }
 
+    /**
+     *
+     * @Deprecated
+     * @returns {{rotation: THREE.Vector3, translation: THREE.Vector3}}
+     */
     getTranslationAndRotation() {
         let translation = new THREE.Vector3(0);
         let rotation = new THREE.Vector3(0);
@@ -139,6 +145,7 @@ M3D.GamepadInput = class {
 
         return !(BLACKLIST[match[1]] && BLACKLIST[match[1]].indexOf(match[2]) != -1);
     }
+
 
     static get instance() {
         if (!this[singleton]) {

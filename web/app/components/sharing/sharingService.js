@@ -181,27 +181,19 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
     this._setupHostCameraSharing = function () {
         if (self.settings.shareCamera) {
-            self.dataPublisher.addCameras(self.renderData.cameras);
+            self.dataPublisher.addCameras(self.renderData.cameraManager.ownCameras);
         }
 
         // On cameras change notify angular
         self.dataPublisher.setOnCamerasChange(function (cameras) {
             $rootScope.$apply(function() {
-                self.renderData.sharedCameras = cameras;
+                self.renderData.cameraManager.setSharedCameras(cameras);
+
+                let cameraManager = self.renderData.cameraManager;
 
                 // Check if active camera was deleted
-                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
-                    var found = false;
-                    for (var userId in self.renderData.sharedCameras) {
-                        if (self.renderData.sharedCameras[userId].list.indexOf(self.renderData.activeCamera) >= 0) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        self.renderData.activeCamera = self.renderData.cameras[0];
-                    }
+                if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
+                    cameraManager.setActiveCamera(cameraManager.ownCameras[0]);
                 }
             });
         });
@@ -254,12 +246,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             self.dataPublisher.rmMiscListener("sessionAnnotations");
 
             $rootScope.$apply(function() {
-                self.renderData.sharedCameras = {};
-
-                // Check if shared camera was used
-                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
-                    self.renderData.activeCamera = self.renderData.cameras[0];
-                }
+                self.renderData.cameraManager.clearSharedCameras();
             });
 
             self.annotations.rmListener("SharingService");
@@ -354,27 +341,19 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
     this._setupClientCameraSharing = function () {
         if (self.settings.shareCamera) {
-            self.dataSubscriber.addCameras(self.renderData.cameras);
+            self.dataSubscriber.addCameras(self.renderData.cameraManager.ownCameras);
         }
 
         // On cameras change notify angular
         self.dataSubscriber.setOnCamerasChange(function (cameras) {
             // Check if active camera was deleted
             $rootScope.$apply(function() {
-                self.renderData.sharedCameras = cameras;
+                self.renderData.cameraManager.setSharedCameras(cameras);
 
-                if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
-                    var found = false;
-                    for (var userId in self.renderData.sharedCameras) {
-                        if (self.renderData.sharedCameras[userId].list.indexOf(self.renderData.activeCamera) >= 0) {
-                            found = true;
-                            break;
-                        }
-                    }
+                let cameraManager = self.renderData.cameraManager;
 
-                    if (!found) {
-                        self.renderData.activeCamera = self.renderData.cameras[0];
-                    }
+                if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
+                    cameraManager.setActiveCamera(cameraManager.ownCameras[0]);
                 }
 
             });
@@ -389,7 +368,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 self.renderData.replaceRenderContent.apply(this, rootObjects);
 
                 $rootScope.$apply(function() {
-                    self.renderData.sharedCameras = cameras;
+                    self.renderData.cameraManager.setSharedCameras(cameras);
                 });
 
                 self._setupClientCameraSharing();
@@ -433,12 +412,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
         // Delete shared cameras
         $rootScope.$apply(function() {
-            self.renderData.sharedCameras = {};
-
-            // Check if shared camera was used
-            if (self.renderData.cameras.indexOf(self.renderData.activeCamera) < 0) {
-                self.renderData.activeCamera = self.renderData.cameras[0];
-            }
+            self.renderData.cameraManager.clearSharedCameras();
         });
 
         self.dataSubscriber = null;

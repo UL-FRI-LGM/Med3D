@@ -84,7 +84,8 @@ app.directive("drawnAnnotationsSidebar", function () {
 
             // On click modify adding annotation value
             scope.addAnnotation = function () {
-                let newAnnotation = new DrawnAnnotation("Untitled annotation", scope.publicRenderData.activeCamera.position.clone(), scope.publicRenderData.activeCamera.rotation.toVector3().clone());
+                let activeCamera = scope.publicRenderData.cameraManager.activeCamera;
+                let newAnnotation = new DrawnAnnotation("Untitled annotation", activeCamera.position.clone(), activeCamera.rotation.toVector3().clone());
 
                 newAnnotation.__editingTitle = true;
                 scope.annotations.drawnAnnotationsList.push(newAnnotation);

@@ -6,8 +6,10 @@ var camerasSidebarController = function($scope, PublicRenderData) {
     $scope.renderData = PublicRenderData;
 
     $scope.setActiveCam = function(camera) {
-        if (camera !== $scope.renderData.activeCamera) {
-            $scope.renderData.setActiveCamera(camera);
+        let cameraManager = $scope.publicRenderData.cameraManager;
+
+        if (camera !== cameraManager.activeCamera) {
+            cameraManager.setActiveCamera(camera);
         }
     }
 };

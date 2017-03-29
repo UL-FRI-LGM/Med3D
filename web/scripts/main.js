@@ -56,7 +56,7 @@ function createSessionSubscriberScene(uuid, callback) {
             camera = c[0];
             camera.aspect = canvas.width / canvas.height;
 
-            startAnimation();
+            startRenderLoop();
 
             callback(true);
         }
@@ -234,7 +234,7 @@ function loadObjFromFile(file) {
     var objLoader = new M3D.ObjLoader();
 
     var onLoad = function(data) {
-        stopAnimation();
+        stopRenderLoop();
         sceneClearGroups();
         renderer.clearCache();
 
@@ -249,7 +249,7 @@ function loadObjFromFile(file) {
         }
 
         sceneAddGroup(group);
-        startAnimation();
+        startRenderLoop();
         $("#applicationStatus").text("Obj file successfully loaded.");
     };
 
@@ -271,7 +271,7 @@ function execMarchingCubes(input) {
         $("#applicationStatus").text("Marching cubes finished. Execution time: " + ((end - start)/1000).toFixed(2) + "s, on " + nThreads + " threads.");
 
         try {
-            stopAnimation();
+            stopRenderLoop();
             sceneClearGroups();
             renderer.clearCache();
 
@@ -293,7 +293,7 @@ function execMarchingCubes(input) {
 
 
             sceneAddGroup(group);
-            startAnimation();
+            startRenderLoop();
         }
         catch (e) {
             console.error(e);

@@ -44,17 +44,19 @@ M3D.Object3D = class {
 
 		this._onChangeListener = null;
 
-		// References to static functions
+		// References to wrapped functions
 		this.rotateOnAxis = rotateOnAxis;
 		this.rotateX = rotateX;
 		this.rotateY = rotateY;
 		this.rotateZ = rotateZ;
+		this.rotate = rotate;
         this.lookAt = lookAt;
 
 		this.translateOnAxis = translateOnAxis;
 		this.translateX = translateX;
 		this.translateY = translateY;
 		this.translateZ = translateZ;
+        this.translate = translate;
 	}
 
     //region GETTERS
@@ -88,7 +90,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set position(vec) {
         if (!vec.equals(this._position)) {
             this._position.copy(vec);
@@ -100,7 +101,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set positionX(val) {
         if (this._position.x !== val) {
             this._position.x = val;
@@ -112,7 +112,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set positionY(val) {
         if (this._position.y !== val) {
             this._position.y = val;
@@ -124,7 +123,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set positionZ(val) {
         if (this._position.z !== val) {
             this._position.z = val;
@@ -136,7 +134,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set rotation(euler) {
         if (!euler.equals(this._rotation)) {
             this._rotation.copy(euler);
@@ -148,7 +145,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set rotationX(val) {
 	    if (this._rotation.x !== val) {
             this._rotation.x = val;
@@ -160,7 +156,6 @@ M3D.Object3D = class {
             }
         }
 	}
-
     set rotationY(val) {
         if (this._rotation.y !== val) {
             this._rotation.y = val;
@@ -172,7 +167,6 @@ M3D.Object3D = class {
             }
         }
 	}
-
     set rotationZ(val) {
         if (this._rotation.z !== val) {
             this._rotation.z = val;
@@ -184,7 +178,6 @@ M3D.Object3D = class {
             }
         }
 	}
-
     set quaternion(quat) {
         if (!quat.equals(this._quaternion)) {
             this._quaternion.copy(quat);
@@ -196,7 +189,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set scale(vec) {
         if (!vec.equals(this._scale)) {
             this._scale = vec;
@@ -208,9 +200,8 @@ M3D.Object3D = class {
             }
         }
     }
-
     set matrixAutoUpdate(val) {
-        if (matrixAutoUpdate !== this._matrixAutoUpdate) {
+        if (val !== this._matrixAutoUpdate) {
             this._matrixAutoUpdate = val;
 
             // Notify onChange subscriber
@@ -220,7 +211,6 @@ M3D.Object3D = class {
             }
         }
     }
-
     set frustumCulled(val) {
         if (val !== this._frustumCulled) {
             this._frustumCulled = val;
@@ -232,8 +222,9 @@ M3D.Object3D = class {
             }
         }
     }
+    //endregion
 
-    addOnChangeListener(listener, recurse) {
+    addOnChangeListener (listener, recurse) {
         this._onChangeListener = listener;
 
         if (recurse) {
@@ -242,16 +233,21 @@ M3D.Object3D = class {
             }
         }
     }
-    //endregion
 
     //region MATRIX UPDATING
 	applyMatrix(matrix) {
-		this._matrix.multiplyMatrices(matrix, this._matrix);
-		this._matrix.decompose(this._position, this._quaternion, this._scale);
+        this._matrix.multiplyMatrices(matrix, this._matrix);
+        this._matrix.decompose(this._position, this._quaternion, this._scale);
 
         // Notify onChange subscriber
         if (this._onChangeListener) {
-            let update = {uuid: this._uuid, changes: {position: this._position.toArray(), quaternion: this._quaternion.toArray(), scale: this._scale.toArray()}};
+            let update = {uuid: this._uuid,
+                changes: {
+                    position: this._position.toArray(),
+                    quaternion: this._quaternion.toArray(),
+                    scale: this._scale.toArray()
+                }
+            };
             this._onChangeListener.objectUpdate(update)
         }
 	}
@@ -563,9 +559,9 @@ M3D.Object3D = class {
  * @param {THREE.Vector3} axis A normalized 3D vector in space
  * @param angle The angle in radians.
  */
-var rotateOnAxis = (function() {
+let rotateOnAxis = (function() {
 	// Private static quaternion
-	var q1 = new THREE.Quaternion();
+	let q1 = new THREE.Quaternion();
 
 	return function (axis, angle) {
         if (angle !== 0) {
@@ -574,7 +570,7 @@ var rotateOnAxis = (function() {
 
             // Notify onChange subscriber
             if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
+                let update = {uuid: this._uuid, changes: {quaternion: this._quaternion.toArray()}};
                 this._onChangeListener.objectUpdate(update)
             }
 
@@ -587,9 +583,9 @@ var rotateOnAxis = (function() {
  * Incrementally rotates the object in X axis for the given angle.
  * @param angle The angle in radians
  */
-var rotateX = (function() {
+let rotateX = (function() {
 	// Private static axis vector
-	var v1 = new THREE.Vector3(1, 0, 0);
+	let v1 = new THREE.Vector3(1, 0, 0);
 
 	return function (angle) {
 		return this.rotateOnAxis(v1, angle);
@@ -601,7 +597,7 @@ var rotateX = (function() {
  * Incrementally rotates the object in Y axis for the given angle.
  * @param angle The angle in radians
  */
-var rotateY = (function() {
+let rotateY = (function() {
 	// Private static axis vector
 	var v1 = new THREE.Vector3(0, 1, 0);
 
@@ -614,7 +610,7 @@ var rotateY = (function() {
  * Incrementally rotates the object in Z axis for the given angle.
  * @param angle The angle in radians
  */
-var rotateZ = (function () {
+let rotateZ = (function () {
 	// Private static axis vector
 	var v1 = new THREE.Vector3(0, 0, 1);
 
@@ -623,7 +619,13 @@ var rotateZ = (function () {
 	};
 })();
 
-var lookAt = (function () {
+let rotate = function (angleVector) {
+    this.rotateX(angleVector.x);
+    this.rotateY(angleVector.y);
+    this.rotateZ(angleVector.z);
+};
+
+let lookAt = (function () {
     // Private static
     let m = new THREE.Matrix4();
     let q = new THREE.Quaternion();
@@ -650,12 +652,12 @@ var lookAt = (function () {
  * @param {THREE.Vector3} axis A normalized 3D vector in space
  * @param distance The distance to translate.
  */
-var translateOnAxis = (function () {
+let translateOnAxis = (function () {
 
 	// translate object by distance along axis in object space
 	// axis is assumed to be normalized
 
-	var v1 = new THREE.Vector3();
+	let v1 = new THREE.Vector3();
 
 	return function (axis, distance) {
         if (distance !== 0) {
@@ -665,7 +667,7 @@ var translateOnAxis = (function () {
 
             // Notify onChange subscriber
             if (this._onChangeListener) {
-                var update = {uuid: this._uuid, changes: {position: this._position.toArray()}};
+                let update = {uuid: this._uuid, changes: {position: this._position.toArray()}};
                 this._onChangeListener.objectUpdate(update)
             }
         }
@@ -678,9 +680,9 @@ var translateOnAxis = (function () {
  * Translates an object by distance along axis X in object space.
  * @param distance The distance to translate.
  */
-var translateX = (function () {
+let translateX = (function () {
 	// Private axis vector
-	var v1 = new THREE.Vector3( 1, 0, 0 );
+    let v1 = new THREE.Vector3( 1, 0, 0 );
 
 	return function (distance) {
 		return this.translateOnAxis(v1, distance);
@@ -691,9 +693,9 @@ var translateX = (function () {
  * Translates an object by distance along axis Y in object space.
  * @param distance The distance to translate.
  */
-var translateY = (function () {
+let translateY = (function () {
 	// Private axis vector
-	var v1 = new THREE.Vector3( 0, 1, 0 );
+    let v1 = new THREE.Vector3( 0, 1, 0 );
 
 	return function (distance) {
 		return this.translateOnAxis(v1, distance);
@@ -704,12 +706,18 @@ var translateY = (function () {
  * Translates an object by distance along axis Z in object space.
  * @param distance The distance to translate.
  */
-var translateZ = (function () {
+let translateZ = (function () {
 	// Private axis vector
-	var v1 = new THREE.Vector3(0, 0, 1);
+	let v1 = new THREE.Vector3(0, 0, 1);
 
 	return function (distance) {
 		return this.translateOnAxis(v1, distance);
 	};
 })();
+
+let translate = function (angleVector) {
+    this.translateX(angleVector.x);
+    this.translateY(angleVector.y);
+    this.translateZ(angleVector.z);
+};
 //endregion

@@ -9,9 +9,7 @@ app.factory('PublicRenderData', function(){
         renderingInProgress: false,
 
         // Camera management
-        activeCamera: null,
-        cameras: [],
-        sharedCameras: {},
+        cameraManager: new CameraManager(),
 
         // Drawing parameters
         lineColor: new THREE.Color(1, 1, 1),
