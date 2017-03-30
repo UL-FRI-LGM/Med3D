@@ -21,10 +21,10 @@ M3D.OrbitCameraControls = class {
 
         // Is zooming in/out enabled
         this._zoomEnabled = true;
-        this._zoomSpeed = 1.0;
+        this._zoomSpeed = 1.8;
 
         // How far you can dolly in and out (PerspectiveCamera only)
-        this._minDistance = 5;
+        this._minDistance = 1;
         this._maxDistance = Infinity;
 
         // How far you can orbit vertically, upper and lower limits.
@@ -65,6 +65,10 @@ M3D.OrbitCameraControls = class {
         this._locked = false;
     }
 
+    _getZoomScale(deltaT) {
+        return Math.pow(0.95, this._zoomSpeed * deltaT * 0.1);
+    }
+
     /**
      * Sets camera position and the orbit center
      * * @param {THREE.Vector3} cameraPosition
@@ -100,6 +104,9 @@ M3D.OrbitCameraControls = class {
 
         // Update orbit center
         this._orbitCenter = sphere.center.clone();
+
+        this._minDistance = sphere.radius * 0.01;
+        this._maxDistance = distance * 1.5;
 
         // Save reset position
         this._resetOrbitCenter = this._orbitCenter.clone();
@@ -352,7 +359,15 @@ let _updateHandle = function () {
 
         // If zooming is enabled apply the wheel zoom
         if (this._zoomEnabled) {
-            this._spherical.radius += inputData.mouse.wheel.deltaY / 5 * this._zoomSpeed;
+            let zoomScale = this._getZoomScale(deltaT);
+
+            if (inputData.mouse.wheel.deltaY > 0) {
+                this._spherical.radius /= zoomScale;
+            }
+            else if (inputData.mouse.wheel.deltaY < 0) {
+                this._spherical.radius *= zoomScale;
+            }
+
         }
 
         // Restrict radius to be between desired limits

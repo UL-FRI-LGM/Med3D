@@ -15,16 +15,11 @@ let meshLoadingController = function($scope, TaskManagerService) {
             let privateOnLoad = function(data) {
                 let group = new M3D.Group();
 
-                let boundingBox = new THREE.Box3();
                 for (let i = 0; i < data.length; i++) {
                     data[i].material = new M3D.MeshPhongMaterial();
                     data[i].material.specular = new THREE.Color("#444444");
                     data[i].material.color = new THREE.Color("#8A0707");
                     data[i].material.shininess = 8;
-
-                    let tempBox = new THREE.Box3();
-                    tempBox.setFromArray(data[i].geometry.vertices.array);
-                    boundingBox.union(tempBox);
 
                     group.add(data[i]);
                 }
@@ -100,8 +95,6 @@ let meshLoadingController = function($scope, TaskManagerService) {
                             // Try to parse the response data
                             let data = objLoader.parse(res.data);
 
-                            let boundingBox = new THREE.Box3();
-
                             // Create objects group
                             for (let i = 0; i < data.length; i++) {
                                 data[i].material = new M3D.MeshPhongMaterial();
@@ -109,14 +102,9 @@ let meshLoadingController = function($scope, TaskManagerService) {
                                 data[i].material.color = new THREE.Color("#8A0707");
                                 data[i].material.shininess = 8;
 
-                                let tempBox = new THREE.Box3();
-                                tempBox.setFromArray(data[i].geometry.vertices.array);
-                                boundingBox.union(tempBox);
-
                                 group.add(data[i]);
                             }
 
-                            group.position.subVectors(new THREE.Vector3(0, 0, 0), boundingBox.center());
                         }
                         catch(e) {
                             onError({code: 2, msg: "Unknown parsing error."});

@@ -23,7 +23,6 @@ let volumeLoadingController = function($scope, TaskManagerService) {
                     mesh.material.color = new THREE.Color("#8A0707");
                     mesh.material.shininess = 8;
                     mesh.scale = new THREE.Vector3(100, 100, 100);
-                    mesh.position.subVectors(new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
 
                     group.add(mesh);
                 }
@@ -81,8 +80,6 @@ let volumeLoadingController = function($scope, TaskManagerService) {
                     mesh.material.color = new THREE.Color("#8A0707");
                     mesh.material.shininess = 8;
                     mesh.scale = new THREE.Vector3(100, 100, 100);
-
-                    mesh.position = (new THREE.Vector3(0, 0, 0), bufferGeometry.boundingSphere.center);
 
                     group.add(mesh);
                 }
