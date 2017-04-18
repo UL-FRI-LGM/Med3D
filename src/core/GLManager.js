@@ -63,6 +63,15 @@ M3D.GLManager = class {
         // endregion
     }
 
+    updateBufferAttribute(bufferAttribute, isElementBuffer) {
+        if (isElementBuffer) {
+            this._attributeManager.updateAttribute(bufferAttribute, this._gl.ELEMENT_ARRAY_BUFFER);
+        }
+        else {
+            this._attributeManager.updateAttribute(bufferAttribute, this._gl.ARRAY_BUFFER);
+        }
+    }
+
     /**
      * Updates object geometry attributes (creates GL buffers or updates them if they already exist)
      * @param object

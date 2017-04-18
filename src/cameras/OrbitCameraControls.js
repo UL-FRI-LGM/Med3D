@@ -379,6 +379,13 @@ let _updateHandle = function () {
         // rotate offset back to "camera-up-vector-is-up" space
         centerOffset.applyQuaternion(this._cameraQuaternionInverse);
 
+
+        //let newUp = this._camera.up.clone().applyQuaternion(this._camera._quaternion);
+
+        //this._cameraQuaternion.setFromUnitVectors(newUp, new THREE.Vector3(0, 1, 0));
+        //this._cameraQuaternionInverse = this._cameraQuaternion.clone().inverse();
+
+
         // Offset the camera using the updated center offset
         this._camera.position = this._orbitCenter.clone().add(centerOffset);
 

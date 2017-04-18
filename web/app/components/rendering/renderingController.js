@@ -33,7 +33,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     PublicRenderData.replaceRenderContent = function (...objects) {
         $scope.stopRenderLoop();
         PublicRenderData.contentRenderGroup.clear();
-        self.renderer.clearCache();
+        self.renderer.clearCachedAttributes();
         $scope.$apply(Annotations.clear);
 
         // Add new render content

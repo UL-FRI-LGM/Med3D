@@ -69,5 +69,13 @@
             "vertex": "custom/overlay/overlayTextures.vert",
             "fragment": "custom/overlay/overlayTextures.frag"
         }
+    },
+
+    "basicVolume": {
+        "description": "Default volume.",
+        "shaders": {
+            "vertex": "volume/volume_basic_template.vert",
+            "fragment": "volume/volume_basic_template.frag"
+        }
     }
 }

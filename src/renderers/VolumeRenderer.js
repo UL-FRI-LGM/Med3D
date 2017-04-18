@@ -8,53 +8,82 @@
  */
 M3D.VolumeRenderer = class extends M3D.Renderer {
 
-	constructor(gl) {
-		super();
+    constructor(canvas, gl_version) {
+        // Call abstract Renderer constructor
+        super(canvas, gl_version);
 
-		this.gl = gl;
-		createQuad();
-	}
+        // region CONSTRUCT QUAD
+        this.quadVtx = new M3D.Float32Attribute([
+            -1, -1, 0,
+             1, -1, 0,
+             1,  1, 0,
+            -1,  1, 0
+        ], 3);
+        this.quadIdx = new M3D.Uint32Attribute([0, 1, 2, 0, 2, 3], 1);
+        this.quadUv = new M3D.Float32Attribute([
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1
+        ], 2);
 
-	render(volume, camera) {
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this._glManager.updateBufferAttribute(this.quadVtx, false);
+        this._glManager.updateBufferAttribute(this.quadIdx, true);
+        this._glManager.updateBufferAttribute(this.quadUv, false);
+        // endregion
 
-		camera.updateMatrixWorld();
-		camera.matrixWorldInverse.getInverse(camera.matrixWorld);
-		var VP = camera.projectionMatrix.clone();
-		VP.multiply(camera.matrixWorldInverse);
+        // Set the selected renderer
+        this._selectedRenderer = this._volumeRender;
+    }
 
-		// get model transformation
-		// draw volume
-	}
+    _volumeRender(scene, camera) {
 
-	createQuad() {
-		var gl = this.gl;
+        // Define required programs
+        for (let vol of scene.children) {
+            this._requiredPrograms.push(vol.material.requiredProgram());
+        }
 
-		// create vertex buffer
-		if (this.VBO === undefined) {
-			var vbodata = new Float32Array([
-				-1.0, -1.0,
-				 1.0, -1.0,
-				-1.0,  1.0,
-				 1.0,  1.0
-			]);
-			var vbo = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-			gl.bufferData(gl.ARRAY_BUFFER, vbodata, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-		}
+        // Load the required programs
+        // Required programs for each render iteration should be listed in the _requiredPrograms array
+        if (!this._loadRequiredPrograms()) {
+            return;
+        }
 
-		// create index buffer
-		if (this.IBO === undefined) {
-			var ibodata = new Uint16Array([
-				0, 1, 2,
-				1, 2, 3
-			]);
-			var ibo = gl.createBuffer();
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ibodata, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-		}
-	}
+        for (let vol of scene.children) {
+            let material = vol.material;
 
-}
+            // TODO: Implement this
+            let program = this._compiledPrograms.get(material.requiredProgram().programID);
+            program.use();
+
+            this._setup_attributes(program);
+
+            this._setup_uniforms(program, vol, camera);
+
+            // Draw the quad
+            let buffer = this._glManager.getAttributeBuffer(this.quadIdx);
+            this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
+
+            this._gl.drawElements(this._gl.TRIANGLES, this.quadIdx.count(), this._gl.UNSIGNED_INT, 0)
+        }
+    }
+
+    // TODO: Implement this. Add additional parameters if needed.
+    _setup_uniforms(program, volume, camera) {
+        let uniformSetter = program.uniformSetter;
+
+        uniformSetter["material.color"].set(volume.material.color.toArray());
+        uniformSetter["volColor"].set(volume.color.toArray());
+    }
+
+    // TODO: Implement this. Add additional parameters if needed.
+    _setup_attributes(program) {
+        let attributeSetter = program.attributeSetter;
+
+        // Setup quad attributes
+        attributeSetter["VPos"].set(this._glManager.getAttributeBuffer(this.quadVtx), 3);
+        if (attributeSetter["uv"]) {
+            attributeSetter["uv"].set(this._glManager.getAttributeBuffer(this.quadUv), 3);
+        }
+    }
+};

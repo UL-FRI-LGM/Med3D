@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="1920" height="1080"></canvas>
+<br>
+FPS: <span id="fps">N/A</span>
+<br>
+Press (M) for different render modes.
+<br>
+If there is a lot of lag your GPU might not support WEBGL 2.0 rendering to float textures.
+
+<script src="../libraries/three-math.min.js"></script>
+<script src="lib/jquery.min.js"></script>
+
+<script src="../src/Med3D.js"></script>
+
+<!-- LOADERS -->
+<script src="../src/loaders/Cache.js"></script>
+<script src="../src/loaders/LoadingManager.js"></script>
+<script src="../src/loaders/XHRLoader.js"></script>
+<script src="../src/loaders/ShaderLoader.js"></script>
+<script src="../src/loaders/ObjLoader.js"></script>
+<script src="../src/loaders/ImageLoader.js"></script>
+
+<!-- CORE -->
+<script src="../src/core/BufferAttribute.js"></script>
+<script src="../src/core/GLAttributeManager.js"></script>
+<script src="../src/core/GLTextureManager.js"></script>
+<script src="../src/core/GLFrameBufferManager.js"></script>
+<script src="../src/core/GLManager.js"></script>
+<script src="../src/core/Object3D.js"></script>
+<script src="../src/core/Scene.js"></script>
+
+<!-- CAMERA -->
+<script src="../src/cameras/Camera.js"></script>
+<script src="../src/cameras/PerspectiveCamera.js"></script>
+<script src="../src/cameras/OrthographicCamera.js"></script>
+
+<!-- LIGHTS -->
+<script src="../src/lights/Light.js"></script>
+<script src="../src/lights/AmbientLight.js"></script>
+<script src="../src/lights/DirectionalLight.js"></script>
+<script src="../src/lights/PointLight.js"></script>
+
+<script src="../src/textures/Texture.js"></script>
+<script src="../src/renderers/RenderTarget.js"></script>
+
+<script src="../src/program_management/ShaderBuilder.js"></script>
+<script src="../src/program_management/MaterialProgramTemplate.js"></script>
+
+
+<!-- MATERIALS -->
+<script src="../src/materials/Material.js"></script>
+<script src="../src/materials/MeshBasicMaterial.js"></script>
+<script src="../src/materials/MeshPhongMaterial.js"></script>
+<script src="../src/materials/CustomShaderMaterial.js"></script>
+<script src="../src/materials/VolumeBasicMaterial.js"></script>
+
+<!-- OBJECTS -->
+<script src="../src/objects/Geometry.js"></script>
+<script src="../src/objects/Mesh.js"></script>
+<script src="../src/objects/Group.js"></script>
+<script src="../src/objects/Quad.js"></script>
+<script src="../src/objects/Contour.js"></script>
+<script src="../src/objects/Circle.js"></script>
+<script src="../src/objects/Line.js"></script>
+<script src="../src/objects/Cube.js"></script>
+<script src="../src/objects/Volume.js"></script>
+
+<!-- PROGRAM MANAGEMENT -->
+<script src="../src/program_management/GLProgram.js"></script>
+<script src="../src/program_management/GLProgramManager.js"></script>
+
+<!-- RENDERS -->
+<script src="../src/renderers/Renderer.js"></script>
+<script src="../src/renderers/VolumeRenderer.js"></script>
+
+<script src="../src/marching_cubes/MarchingCubes.js"></script>
+
+<script src="../src/marching_cubes/MHDReader.js"></script>
+<script src="../src/controls/KeyboardInput.js"></script>
+
+<script src="../src/renderers/RenderPass.js"></script>
+<script src="../src/renderers/RenderQueue.js"></script>
+
+<!-- KEYBOARD INITIALIZATION -->
+<script>
+    var renderer = new M3D.VolumeRenderer(document.getElementById("canvas"), M3D.WEBGL2);
+    renderer.addShaderLoaderUrls("../src/shaders");
+
+    var scene = new M3D.Scene();
+    scene.add(new M3D.Volume(2, 3));
+
+    var camera = new M3D.PerspectiveCamera(60, 16/9, 0.1, 1000);
+
+    var animate = function () {
+        requestAnimationFrame(animate);
+
+        renderer.render(scene, camera);
+    };
+
+    animate();
+</script>
+
+</body>
+</html>
