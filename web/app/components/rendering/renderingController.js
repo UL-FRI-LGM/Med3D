@@ -7,7 +7,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     let self = this;
 
     // Required programs
-    this.requiredPrograms = ['phong', 'custom_overlayTextures', 'custom_drawOnTexture', 'custom_copyTexture', 'custom_redrawOnTexture'];
+    this.requiredPrograms = ['basic', 'phong', 'custom_overlayTextures', 'custom_drawOnTexture', 'custom_copyTexture', 'custom_redrawOnTexture'];
 
     $scope.annotations = Annotations;
 

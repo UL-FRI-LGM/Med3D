@@ -312,17 +312,6 @@ let _updateHandle = function () {
 
     return function (inputData, deltaT) {
 
-        // console.log("Position: " + this._camera.position.toArray());
-        // console.log("Rotation: " + this._camera.rotation.toArray());
-        // console.log("Camer-UP: " + this._camera.up.clone().applyQuaternion(this._camera.quaternion).toArray());
-
-        // Todo: Popravi os orbit kamere
-        if (inputData.mouse.buttons.middle) {
-            // this._cameraQuaternion = new THREE.Quaternion().setFromUnitVectors(this._camera.up.clone(), this._camera.up.clone().applyQuaternion(this._camera.quaternion));
-            // this._cameraQuaternionInverse = this._cameraQuaternion.clone().inverse();
-            console.log("Middle mouse TODO: Test");
-        }
-
         // If there are any animations in queue execute the animation step and disregard the input
         if (this._cameraAnimationQueue.length > 0 || this._currentAnimation != null) {
             this._animate(deltaT);

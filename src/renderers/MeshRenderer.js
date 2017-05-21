@@ -214,9 +214,8 @@ M3D.MeshRenderer = class extends M3D.Renderer {
         }
     }
 
+    // TODO: Better naming of the uniforms is needed in order to avoid string usage.
     _setup_material_uniforms(material, uniformSetter) {
-        const prefix = "material";
-
         // Setup custom user uniforms (in case of CustomShaderMaterial)
         if (material instanceof M3D.CustomShaderMaterial) {
             let customUniforms = material._uniforms;
@@ -231,19 +230,16 @@ M3D.MeshRenderer = class extends M3D.Renderer {
             }
         }
         else {
-            const diffuse = prefix + ".diffuse";
-            if (uniformSetter[diffuse] !== undefined) {
-                uniformSetter[diffuse].set(material.color.toArray());
+            if (uniformSetter["material.diffuse"] !== undefined) {
+                uniformSetter["material.diffuse"].set(material.color.toArray());
             }
 
-            const specular = prefix + ".specular";
-            if (uniformSetter[specular] !== undefined) {
-                uniformSetter[specular].set(material.specular.toArray());
+            if (uniformSetter["material.specular"] !== undefined) {
+                uniformSetter["material.specular"].set(material.specular.toArray());
             }
 
-            const shininess = prefix + ".shininess";
-            if (uniformSetter[shininess] !== undefined) {
-                uniformSetter[shininess].set(material.shininess);
+            if (uniformSetter["material.shininess"] !== undefined) {
+                uniformSetter["material.shininess"].set(material.shininess);
             }
         }
 
@@ -251,7 +247,7 @@ M3D.MeshRenderer = class extends M3D.Renderer {
         let textures = material.maps;
 
         for (let i = 0; i < textures.length; i++) {
-            const texture = prefix + ".texture" + i;
+            const texture = "material.texture" + i;
             if (uniformSetter[texture] !== undefined) {
                 uniformSetter[texture].set(this._glManager.getTexture(textures[i]), i);
             }
@@ -349,6 +345,7 @@ M3D.MeshRenderer = class extends M3D.Renderer {
         }
     }
 
+    // TODO: Optimize required programs string. Overhead due to the string comparison is too big!
     _projectObject(object, camera) {
 
         // If object is not visible do not bother projecting it

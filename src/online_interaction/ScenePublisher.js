@@ -181,11 +181,13 @@ M3D.ScenePublisher = class {
         let self = this;
 
         // Init socket
-        this._socket = io();
+        this._socket = io({transports: ["websocket", "pooling"], perMessageDeflate: {threshold: 1024}, rememberUpgrade: true, forceNode: true});
 
         // Notify subscriber on connect and upload the scene to the server.
         this._socket.on('connect', function() {
             self._updateInProgress = true;
+
+            console.log(self._socket.io.engine.transport.name);
 
             let serverCallback = function() {
                 self._updateInProgress = false;
@@ -353,7 +355,7 @@ M3D.ScenePublisher = class {
         }
 
         // Forming request
-        let request = {type: "add", sessionId: this._socket.io.engine.id, cameras: camerasJson};
+        let request = {type: "add", cameras: camerasJson};
 
         // When successfully uploaded add change listeners
         this._socket.emit("sessionCameras", request, function () {
@@ -369,7 +371,7 @@ M3D.ScenePublisher = class {
 
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
-            let request = {type: "update", sessionId: this._socket.io.engine.id, updates: this._scheduledCameraUpdates};
+            let request = {type: "update", updates: this._scheduledCameraUpdates};
             request.timestamp = new Date().getTime();
 
             this._scheduledCameraUpdates = {};

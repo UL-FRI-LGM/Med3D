@@ -80,8 +80,8 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
         }
 
         // Create program specification
-        var flags = [];
-        var values = {};
+        let flags = [];
+        let values = {};
 
         // Add texture flag
         if (this._maps.length > 0) {
@@ -97,7 +97,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
     }
 
     toJson() {
-        var obj = super.toJson();
+        let obj = super.toJson();
 
         obj.color = this._color.getHex();
         obj.specular = this._specular.getHex();
@@ -107,7 +107,7 @@ M3D.MeshPhongMaterial = class extends M3D.Material {
     }
 
     static fromJson(obj) {
-        var material = new M3D.MeshPhongMaterial();
+        let material = new M3D.MeshPhongMaterial();
 
         // Material properties
         material = super.fromJson(obj, material);

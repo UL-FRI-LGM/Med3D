@@ -59,10 +59,10 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     // This function updates local annotations when it receives a request
     this._onSharedAnnotationsChange = function (request) {
         if (request.type === "add") {
-            var newAnnotationsList = [];
+            let newAnnotationsList = [];
 
-            for (var i = 0; i < request.data.list.length; i++) {
-                newAnnotationsList.push(self._buildAnnotation(request.data.list[i]));
+            for (let i = 0; i < request.data.annotations.length; i++) {
+                newAnnotationsList.push(self._buildAnnotation(request.data.annotations[i]));
             }
 
 
@@ -110,8 +110,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 if (self.dataPublisher !== null && self.settings.shareAnnotations) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
                         type: "add",
-                        sessionId: self.dataPublisher.getSessionID(),
-                        data: [annotation]
+                        annotations: [annotation]
                     }, function () {
                     });
                 }
@@ -121,7 +120,6 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 if (self.dataPublisher !== null && self.settings.shareAnnotations) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
                         type: "rm",
-                        sessionId: self.dataPublisher.getSessionID(),
                         index: index
                     }, function () {
                     });
@@ -131,8 +129,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             var onClear = function () {
                 if (self.dataPublisher !== null) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
-                        type: "clear",
-                        sessionId: self.dataPublisher.getSessionID()
+                        type: "clear"
                     }, function () {});
                 }
             };
@@ -149,8 +146,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 if (self.annotations.list.length > 0 && self.settings.shareAnnotations) {
                     let request = {
                         type: "add",
-                        sessionId: self.dataPublisher.getSessionID(),
-                        data: self.annotations.toJson()
+                        annotations: self.annotations.toJson()
                     };
 
                     // Push the annotations to the server
@@ -238,8 +234,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         if (self.state.hostingInProgress && self.dataPublisher !== null) {
             // Clear annotations when session hosting stops
             self.dataPublisher.miscRequestEmit("sessionAnnotations", {
-                type: "clear",
-                sessionId: self.dataPublisher.getSessionID()
+                type: "clear"
             }, function () {});
 
             self.dataPublisher.rmMiscListener("chat");
@@ -263,7 +258,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         // Check if the data subscriber is alive
         if (this.dataSubscriber !== null) {
             // Form fetch request
-            let request = {type: "fetch", sessionId: this.dataSubscriber.getSessionID()};
+            let request = {type: "fetch"};
 
             // Fetch annotations from the server
             this.dataSubscriber.miscRequestEmit("sessionAnnotations", request, function (response) {
@@ -295,8 +290,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                             if (self.dataSubscriber !== null) {
                                 self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
                                     type: "add",
-                                    sessionId: self.dataSubscriber.getSessionID(),
-                                    data: [annotation]
+                                    annotations: [annotation]
                                 }, function () {
                                 });
                             }
@@ -306,7 +300,6 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                             if (self.dataSubscriber !== null) {
                                 self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
                                     type: "rm",
-                                    sessionId: self.dataSubscriber.getSessionID(),
                                     index: index
                                 }, function () {
                                 });

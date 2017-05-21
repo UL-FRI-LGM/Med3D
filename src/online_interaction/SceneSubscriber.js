@@ -12,7 +12,7 @@ M3D.SceneSubscriberListener = class {
 M3D.SceneSubscriber = class {
 
     constructor(username, updateListener) {
-        this._socket = io();
+        this._socket = io({transports: ["websocket", "pooling"], perMessageDeflate: {threshold: 1024}});
         this._sessionID = null;
         this._username = username;
 
@@ -84,7 +84,7 @@ M3D.SceneSubscriber = class {
                     });
                 }
 
-                self._socket.emit("sessionCameras", {type: "fetch", sessionId: self._sessionID}, function(response) {
+                self._socket.emit("sessionCameras", {type: "fetch"}, function(response) {
 
                     // Check if the fetch was successful
                     if (response.status === 0) {
@@ -375,7 +375,7 @@ M3D.SceneSubscriber = class {
         }
 
         // Forming request
-        let request = {type: "add", sessionId: this._sessionID, cameras: camerasJson};
+        let request = {type: "add", cameras: camerasJson};
 
         // When successfully uploaded add change listeners
         this._socket.emit("sessionCameras", request, function () {
@@ -391,7 +391,7 @@ M3D.SceneSubscriber = class {
 
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
-            let request = {type: "update", sessionId: this._sessionID, updates: this._scheduledCameraUpdates};
+            let request = {type: "update", updates: this._scheduledCameraUpdates};
 
             this._scheduledCameraUpdates = {};
             this._socket.emit("sessionCameras", request, callback);
