@@ -155,6 +155,38 @@ app.factory('Annotations', function(){
             return annotations;
         };
 
+        /**
+         * Reconstructs the annotation from the JSON
+         * @param data
+         * @returns
+         */
+        this.reconstructAnnotation = function (data) {
+            let annotation = {
+                title: data.title,
+                content: data.content,
+                windowPosition: {
+                    width: data.windowPosition.width,
+                    height: data.windowPosition.height,
+                    offset: {
+                        left: ($(window).width() / 2 - data.windowPosition.width / 2),
+                        top: ($(window).height() / 2 - data.windowPosition.height / 2) + 9 // TODO: Statically inserted min height
+                    }
+                },
+                modalHolderPosition: {
+                    left: (($(window).width() - 1000) / 2),
+                    top: (($(window).height() - 1000) / 2),
+                },
+                active: false
+            };
+
+            // Check if marker meta data is specified
+            if (data.markerMeta !== undefined) {
+                annotation.markerMeta = { position: (new THREE.Vector3()).fromArray(data.markerMeta.position), normal: (new THREE.Vector3()).fromArray(data.markerMeta.normal) };
+            }
+
+            return annotation;
+        };
+
 
         /**
          * DRAWN ANNOTATIONS

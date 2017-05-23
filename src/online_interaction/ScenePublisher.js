@@ -4,7 +4,7 @@
 
 M3D.ScenePublisher = class {
     
-    constructor(username, rootObjects, onConnectionChange) {
+    constructor(username, rootObjects) {
 
         let self = this;
 
@@ -164,47 +164,44 @@ M3D.ScenePublisher = class {
         this._cameraChangeListener = new M3D.UpdateListener(onCameraUpdate);
         this._dataChangeListener = new M3D.UpdateListener(onObjectUpdate, onHierarchyUpdate, onMaterialUpdate, onGeometryUpdate);
 
-        this._onConnectionChange = onConnectionChange;
-        this._socket = null;
-
         // Subscribers data
         this._subscribersCameras = {};
-        this._subscriberOnCameraChange = null
+        this._subscriberOnCameraChange = null;
+
+        // Fetch socket manager reference and add a new socket subscriber
+        this._socketManager = M3D.SocketManager.instance;
+        this._socketSubscriber = new M3D.SocketSubscriber();
+        this._socketManager.addSocketSubscriber(this._socketSubscriber);
+
+        // If the connection was not jet established initiate the connecting
+        if (!this._socketManager.isConnectionOpen) {
+            this._socketManager.connectToServer();
+        }
     }
 
-    startPublishing(updateInterval) {
+    startPublishing(updateInterval, callback) {
+        let self = this;
+
+        // Set the update interval
         if (updateInterval) {
             this._updateInterval = updateInterval;
         }
+
+        // Initialize las update time
         this._lastUpdate = new Date();
 
-        let self = this;
+        // Upload the current scene state and data to the server
+        this._updateInProgress = true;
 
-        // Init socket
-        this._socket = io({transports: ["websocket", "pooling"], perMessageDeflate: {threshold: 1024}, rememberUpgrade: true, forceNode: true});
-
-        // Notify subscriber on connect and upload the scene to the server.
-        this._socket.on('connect', function() {
-            self._updateInProgress = true;
-
-            console.log(self._socket.io.engine.transport.name);
-
-            let serverCallback = function() {
-                self._updateInProgress = false;
-                self._onConnectionChange({status: 0, session_uuid: self._socket.id});
-            };
-
-            // After finishing the data upload. Share cameras.
-            self._uploadData(function () {
-                self._setupSubscriberCameraListener();
-                serverCallback();
-            });
+        // Upload the data and then setup the camera update listener
+        this._uploadData(function () {
+            self._updateInProgress = false;
+            self._setupCameraUpdatesListener();
+            callback();
         });
     }
 
     stopPublishing() {
-        this._socket.disconnect();
-
         // Destroy scene changes listener
         this._dataChangeListener = null;
 
@@ -215,6 +212,8 @@ M3D.ScenePublisher = class {
 
         this._newObjects = {objects: {}, geometries: {}, materials: {}};
         this._synchronizedObjects.clear();
+
+        // TODO
     }
 
     // region SCENE DATA MANAGEMENT
@@ -254,7 +253,8 @@ M3D.ScenePublisher = class {
         // Form the request and forward it to server via socket.io
         let request = {type: "create", username: this._username, data: data};
 
-        this._socket.emit("session", request, callback);
+        // Send the data to the server
+        this._socketManager.emit("session", request, callback);
     }
 
     _updateData(callback) {
@@ -262,6 +262,7 @@ M3D.ScenePublisher = class {
         let updateData = {updates: {}, newObjects: {}};
         let updateEmpty = true;
 
+        // region UPDATES
         // Add object updates
         if (Object.keys(this._scheduledObjectsUpdates).length > 0) {
 
@@ -299,16 +300,20 @@ M3D.ScenePublisher = class {
             updateEmpty = false;
         }
 
+        // Add material updates
         if (Object.keys(this._scheduledMaterialsUpdates).length > 0) {
             updateData.updates.materials = this._scheduledMaterialsUpdates;
             updateEmpty = false;
         }
 
+        // Add geometry updates
         if (Object.keys(this._scheduledGeometriesUpdates).length > 0) {
             updateData.updates.geometries = this._scheduledGeometriesUpdates;
             updateEmpty = false;
         }
+        // endregion
 
+        // region NEW DATA
         // Add newly added objects
         if (Object.keys(this._newObjects.objects).length > 0) {
             updateData.newObjects.objects = this._newObjects.objects;
@@ -324,6 +329,7 @@ M3D.ScenePublisher = class {
             updateData.newObjects.materials = this._newObjects.materials;
             updateEmpty = false;
         }
+        // endregion
 
         // If there is nothing to update.. fallback
         if (updateEmpty) {
@@ -332,7 +338,7 @@ M3D.ScenePublisher = class {
         }
 
         // Forward the request to the server
-        this._socket.emit("sessionDataUpdate", updateData, callback);
+        this._socketManager.emit("sessionDataUpdate", updateData, callback);
 
         // Reset scheduled updates
         this._scheduledObjectsUpdates = {};
@@ -344,7 +350,15 @@ M3D.ScenePublisher = class {
     }
     // endregion SCENE DATA MANAGEMENT
 
+
     // region CAMERA HOSTING
+    /**
+     * Adds new cameras to the scene publisher. The new cameras are added to the session and sent to the server. When the
+     * transmission succeeds it also sets up on change listener that will record the changes made and forward them to
+     * the server.
+     * @param cameras List of cameras that are to be added
+     * @param callback Callback that is fired when the server responds that it received the data.
+     */
     addCameras(cameras, callback) {
         let self = this;
 
@@ -354,11 +368,8 @@ M3D.ScenePublisher = class {
             camerasJson[cameras[i]._uuid] = cameras[i].toJson();
         }
 
-        // Forming request
-        let request = {type: "add", cameras: camerasJson};
-
-        // When successfully uploaded add change listeners
-        this._socket.emit("sessionCameras", request, function () {
+        // When successfully uploaded add on change listener to the cameras
+        this._socketManager.emit("sessionCameras", {type: "add", cameras: camerasJson}, function () {
             for (let i = 0; i < cameras.length; i++) {
                 cameras[i].addOnChangeListener(self._cameraChangeListener, false);
             }
@@ -369,15 +380,22 @@ M3D.ScenePublisher = class {
         });
     }
 
+    /**
+     * Forwards the recorded camera changes to the server
+     * @param callback Callback that is fired
+     */
     _updateCameras(callback) {
         if (Object.keys(this._scheduledCameraUpdates).length > 0) {
             let request = {type: "update", updates: this._scheduledCameraUpdates};
             request.timestamp = new Date().getTime();
 
+            // Send the data to the server
+            this._socketManager.emit("sessionCameras", request, callback);
+            // Clear the recorded changes
             this._scheduledCameraUpdates = {};
-            this._socket.emit("sessionCameras", request, callback);
         }
         else {
+            // If no change was recorded only fire the callback
             callback();
         }
     }
@@ -385,10 +403,23 @@ M3D.ScenePublisher = class {
 
 
     // region CAMERA LISTENING
-    _setupSubscriberCameraListener() {
+    _setupCameraUpdatesListener() {
         let self = this;
 
-        this._socket.on("sessionCameras", function (request) {
+        this._socketSubscriber.addEventCallback("sessionCameras", function (request) {
+
+            /**
+             * A new camera was added by some user:
+             * REQUEST:
+             * {
+             *      type: "add",
+             *      userId: ID of the user that added a new camera
+             *      data: {
+             *          list: List of cameras
+             *          ownerUsername: Username of the camera owner
+             *      }
+             * }
+             */
             if (request.type === "add") {
                 let userCamerasList = request.data.list;
 
@@ -407,8 +438,18 @@ M3D.ScenePublisher = class {
                         self._subscriberOnCameraChange(self._subscribersCameras);
                     }
                 }
+                return;
             }
-            else if (request.type === "update") {
+
+            /**
+             * Received updated parameters of cameras for some user
+             * REQUEST:
+             * {
+             *      type: "update",
+             *      updates: Object with camera updates
+             * }
+             */
+            if (request.type === "update") {
                 // Fetch user camera list
                 let userCameras = self._subscribersCameras[request.userId];
 
@@ -425,8 +466,18 @@ M3D.ScenePublisher = class {
                         }
                     }
                 }
+                return;
             }
-            else if (request.type === "rm") {
+
+            /**
+             * Received a request to remove a camera
+             * REQUEST:
+             * {
+             *      type: "rm",
+             *      uuid: Uuid of the camera that is to be removed. If no uuid is specified delete all of the cameras
+             * }
+             */
+            if (request.type === "rm") {
                 // Delete all user cameras
                 if (request.uuid === undefined) {
                     delete self._subscribersCameras[request.userId];
@@ -439,7 +490,9 @@ M3D.ScenePublisher = class {
                 if (self._subscriberOnCameraChange !== null) {
                     self._subscriberOnCameraChange(self._subscribersCameras);
                 }
+                return;
             }
+
         });
     }
 
@@ -448,56 +501,10 @@ M3D.ScenePublisher = class {
     }
     // endregion
 
-    miscRequestEmit(namespace, request, callback) {
-        if (this._socket !== null) {
-            this._socket.emit(namespace, request, callback);
-        }
-        else {
-            callback({status: 1, msg: "Socket is closed."});
-        }
-    }
-
-    setMiscListener(namespace, callback) {
-        if (this._socket !== null) {
-            this._socket.on(namespace, callback);
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    rmMiscListener(namespace) {
-        if (this._socket !== null) {
-            this._socket.removeAllListeners(namespace);
-        }
-    }
-
-    // region META GETTERS
-    getSocketID() {
-        if (this._socket !== null) {
-            return this._socket.id;
-        }
-        else {
-            return null;
-        }
-    }
-
-    getSessionID() {
-        if (this._socket !== null) {
-            return this._socket.io.engine.id;
-        }
-        else {
-            return null;
-        }
-    }
 
     getUsername() {
         return this._username;
     }
-    // endregion
-
-
 
     update() {
         let currentTime = new Date();

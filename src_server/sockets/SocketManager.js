@@ -94,7 +94,7 @@ SocketManager = class {
 
                     // Join the user into the session
                     socket.join(request.sessionId);
-                    socket.emit("connectResponse", {status: 0, initialData: session.initialData});
+                    socket.emit("joinSessionResponse", {status: 0, initialData: session.initialData});
                 }
             });
 

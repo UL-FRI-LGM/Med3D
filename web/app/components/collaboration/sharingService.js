@@ -4,8 +4,16 @@
 
 
 app.service("SharingService", function ($rootScope, PublicRenderData, Annotations, Messages) {
-
+    // This reference
     let self = this;
+
+    // Socket manager
+    this.socketManager = M3D.SocketManager.instance;
+    this.socketManager.connectToServer();
+
+    // Create new socket subscriber
+    this.socketSubscriber = new M3D.SocketSubscriber();
+    this.socketManager.addSocketSubscriber(this.socketSubscriber);
 
     // Reference to render data and annotations
     this.renderData = PublicRenderData;
@@ -25,176 +33,10 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     };
 
     // Data publisher
-    this.dataPublisher = null;
-    this.dataSubscriber = null;
-
-    // region HELPER FUNCTIONS
-    this._buildAnnotation = function (data) {
-        let annotation = {
-            title: data.title,
-            content: data.content,
-            windowPosition: {
-                width: data.windowPosition.width,
-                height: data.windowPosition.height,
-                offset: {
-                    left: ($(window).width() / 2 - data.windowPosition.width / 2),
-                    top: ($(window).height() / 2 - data.windowPosition.height / 2) + 9 // TODO: Statically inserted min height
-                }
-            },
-            modalHolderPosition: {
-                left: (($(window).width() - 1000) / 2),
-                top: (($(window).height() - 1000) / 2),
-            },
-            active: false
-        };
-
-        // Check if marker meta data is specified
-        if (data.markerMeta !== undefined) {
-            annotation.markerMeta = { position: (new THREE.Vector3()).fromArray(data.markerMeta.position), normal: (new THREE.Vector3()).fromArray(data.markerMeta.normal) };
-        }
-
-        return annotation;
-    };
-
-    // This function updates local annotations when it receives a request
-    this._onSharedAnnotationsChange = function (request) {
-        if (request.type === "add") {
-            let newAnnotationsList = [];
-
-            for (let i = 0; i < request.data.annotations.length; i++) {
-                newAnnotationsList.push(self._buildAnnotation(request.data.annotations[i]));
-            }
-
-
-            $rootScope.$apply(function() {
-                if (self.annotations.sharedList[request.userId] === undefined) {
-                    self.annotations.sharedList[request.userId] = {ownerUsername: request.data.ownerUsername, list: newAnnotationsList};
-                }
-                else {
-                    self.annotations.sharedList[request.userId].list = self.annotations.sharedList[request.userId].list.concat(newAnnotationsList);
-                }
-            });
-        }
-        else if (request.type === "rm") {
-            $rootScope.$apply(function() {
-                if (self.annotations.sharedList[request.userId] !== undefined) {
-                    if (request.index === undefined) {
-                        delete self.annotations.sharedList[request.userId];
-                    }
-                    else if (self.annotations.sharedList[request.userId].list.length > request.index) {
-                        if (self.annotations.sharedList[request.userId].list.length <= 1) {
-                            delete self.annotations.sharedList[request.userId];
-                        }
-                        else {
-                            self.annotations.sharedList[request.userId].list.splice(request.index, 1);
-                        }
-                    }
-                }
-            });
-        }
-        else if (request.type === "clear") {
-            $rootScope.$apply(function() {
-                self.annotations.sharedList = {};
-                self.annotations.list = [];
-            });
-        }
-    };
-    // endregion
+    this.sceneHost = null;
+    this.sceneSubscriber = null;
 
     // region HOST FUNCTIONS
-    this._setupHostAnnotationsSharing = function () {
-
-        let setOnAnnotationChange = function() {
-            // Setup change listener
-            let onAdd = function (annotation) {
-                if (self.dataPublisher !== null && self.settings.shareAnnotations) {
-                    self.dataPublisher.miscRequestEmit("sessionAnnotations", {
-                        type: "add",
-                        annotations: [annotation]
-                    }, function () {
-                    });
-                }
-            };
-
-            let onRm = function (index) {
-                if (self.dataPublisher !== null && self.settings.shareAnnotations) {
-                    self.dataPublisher.miscRequestEmit("sessionAnnotations", {
-                        type: "rm",
-                        index: index
-                    }, function () {
-                    });
-                }
-            };
-
-            let onClear = function () {
-                if (self.dataPublisher !== null) {
-                    self.dataPublisher.miscRequestEmit("sessionAnnotations", {
-                        type: "clear"
-                    }, function () {});
-                }
-            };
-
-            self.annotations.addListener("SharingService", onAdd, onRm, onClear);
-
-            // Set shared annotations listener
-            self.dataPublisher.setMiscListener("sessionAnnotations", self._onSharedAnnotationsChange);
-        };
-
-        return function () {
-            if (self.dataPublisher !== null) {
-                // If no active annotations or annotation collaboration is disabled do not send init batch to the server
-                if (self.annotations.list.length > 0 && self.settings.shareAnnotations) {
-                    let request = {
-                        type: "add",
-                        annotations: self.annotations.toJson()
-                    };
-
-                    // Push the annotations to the server
-                    self.dataPublisher.miscRequestEmit("sessionAnnotations", request, setOnAnnotationChange);
-                }
-                else {
-                    setOnAnnotationChange();
-                }
-            }
-        }
-    }();
-
-    this._setupHostChatSharing = function () {
-        // Check if the data subscriber is alive
-        if (this.dataPublisher !== null) {
-
-            $rootScope.$apply(function() {
-                self.messages.length = 0;
-            });
-
-            self.dataPublisher.setMiscListener("chat", function (message) {
-                $rootScope.$apply(function() {
-                    self.messages.push(message);
-                });
-            });
-        }
-    };
-
-    this._setupHostCameraSharing = function () {
-        if (self.settings.shareCamera) {
-            self.dataPublisher.addCameras(self.renderData.cameraManager.ownCameras);
-        }
-
-        // On cameras change notify angular
-        self.dataPublisher.setOnCamerasChange(function (cameras) {
-            $rootScope.$apply(function() {
-                self.renderData.cameraManager.setSharedCameras(cameras);
-
-                let cameraManager = self.renderData.cameraManager;
-
-                // Check if active camera was deleted
-                if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
-                    cameraManager.setActiveCamera(cameraManager.ownCameras[0]);
-                }
-            });
-        });
-    };
-
     this.startHostingSession = function (username, callback) {
 
         // Check if the render data is initialized
@@ -206,153 +48,43 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         let sharedRootObjects = [self.renderData.contentRenderGroup];
 
         // Create new data publisher
-        self.dataPublisher = new M3D.ScenePublisher(username, sharedRootObjects, function (event) {
-            // If connected successfully
-            if (event.status === 0) {
-                // Setup camera collaboration
-                self._setupHostCameraSharing();
+        self.sceneHost = new M3D.ScenePublisher(username, sharedRootObjects);
 
-                // Check if annotation collaboration is active
-                self._setupHostAnnotationsSharing();
-                self._setupHostChatSharing();
+        // If connected successfully
+        // Setup camera collaboration
+        self._setupCameraSharing(true);
+        self.clearChat();
 
-                callback(event);
-            }
-            // Something went wrong
-            else {
-                self.dataPublisher.stopPublishing();
-                self.dataPublisher = null;
-                callback(event);
-            }
-        });
+        // Check if annotation collaboration is active
+        self._setupHostAnnotationsSharing();
 
         // Initiate publishing
-        self.dataPublisher.startPublishing();
+        self.sceneHost.startPublishing(null, function () {
+            callback({status: 0, msg: "Successfully started hosting session."});
+        });
     };
 
     this.stopHostingSession = function (callback) {
-        if (self.state.hostingInProgress && self.dataPublisher !== null) {
+        if (self.state.hostingInProgress && self.sceneHost !== null) {
             // Clear annotations when session hosting stops
-            self.dataPublisher.miscRequestEmit("sessionAnnotations", {
+            self.socketManager.emit("sessionAnnotations", {
                 type: "clear"
             }, function () {});
-
-            self.dataPublisher.rmMiscListener("chat");
-            self.dataPublisher.rmMiscListener("sessionAnnotations");
 
             $rootScope.$apply(function() {
                 self.renderData.cameraManager.clearSharedCameras();
             });
 
             self.annotations.rmListener("SharingService");
-            self.dataPublisher.stopPublishing();
+            self.sceneHost.stopPublishing();
             callback({"status": 0, msg: "Successfully stopped session hosting."});
         }
 
-        self.dataPublisher = null;
+        self.sceneHost = null;
     };
     // endregion
 
     // region CLIENT FUNCTIONS
-    this._setupClientAnnotationSharing = function () {
-        // Check if the data subscriber is alive
-        if (this.dataSubscriber !== null) {
-            // Form fetch request
-            let request = {type: "fetch"};
-
-            // Fetch annotations from the server
-            this.dataSubscriber.miscRequestEmit("sessionAnnotations", request, function (response) {
-                if (response.status === 0) {
-
-                    // region PARSE ANNOTATIONS
-                    let sharedAnnotations = {};
-
-                    // Build annotations
-                    for (let userId in response.data) {
-                        let annotationList = [];
-                        for (let i = 0; i < response.data[userId].list.length; i++) {
-                            annotationList.push(self._buildAnnotation(response.data[userId].list[i]));
-                        }
-
-                        sharedAnnotations[userId] = {ownerUsername: response.data[userId].ownerUsername, list: annotationList};
-                    }
-
-                    // Set build annotations to shared list
-                    $rootScope.$apply(function() {
-                        self.annotations.sharedList = sharedAnnotations;
-                    });
-                    // endregion PARSE ANNOTATIONS
-
-                    // region SETUP LOCAL ANNOTATIONS ON CHANGE LISTENER
-                    // Check if annotation collaboration is enabled
-                    if (self.settings.shareAnnotations) {
-                        let onAdd = function (annotation) {
-                            if (self.dataSubscriber !== null) {
-                                self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
-                                    type: "add",
-                                    annotations: [annotation]
-                                }, function () {
-                                });
-                            }
-                        };
-
-                        let onRm = function (index) {
-                            if (self.dataSubscriber !== null) {
-                                self.dataSubscriber.miscRequestEmit("sessionAnnotations", {
-                                    type: "rm",
-                                    index: index
-                                }, function () {
-                                });
-                            }
-                        };
-
-                        self.annotations.addListener("SharingService", onAdd, onRm, function () {});
-                    }
-                    // endregion
-
-                    // Listen on socket for annotation changes
-                    self.dataSubscriber.setMiscListener("sessionAnnotations", self._onSharedAnnotationsChange);
-                }
-            });
-        }
-    };
-
-    this._setupClientChatSharing = function () {
-        // Check if the data subscriber is alive
-        if (this.dataSubscriber !== null) {
-            $rootScope.$apply(function() {
-                self.messages.length = 0;
-            });
-
-            self.dataSubscriber.setMiscListener("chat", function (message) {
-                $rootScope.$apply(function() {
-                    self.messages.push(message);
-                });
-            });
-        }
-    };
-
-    this._setupClientCameraSharing = function () {
-        if (self.settings.shareCamera) {
-            self.dataSubscriber.addCameras(self.renderData.cameraManager.ownCameras);
-        }
-
-        // On cameras change notify angular
-        self.dataSubscriber.setOnCamerasChange(function (cameras) {
-            // Check if active camera was deleted
-            $rootScope.$apply(function() {
-                self.renderData.cameraManager.setSharedCameras(cameras);
-
-                let cameraManager = self.renderData.cameraManager;
-
-                if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
-                    cameraManager.setActiveCamera(cameraManager.ownCameras[0]);
-                }
-
-            });
-        });
-    };
-
     this.joinSession = function () {
         let callbackRef;
 
@@ -364,9 +96,9 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                     self.renderData.cameraManager.setSharedCameras(cameras);
                 });
 
-                self._setupClientCameraSharing();
+                self._setupCameraSharing(false);
                 self._setupClientAnnotationSharing();
-                self._setupClientChatSharing();
+                self.clearChat();
             }
 
             callbackRef({status: status});
@@ -387,15 +119,13 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             callbackRef = callback;
 
             // Subscribe to the given session
-            self.dataSubscriber = new M3D.SceneSubscriber(username, listener);
-            self.dataSubscriber.subscribe(uuid);
+            self.sceneSubscriber = new M3D.SceneSubscriber(username, listener);
+            self.sceneSubscriber.subscribe(uuid);
         }
     }();
 
     this.leaveSession = function (callback) {
-        self.dataSubscriber.rmMiscListener("chat");
-        self.dataSubscriber.rmMiscListener("sessionAnnotations");
-        self.dataSubscriber.unsubscribe();
+        self.sceneSubscriber.unsubscribe();
         self.annotations.rmListener("SharingService");
 
         // Delete shared annotations
@@ -408,36 +138,221 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             self.renderData.cameraManager.clearSharedCameras();
         });
 
-        self.dataSubscriber = null;
+        self.sceneSubscriber = null;
 
         callback({status: 0});
     };
     // endregion
 
-    this.sendChatMessage = function(msg) {
-        if (self.state.hostingInProgress && self.dataPublisher !== null) {
-            self.dataPublisher.miscRequestEmit("chat", {
-                sender: self.dataPublisher.getUsername(),
-                message: msg
-            });
+    // region CAMERA SHARING
+    this._setupCameraSharing = function (isHost) {
+        let sceneManager = (isHost) ? self.sceneHost : self.sceneSubscriber;
+
+        if (self.settings.shareCamera) {
+            sceneManager.addCameras(self.renderData.cameraManager.ownCameras);
         }
-        else if (self.state.listeningInProgress && self.dataSubscriber !== null) {
-            self.dataSubscriber.miscRequestEmit("chat", {
-                sender: self.dataSubscriber.getUsername(),
-                message: msg
+
+        // On cameras change notify angular
+        sceneManager.setOnCamerasChange(function (cameras) {
+            $rootScope.$apply(function() {
+                self.renderData.cameraManager.setSharedCameras(cameras);
+
+                let cameraManager = self.renderData.cameraManager;
+
+                // Check if active camera was deleted
+                if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
+                    cameraManager.setActiveCamera(cameraManager.ownCameras[0]);
+                }
+            });
+        });
+    };
+    // endregion
+
+    // region ANNOTATIONS
+    this.socketSubscriber.addEventCallback("sessionAnnotations", function (request) {
+        // Check if we are participating in a session
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
+            if (request.type === "add") {
+                let newAnnotationsList = [];
+
+                for (let i = 0; i < request.data.annotations.length; i++) {
+                    newAnnotationsList.push(self.annotations.reconstructAnnotation(request.data.annotations[i]));
+                }
+
+                $rootScope.$apply(function () {
+                    if (self.annotations.sharedList[request.userId] === undefined) {
+                        self.annotations.sharedList[request.userId] = {
+                            ownerUsername: request.data.ownerUsername,
+                            list: newAnnotationsList
+                        };
+                    }
+                    else {
+                        self.annotations.sharedList[request.userId].list = self.annotations.sharedList[request.userId].list.concat(newAnnotationsList);
+                    }
+                });
+            }
+            else if (request.type === "rm") {
+                $rootScope.$apply(function () {
+                    if (self.annotations.sharedList[request.userId] !== undefined) {
+                        if (request.index === undefined) {
+                            delete self.annotations.sharedList[request.userId];
+                        }
+                        else if (self.annotations.sharedList[request.userId].list.length > request.index) {
+                            if (self.annotations.sharedList[request.userId].list.length <= 1) {
+                                delete self.annotations.sharedList[request.userId];
+                            }
+                            else {
+                                self.annotations.sharedList[request.userId].list.splice(request.index, 1);
+                            }
+                        }
+                    }
+                });
+            }
+            else if (request.type === "clear") {
+                $rootScope.$apply(function () {
+                    self.annotations.sharedList = {};
+                    self.annotations.list = [];
+                });
+            }
+        }
+    });
+
+    // region ANNOTATION ON CHANGE CALLBACK FUNCTIONS
+    let _onAddAnnotation = function (annotation) {
+        if (self.sceneSubscriber !== null) {
+            self.socketManager.emit("sessionAnnotations", {
+                type: "add",
+                annotations: [annotation]
+            }, function () {
             });
         }
     };
+
+    let _onRmAnnotation = function (index) {
+        if (self.sceneSubscriber !== null) {
+            self.socketManager.emit("sessionAnnotations", {
+                type: "rm",
+                index: index
+            }, function () {
+            });
+        }
+    };
+
+    let _onClearAnnotations = function () {
+        if (self.sceneHost !== null) {
+            self.socketManager.emit("sessionAnnotations", {
+                type: "clear"
+            }, function () {});
+        }
+    };
+    // endregion
+
+    /**
+     * Uploads own annotation and then sets up the annotation listeners
+     * @private
+     */
+    this._setupHostAnnotationsSharing = function () {
+        if (this.state.listeningInProgress || this.state.hostingInProgress) {
+            // If no active annotations or annotation collaboration is disabled do not send init batch to the server
+            if (this.annotations.list.length > 0 && this.settings.shareAnnotations) {
+                let request = {
+                    type: "add",
+                    annotations: this.annotations.toJson()
+                };
+
+                // Push the annotations to the server
+                self.socketManager.emit("sessionAnnotations", request, function() {
+                    self.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
+                });
+            }
+            else {
+                this.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
+            }
+        }
+    };
+
+    /**
+     * Fetches annotations form the server and then sets up the annotation listeners
+     * @private
+     */
+    this._setupClientAnnotationSharing = function () {
+        // Check if the data subscriber is alive
+        if (this.state.listeningInProgress || this.state.hostingInProgress) {
+            // Form fetch request
+            let request = {type: "fetch"};
+
+            // Fetch annotations from the server
+            this.socketManager.emit("sessionAnnotations", request, function (response) {
+                if (response.status === 0) {
+                    // region PARSE ANNOTATIONS
+                    let sharedAnnotations = {};
+
+                    // Build annotations
+                    for (let userId in response.data) {
+                        let annotationList = [];
+                        for (let i = 0; i < response.data[userId].list.length; i++) {
+                            annotationList.push(self.annotations.reconstructAnnotation(response.data[userId].list[i]));
+                        }
+
+                        sharedAnnotations[userId] = {ownerUsername: response.data[userId].ownerUsername, list: annotationList};
+                    }
+
+                    // Set build annotations to shared list
+                    $rootScope.$apply(function() {
+                        self.annotations.sharedList = sharedAnnotations;
+                    });
+                    // endregion
+
+                    // Add listener for own annotations
+                    if (self.settings.shareAnnotations) {
+                        self.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation(), function () {});
+                    }
+                }
+            });
+        }
+    };
+    // endregion
+
+    // region CHAT
+    /**
+     * Removes all the messages from the chat
+     */
+    this.clearChat = function () {
+        $rootScope.$apply(function() {
+            self.messages.length = 0;
+        });
+    };
+
+    /**
+     * Sends a message to the recipient via server
+     * @param msg Text message
+     */
+    this.sendChatMessage = function(msg) {
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
+            self.socketManager.emit("chat", { sender: self.sceneHost.getUsername(), message: msg });
+        }
+    };
+
+    /**
+     * Add callback to socket subscriber that listens for the incoming messages.
+     */
+    this.socketSubscriber.addEventCallback("chat", function () {
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
+            $rootScope.$apply(function () {
+                self.messages.push(message);
+            });
+        }
+    });
+    // endregion CHAT
 
     // Call this from the main loop
     this.update = function () {
-        if (self.state.hostingInProgress && self.dataPublisher !== null) {
-            self.dataPublisher.update();
+        if (self.state.hostingInProgress && self.sceneHost !== null) {
+            self.sceneHost.update();
         }
-        else if (self.state.listeningInProgress && self.dataSubscriber !== null) {
-            self.dataSubscriber.update();
+        else if (self.state.listeningInProgress && self.sceneSubscriber !== null) {
+            self.sceneSubscriber.update();
         }
     };
-
 
 });

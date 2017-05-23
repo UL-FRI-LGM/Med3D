@@ -2,7 +2,7 @@
  * Created by Primoz on 20. 08. 2016.
  */
 
-var sharingController = function($scope, SharingService) {
+let sharingController = function($scope, SharingService) {
 
     $scope.sharingService = SharingService;
     $scope.sharingSettings = SharingService.settings;
@@ -40,7 +40,7 @@ var sharingController = function($scope, SharingService) {
             });
         }
 
-        callback({status: 1, msg: "Listening already in progress"})
+        callback(null, {status: 1, msg: "Listening already in progress"})
     };
 
 

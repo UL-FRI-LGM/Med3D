@@ -12,18 +12,23 @@ M3D.SceneSubscriberListener = class {
 M3D.SceneSubscriber = class {
 
     constructor(username, updateListener) {
-        this._socket = io({transports: ["websocket", "pooling"], perMessageDeflate: {threshold: 1024}});
+        let self = this;
+
+        // Subscriber meta data
         this._sessionID = null;
         this._username = username;
 
-        let self = this;
+        // Maps {uuid -> object reference}
         this._objects = {};
         this._geometries = {};
         this._materials = {};
 
+        // Root hierarchy objects
         this._rootObjects = [];
+        // Camera map {uuid -> camera}
         this._cameras = {};
 
+        // Store the given update listener
         this._updateListener = updateListener;
 
         // region CAMERAS
@@ -61,7 +66,25 @@ M3D.SceneSubscriber = class {
         // endregion
 
         //region SOCKET.IO
-        this._socket.on("connectResponse", function(response) {
+        this._socketManager = M3D.SocketManager.instance;
+
+        if (!this._socketManager.isConnectionOpen) {
+            this._socketManager.connectToServer();
+        }
+
+        // Create new socket subscriber and enroll it into the socket manager
+        this._socketSubscriber = new M3D.SocketSubscriber();
+        this._socketManager.addSocketSubscriber(this._socketSubscriber);
+
+        /**
+         * RESPONSE:
+         * {
+         *      status: 0 - success
+         *      initialData: Current session data
+         * }
+         */
+        this._socketSubscriber.addEventCallback("joinSessionResponse", function(response) {
+
             if (response && response.status === 0) {
                 let objectsJson = response.initialData.objects;
                 let geometriesJson = response.initialData.geometries;
@@ -70,8 +93,7 @@ M3D.SceneSubscriber = class {
                 // Import the received data, returns reference to all root objects (data may contain more hierarchies or parentless objects)
                 self._rootObjects = M3D.Object3D.importHierarchy(objectsJson, geometriesJson, materialsJson);
 
-
-                // Store reference to all updatable objects in hierarchy for fast access on update
+                // Map the scene hierarchy to more easily update the data
                 for (let i = 0; i < self._rootObjects.length; i++) {
                     self._rootObjects[i].traverse(function (object) {
                         self._objects[object._uuid] = object;
@@ -84,7 +106,8 @@ M3D.SceneSubscriber = class {
                     });
                 }
 
-                self._socket.emit("sessionCameras", {type: "fetch"}, function(response) {
+                // Fetch cameras
+                self._socketManager.emit("sessionCameras", {type: "fetch"}, function(response) {
 
                     // Check if the fetch was successful
                     if (response.status === 0) {
@@ -131,7 +154,14 @@ M3D.SceneSubscriber = class {
             }
         });
 
-        this._socket.on("sessionDataUpdate", function(request) {
+        /**
+         * REQUEST:
+         * {
+         *      newObjects: Object that were added to the session
+         *      updates: Updates for existing objects
+         * }
+         */
+        this._socketSubscriber.addEventCallback("sessionDataUpdate", function(request) {
             let object, geometry, material;
             let newObjects = request.newObjects;
             let updates = request.updates;
@@ -302,7 +332,14 @@ M3D.SceneSubscriber = class {
             }
         });
 
-        this._socket.on("sessionCameras", function (request) {
+        /**
+         * REQUEST:
+         * {
+         *      type: "add", "update", "rm"
+         *      ...
+         * }
+         */
+        this._socketSubscriber.addEventCallback("sessionCameras", function (request) {
             if (request.type === "add") {
 
                 let userCamerasList = request.data.list;
@@ -358,7 +395,10 @@ M3D.SceneSubscriber = class {
             }
         });
 
-        this._socket.on("sessionTerminated", function() {
+        /**
+         * Called when the session is terminated
+         */
+        this._socketSubscriber.addEventCallback("sessionTerminated", function() {
             self._updateListener.onTerminated();
         });
         //endregion
@@ -378,7 +418,7 @@ M3D.SceneSubscriber = class {
         let request = {type: "add", cameras: camerasJson};
 
         // When successfully uploaded add change listeners
-        this._socket.emit("sessionCameras", request, function () {
+        this._socketManager.emit("sessionCameras", request, function () {
             for (let i = 0; i < cameras.length; i++) {
                 cameras[i].addOnChangeListener(self._cameraChangeListener, false);
             }
@@ -394,7 +434,7 @@ M3D.SceneSubscriber = class {
             let request = {type: "update", updates: this._scheduledCameraUpdates};
 
             this._scheduledCameraUpdates = {};
-            this._socket.emit("sessionCameras", request, callback);
+            this._socketManager.emit("sessionCameras", request, callback);
         }
         else {
             callback();
@@ -406,40 +446,6 @@ M3D.SceneSubscriber = class {
     }
     // endregion
 
-    miscRequestEmit(namespace, request, callback) {
-        if (this._socket !== null) {
-            this._socket.emit(namespace, request, callback);
-        }
-        else {
-            callback({status: 1, msg: "Socket is closed."});
-        }
-    }
-
-    setMiscListener(namespace, callback) {
-        if (this._socket !== null) {
-            this._socket.on(namespace, callback);
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    rmMiscListener(namespace) {
-        if (this._socket !== null) {
-            this._socket.removeAllListeners(namespace);
-        }
-    }
-
-    getSocketID() {
-        if (this._socket !== null) {
-            return this._socket.id;
-        }
-        else {
-            return null;
-        }
-    }
-
     getSessionID() {
         return this._sessionID
     }
@@ -450,11 +456,12 @@ M3D.SceneSubscriber = class {
 
     subscribe(sessionID) {
         this._sessionID = sessionID;
-        this._socket.emit("session", {type: "join", sessionId: sessionID, username: this._username});
+        this._socketManager.emit("session", {type: "join", sessionId: sessionID, username: this._username});
     }
 
     unsubscribe() {
-        this._socket.disconnect();
+        // TODO
+        //this._socket.disconnect();
 
         this._objects = {};
         this._geometries = {};
