@@ -22,7 +22,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
     // This ID is used for stopping and starting animation loop
     this.animationRequestId = null;
 
-    // Public rendering data (used in scene sharing)
+    // Public rendering data (used in scene collaboration)
     PublicRenderData.contentRenderGroup = new M3D.Group();
 
     let offsetDir = new THREE.Vector3(0.577, 0.577, 0.577);
@@ -709,7 +709,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         // Render the scene
         self.renderQueue.render();
 
-        // Update scene sharing
+        // Update scene collaboration
         SharingService.update();
     };
     // endregion

@@ -176,7 +176,7 @@ app.directive('sharingClientModal', function() {
 
         },
         templateUrl: function(element, attributes) {
-            return 'app/components/sharing/clientModal.html';
+            return 'app/components/collaboration/clientModal.html';
         }
     };
 });

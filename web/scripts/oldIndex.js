@@ -113,30 +113,30 @@ function registerClickListeners() {
     });
     //endregion
 
-    //region Scene sharing
+    //region Scene collaboration
     var dropdownStartSharingSceneItem = $("#dropdownStartSharingSceneItem");
     var dropdownStopSharingSceneItem = $("#dropdownStopSharingSceneItem");
     var dropdownCloseSessionItem = $("#dropdownCloseSessionItem");
 
-    // Stop sharing scene event
+    // Stop collaboration scene event
     dropdownStopSharingSceneItem.bind("click", function() {
         stopSharingScene();
 
         sessionState = SESSION_STATE.NOT_SHARED;
 
-        // Toggle start sharing button
+        // Toggle start collaboration button
         dropdownStopSharingSceneItem.addClass("collapse");
         dropdownStartSharingSceneItem.removeClass("collapse");
 
         // Toggle URL
         $("#dropdownSessionUrlItem").addClass("collapse");
 
-        $("#applicationStatus").text("Stopped scene sharing.");
+        $("#applicationStatus").text("Stopped scene collaboration.");
     });
 
-    // Start sharing scene event
+    // Start collaboration scene event
     dropdownStartSharingSceneItem.bind("click", function() {
-        // Disable scene sharing button
+        // Disable scene collaboration button
         dropdownStartSharingSceneItem.addClass('disabled');
         $("#applicationStatus").text("Uploading the scene to the server.");
 
@@ -145,7 +145,7 @@ function registerClickListeners() {
             if (result.status === 0) {
                 sessionState = SESSION_STATE.HOSTING;
 
-                // Toggle stop sharing button
+                // Toggle stop collaboration button
                 dropdownStartSharingSceneItem.removeClass('disabled');
                 dropdownStartSharingSceneItem.addClass("collapse");
                 dropdownStopSharingSceneItem.removeClass("collapse");

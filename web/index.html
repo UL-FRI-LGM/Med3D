@@ -47,7 +47,7 @@
     <script src="app/components/settings/settingsService.js"></script>
     <script src="app/components/input/inputService.js"></script>
     <script src="app/components/task_manager/taskManagerService.js"></script>
-    <script src="app/components/sharing/sharingService.js"></script>
+    <script src="app/components/collaboration/sharingService.js"></script>
 
     <!-- Factory -->
     <script src="app/components/rendering/globalRenderData.js"></script>
@@ -67,7 +67,7 @@
     <script src="app/components/task_manager/taskManagerController.js"></script>
     <script src="app/components/annotations/annotationsSidebarController.js"></script>
     <script src="app/components/annotations/annotationsWidgetController.js"></script>
-    <script src="app/components/sharing/sharingController.js"></script>
+    <script src="app/components/collaboration/sharingController.js"></script>
     <script src="app/components/navbar/navbarController.js"></script>
     <script src="app/components/chat/chatController.js"></script>
     <script src="app/components/cameras/camerasSidebarController.js"></script>
@@ -85,8 +85,8 @@
     <script src="app/components/annotations/drawnAnnotationsSidebarDirective.js"></script>
     <script src="app/components/annotations/annotationWidgetDirective.js"></script>
     <script src="app/components/annotations/newAnnotationWidgetDirective.js"></script>
-    <script src="app/components/sharing/sharingHostModalDirective.js"></script>
-    <script src="app/components/sharing/sharingClientModalDirective.js"></script>
+    <script src="app/components/collaboration/sharingHostModalDirective.js"></script>
+    <script src="app/components/collaboration/sharingClientModalDirective.js"></script>
     <script src="app/components/navbar/navbarDirective.js"></script>
     <script src="app/components/chat/chatDirective.js"></script>
     <script src="app/components/cameras/camerasSidebarDirective.js"></script>
@@ -167,7 +167,10 @@
     <script src="../src/renderers/RenderPass.js"></script>
     <script src="../src/renderers/RenderQueue.js"></script>
 
-    <script src="../libraries/socket.io-1.4.5.js"></script>
+    <!-- SOCKET -->
+    <script src="/socket.io/socket.io.js"></script>
+
+
     <script src="../src/controls/KeyboardInput.js"></script>
     <script src="../src/controls/GamepadInput.js"></script>
     <script src="../src/controls/MouseInput.js"></script>

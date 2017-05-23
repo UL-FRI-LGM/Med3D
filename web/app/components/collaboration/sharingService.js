@@ -18,7 +18,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         shareAnnotations: true
     };
 
-    // State of the sharing service
+    // State of the collaboration service
     this.state = {
         hostingInProgress: false,
         listeningInProgress: false
@@ -104,9 +104,9 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     // region HOST FUNCTIONS
     this._setupHostAnnotationsSharing = function () {
 
-        var setOnAnnotationChange = function() {
+        let setOnAnnotationChange = function() {
             // Setup change listener
-            var onAdd = function (annotation) {
+            let onAdd = function (annotation) {
                 if (self.dataPublisher !== null && self.settings.shareAnnotations) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
                         type: "add",
@@ -116,7 +116,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 }
             };
 
-            var onRm = function (index) {
+            let onRm = function (index) {
                 if (self.dataPublisher !== null && self.settings.shareAnnotations) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
                         type: "rm",
@@ -126,7 +126,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 }
             };
 
-            var onClear = function () {
+            let onClear = function () {
                 if (self.dataPublisher !== null) {
                     self.dataPublisher.miscRequestEmit("sessionAnnotations", {
                         type: "clear"
@@ -142,7 +142,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
         return function () {
             if (self.dataPublisher !== null) {
-                // If no active annotations or annotation sharing is disabled do not send init batch to the server
+                // If no active annotations or annotation collaboration is disabled do not send init batch to the server
                 if (self.annotations.list.length > 0 && self.settings.shareAnnotations) {
                     let request = {
                         type: "add",
@@ -209,10 +209,10 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         self.dataPublisher = new M3D.ScenePublisher(username, sharedRootObjects, function (event) {
             // If connected successfully
             if (event.status === 0) {
-                // Setup camera sharing
+                // Setup camera collaboration
                 self._setupHostCameraSharing();
 
-                // Check if annotation sharing is active
+                // Check if annotation collaboration is active
                 self._setupHostAnnotationsSharing();
                 self._setupHostChatSharing();
 
@@ -265,12 +265,12 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 if (response.status === 0) {
 
                     // region PARSE ANNOTATIONS
-                    var sharedAnnotations = {};
+                    let sharedAnnotations = {};
 
                     // Build annotations
-                    for (var userId in response.data) {
-                        var annotationList = [];
-                        for (var i = 0; i < response.data[userId].list.length; i++) {
+                    for (let userId in response.data) {
+                        let annotationList = [];
+                        for (let i = 0; i < response.data[userId].list.length; i++) {
                             annotationList.push(self._buildAnnotation(response.data[userId].list[i]));
                         }
 
@@ -284,7 +284,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                     // endregion PARSE ANNOTATIONS
 
                     // region SETUP LOCAL ANNOTATIONS ON CHANGE LISTENER
-                    // Check if annotation sharing is enabled
+                    // Check if annotation collaboration is enabled
                     if (self.settings.shareAnnotations) {
                         let onAdd = function (annotation) {
                             if (self.dataSubscriber !== null) {
