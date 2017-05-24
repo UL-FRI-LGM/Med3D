@@ -15,11 +15,6 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.socketSubscriber = new M3D.SocketSubscriber();
     this.socketManager.addSocketSubscriber(this.socketSubscriber);
 
-    // Reference to render data and annotations
-    this.renderData = PublicRenderData;
-    this.annotations = Annotations;
-    this.messages = Messages;
-
     // Sharing settings
     this.settings = {
         shareCamera: true,
@@ -40,47 +35,62 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.startHostingSession = function (username, callback) {
 
         // Check if the render data is initialized
-        if (self.renderData.contentRenderGroup === null) {
+        if (PublicRenderData.contentRenderGroup === null) {
             callback({status: 1, msg: "Error: render data is not initialized!"});
             return
         }
 
-        let sharedRootObjects = [self.renderData.contentRenderGroup];
+        self.clearChat();
+
+        // Fetch scene root objects
+        let sharedRootObjects = [PublicRenderData.contentRenderGroup];
 
         // Create new data publisher
         self.sceneHost = new M3D.ScenePublisher(username, sharedRootObjects);
 
-        // If connected successfully
-        // Setup camera collaboration
-        self._setupCameraSharing(true);
-        self.clearChat();
-
-        // Check if annotation collaboration is active
-        self._setupHostAnnotationsSharing();
-
         // Initiate publishing
         self.sceneHost.startPublishing(null, function () {
+            // Set hosting in progress flag
+            $rootScope.$apply(function() {
+                self.state.hostingInProgress = true;
+            });
+
+            // Setup camera collaboration
+            self._setupCameraSharing(true);
+
+            // Check if annotation collaboration is active
+            self._setupHostAnnotationsSharing();
+
+
             callback({status: 0, msg: "Successfully started hosting session."});
         });
     };
 
     this.stopHostingSession = function (callback) {
-        if (self.state.hostingInProgress && self.sceneHost !== null) {
+        if (self.state.hostingInProgress) {
             // Clear annotations when session hosting stops
             self.socketManager.emit("sessionAnnotations", {
                 type: "clear"
             }, function () {});
 
             $rootScope.$apply(function() {
-                self.renderData.cameraManager.clearSharedCameras();
+                PublicRenderData.cameraManager.clearSharedCameras();
             });
 
-            self.annotations.rmListener("SharingService");
+            Annotations.rmListener("SharingService");
             self.sceneHost.stopPublishing();
-            callback({"status": 0, msg: "Successfully stopped session hosting."});
+
+            self.socketManager.emit("terminate", "Client termination.");
+
+            // Unset the hosting in progress flag
+            $rootScope.$apply(function() {
+                self.state.hostingInProgress = false;
+            });
+
+            self.sceneHost = null;
         }
 
-        self.sceneHost = null;
+        callback({"status": 0, msg: "Successfully stopped session hosting."});
     };
     // endregion
 
@@ -90,15 +100,19 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
         let onConnected = function (status, rootObjects, cameras) {
             if (status === 0) {
-                self.renderData.replaceRenderContent.apply(this, rootObjects);
+                PublicRenderData.replaceRenderContent.apply(this, rootObjects);
 
                 $rootScope.$apply(function() {
-                    self.renderData.cameraManager.setSharedCameras(cameras);
+                    PublicRenderData.cameraManager.setSharedCameras(cameras);
+                });
+
+                // Set the listening in progress flag
+                $rootScope.$apply(function() {
+                    self.state.listeningInProgress = true;
                 });
 
                 self._setupCameraSharing(false);
                 self._setupClientAnnotationSharing();
-                self.clearChat();
             }
 
             callbackRef({status: status});
@@ -107,16 +121,27 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
         let onTerminated = function () {
             self.leaveSession(function () {});
             $rootScope.$apply(function() {
-                self.state.listeningInProgress = false;
+                self.leaveSession(null);
             });
         };
 
+        let offsetDir = new THREE.Vector3(0.577, 0.577, 0.577);
+        let onNewObject = function () {
+            // Calculate content bounding sphere
+            let contentSphere = PublicRenderData.contentRenderGroup.computeBoundingSphere();
+
+            // Focus all of the cameras on the newly added object
+            PublicRenderData.cameraManager.focusCamerasOn(contentSphere, offsetDir);
+        };
 
         // Setup connection listener
-        let listener = new M3D.SceneSubscriberListener(onConnected, onTerminated);
+        let listener = new M3D.SceneSubscriberListener(onConnected, onTerminated, onNewObject);
 
         return function (username, uuid, callback) {
             callbackRef = callback;
+
+            // Clear the chat
+            self.clearChat();
 
             // Subscribe to the given session
             self.sceneSubscriber = new M3D.SceneSubscriber(username, listener);
@@ -126,38 +151,46 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
     this.leaveSession = function (callback) {
         self.sceneSubscriber.unsubscribe();
-        self.annotations.rmListener("SharingService");
+        Annotations.rmListener("SharingService");
+
+        self.socketManager.emit("terminate", "Client termination.");
 
         // Delete shared annotations
         $rootScope.$apply(function() {
-            self.annotations.sharedList = {};
+            Annotations.sharedList = {};
         });
 
         // Delete shared cameras
         $rootScope.$apply(function() {
-            self.renderData.cameraManager.clearSharedCameras();
+            PublicRenderData.cameraManager.clearSharedCameras();
         });
 
         self.sceneSubscriber = null;
 
-        callback({status: 0});
+        $rootScope.$apply(function() {
+            self.state.listeningInProgress = false;
+        });
+
+        if (callback != null) {
+            callback({status: 0});
+        }
     };
     // endregion
 
     // region CAMERA SHARING
     this._setupCameraSharing = function (isHost) {
-        let sceneManager = (isHost) ? self.sceneHost : self.sceneSubscriber;
+        let sharingManager = (isHost) ? self.sceneHost : self.sceneSubscriber;
 
         if (self.settings.shareCamera) {
-            sceneManager.addCameras(self.renderData.cameraManager.ownCameras);
+            sharingManager.addCameras(PublicRenderData.cameraManager.ownCameras);
         }
 
         // On cameras change notify angular
-        sceneManager.setOnCamerasChange(function (cameras) {
+        sharingManager.setOnCamerasChange(function (cameras) {
             $rootScope.$apply(function() {
-                self.renderData.cameraManager.setSharedCameras(cameras);
+                PublicRenderData.cameraManager.setSharedCameras(cameras);
 
-                let cameraManager = self.renderData.cameraManager;
+                let cameraManager = PublicRenderData.cameraManager;
 
                 // Check if active camera was deleted
                 if (!cameraManager.isOwnCamera(cameraManager.activeCamera) && cameraManager.isSharedCamera(cameraManager.activeCamera) == null) {
@@ -176,33 +209,33 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
                 let newAnnotationsList = [];
 
                 for (let i = 0; i < request.data.annotations.length; i++) {
-                    newAnnotationsList.push(self.annotations.reconstructAnnotation(request.data.annotations[i]));
+                    newAnnotationsList.push(Annotations.reconstructAnnotation(request.data.annotations[i]));
                 }
 
                 $rootScope.$apply(function () {
-                    if (self.annotations.sharedList[request.userId] === undefined) {
-                        self.annotations.sharedList[request.userId] = {
+                    if (Annotations.sharedList[request.userId] === undefined) {
+                        Annotations.sharedList[request.userId] = {
                             ownerUsername: request.data.ownerUsername,
                             list: newAnnotationsList
                         };
                     }
                     else {
-                        self.annotations.sharedList[request.userId].list = self.annotations.sharedList[request.userId].list.concat(newAnnotationsList);
+                        Annotations.sharedList[request.userId].list = Annotations.sharedList[request.userId].list.concat(newAnnotationsList);
                     }
                 });
             }
             else if (request.type === "rm") {
                 $rootScope.$apply(function () {
-                    if (self.annotations.sharedList[request.userId] !== undefined) {
+                    if (Annotations.sharedList[request.userId] !== undefined) {
                         if (request.index === undefined) {
-                            delete self.annotations.sharedList[request.userId];
+                            delete Annotations.sharedList[request.userId];
                         }
-                        else if (self.annotations.sharedList[request.userId].list.length > request.index) {
-                            if (self.annotations.sharedList[request.userId].list.length <= 1) {
-                                delete self.annotations.sharedList[request.userId];
+                        else if (Annotations.sharedList[request.userId].list.length > request.index) {
+                            if (Annotations.sharedList[request.userId].list.length <= 1) {
+                                delete Annotations.sharedList[request.userId];
                             }
                             else {
-                                self.annotations.sharedList[request.userId].list.splice(request.index, 1);
+                                Annotations.sharedList[request.userId].list.splice(request.index, 1);
                             }
                         }
                     }
@@ -210,8 +243,8 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             }
             else if (request.type === "clear") {
                 $rootScope.$apply(function () {
-                    self.annotations.sharedList = {};
-                    self.annotations.list = [];
+                    Annotations.sharedList = {};
+                    Annotations.list = [];
                 });
             }
         }
@@ -219,7 +252,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
     // region ANNOTATION ON CHANGE CALLBACK FUNCTIONS
     let _onAddAnnotation = function (annotation) {
-        if (self.sceneSubscriber !== null) {
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
             self.socketManager.emit("sessionAnnotations", {
                 type: "add",
                 annotations: [annotation]
@@ -229,7 +262,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     };
 
     let _onRmAnnotation = function (index) {
-        if (self.sceneSubscriber !== null) {
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
             self.socketManager.emit("sessionAnnotations", {
                 type: "rm",
                 index: index
@@ -239,7 +272,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     };
 
     let _onClearAnnotations = function () {
-        if (self.sceneHost !== null) {
+        if (self.state.hostingInProgress || self.state.listeningInProgress) {
             self.socketManager.emit("sessionAnnotations", {
                 type: "clear"
             }, function () {});
@@ -252,22 +285,20 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
      * @private
      */
     this._setupHostAnnotationsSharing = function () {
-        if (this.state.listeningInProgress || this.state.hostingInProgress) {
-            // If no active annotations or annotation collaboration is disabled do not send init batch to the server
-            if (this.annotations.list.length > 0 && this.settings.shareAnnotations) {
-                let request = {
-                    type: "add",
-                    annotations: this.annotations.toJson()
-                };
+        // If no active annotations or annotation collaboration is disabled do not send init batch to the server
+        if (Annotations.list.length > 0 && this.settings.shareAnnotations) {
+            let request = {
+                type: "add",
+                annotations: Annotations.toJson()
+            };
 
-                // Push the annotations to the server
-                self.socketManager.emit("sessionAnnotations", request, function() {
-                    self.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
-                });
-            }
-            else {
-                this.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
-            }
+            // Push the annotations to the server
+            self.socketManager.emit("sessionAnnotations", request, function() {
+                Annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
+            });
+        }
+        else {
+            Annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation, _onClearAnnotations);
         }
     };
 
@@ -276,40 +307,37 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
      * @private
      */
     this._setupClientAnnotationSharing = function () {
-        // Check if the data subscriber is alive
-        if (this.state.listeningInProgress || this.state.hostingInProgress) {
-            // Form fetch request
-            let request = {type: "fetch"};
+        // Form fetch request
+        let request = {type: "fetch"};
 
-            // Fetch annotations from the server
-            this.socketManager.emit("sessionAnnotations", request, function (response) {
-                if (response.status === 0) {
-                    // region PARSE ANNOTATIONS
-                    let sharedAnnotations = {};
+        // Fetch annotations from the server
+        this.socketManager.emit("sessionAnnotations", request, function (response) {
+            if (response.status === 0) {
+                // region PARSE ANNOTATIONS
+                let sharedAnnotations = {};
 
-                    // Build annotations
-                    for (let userId in response.data) {
-                        let annotationList = [];
-                        for (let i = 0; i < response.data[userId].list.length; i++) {
-                            annotationList.push(self.annotations.reconstructAnnotation(response.data[userId].list[i]));
-                        }
-
-                        sharedAnnotations[userId] = {ownerUsername: response.data[userId].ownerUsername, list: annotationList};
+                // Build annotations
+                for (let userId in response.data) {
+                    let annotationList = [];
+                    for (let i = 0; i < response.data[userId].list.length; i++) {
+                        annotationList.push(Annotations.reconstructAnnotation(response.data[userId].list[i]));
                     }
 
-                    // Set build annotations to shared list
-                    $rootScope.$apply(function() {
-                        self.annotations.sharedList = sharedAnnotations;
-                    });
-                    // endregion
-
-                    // Add listener for own annotations
-                    if (self.settings.shareAnnotations) {
-                        self.annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation(), function () {});
-                    }
+                    sharedAnnotations[userId] = {ownerUsername: response.data[userId].ownerUsername, list: annotationList};
                 }
-            });
-        }
+
+                // Set build annotations to shared list
+                $rootScope.$apply(function() {
+                    Annotations.sharedList = sharedAnnotations;
+                });
+                // endregion
+
+                // Add listener for own annotations
+                if (self.settings.shareAnnotations) {
+                    Annotations.addListener("SharingService", _onAddAnnotation, _onRmAnnotation(), function () {});
+                }
+            }
+        });
     };
     // endregion
 
@@ -319,7 +347,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
      */
     this.clearChat = function () {
         $rootScope.$apply(function() {
-            self.messages.length = 0;
+            Messages.length = 0;
         });
     };
 
@@ -328,18 +356,21 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
      * @param msg Text message
      */
     this.sendChatMessage = function(msg) {
-        if (self.state.hostingInProgress || self.state.listeningInProgress) {
+        if (self.state.hostingInProgress) {
             self.socketManager.emit("chat", { sender: self.sceneHost.getUsername(), message: msg });
+        }
+        else if (self.state.listeningInProgress) {
+            self.socketManager.emit("chat", { sender: self.sceneSubscriber.getUsername(), message: msg });
         }
     };
 
     /**
      * Add callback to socket subscriber that listens for the incoming messages.
      */
-    this.socketSubscriber.addEventCallback("chat", function () {
+    this.socketSubscriber.addEventCallback("chat", function (message) {
         if (self.state.hostingInProgress || self.state.listeningInProgress) {
             $rootScope.$apply(function () {
-                self.messages.push(message);
+                Messages.push(message);
             });
         }
     });

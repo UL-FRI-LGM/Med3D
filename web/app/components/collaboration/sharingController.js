@@ -11,12 +11,6 @@ let sharingController = function($scope, SharingService) {
     $scope.startDataSharing = function (username, callback) {
         if (!$scope.sharingState.hostingInProgress) {
             $scope.sharingService.startHostingSession(username, function (event) {
-                if (event.status === 0) {
-                    $scope.$apply(function () {
-                        $scope.sharingState.hostingInProgress = true;
-                    });
-                }
-
                 // Forward the event to the directive
                 callback(event);
             });
@@ -29,12 +23,6 @@ let sharingController = function($scope, SharingService) {
     $scope.joinSession = function (username, uuid, callback) {
         if (!$scope.sharingState.listeningInProgress) {
             $scope.sharingService.joinSession(username, uuid, function (event) {
-                if (event.status === 0) {
-                    $scope.$apply(function () {
-                        $scope.sharingState.listeningInProgress = true;
-                    });
-                }
-
                 // Forward the event to the directive
                 callback(event);
             });

@@ -90,9 +90,9 @@ app.factory('Annotations', function(){
             }
 
             // Notify subscribers
-            for (let listener in this._onChangeListeners) {
-                if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    this._onChangeListeners[listener].add(jsonCompatibleAnnotation);
+            for (let listener in self._onChangeListeners) {
+                if (self._onChangeListeners.hasOwnProperty(listener)) {
+                    self._onChangeListeners[listener].add(jsonCompatibleAnnotation);
                 }
             }
         };
@@ -105,9 +105,9 @@ app.factory('Annotations', function(){
             this.list.splice(index, 1);
 
             // Notify subscribers
-            for (let listener in this._onChangeListeners) {
-                if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    this._onChangeListeners[listener].rm(index)
+            for (let listener in self._onChangeListeners) {
+                if (self._onChangeListeners.hasOwnProperty(listener)) {
+                    self._onChangeListeners[listener].rm(index)
                 }
             }
         };
@@ -117,11 +117,12 @@ app.factory('Annotations', function(){
          */
         this.clear = function () {
             self.list = [];
+            self.sharedList = {};
 
             // Notify subscribers
-            for (let listener in this._onChangeListeners) {
-                if (this._onChangeListeners.hasOwnProperty(listener)) {
-                    this._onChangeListeners[listener].clear();
+            for (let listener in self._onChangeListeners) {
+                if (self._onChangeListeners.hasOwnProperty(listener)) {
+                    self._onChangeListeners[listener].clear();
                 }
             }
         };

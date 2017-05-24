@@ -3,9 +3,10 @@
  */
 
 M3D.SceneSubscriberListener = class {
-    constructor(onConnected, onTerminated) {
+    constructor(onConnected, onTerminated, onNewObject) {
         this.onConnected = (onConnected) ? onConnected : function() {};
         this.onTerminated = (onTerminated) ? onTerminated : function() {};
+        this.onNewObject = (onNewObject) ? onNewObject : function () {};
     }
 };
 
@@ -237,6 +238,8 @@ M3D.SceneSubscriber = class {
                             self._rootObjects.push(rebuiltObject);
                         }
                     }
+
+                    self._updateListener.onNewObject();
                 }
             }
 

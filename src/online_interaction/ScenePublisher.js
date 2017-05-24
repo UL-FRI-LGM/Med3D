@@ -35,7 +35,7 @@ M3D.ScenePublisher = class {
             let entry = self._scheduledCameraUpdates[update.uuid];
 
             if (entry !== undefined) {
-                for (var prop in changes) {
+                for (let prop in changes) {
                     entry[prop] = changes[prop];
                 }
             }

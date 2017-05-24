@@ -270,7 +270,7 @@ SocketManager = class {
                  */
                 else if (request.type === "clear") {
                     // The clear request should only come from the session owner
-                    if (socket.id.substring(2) != sessionId) {
+                    if (socket.id.substring(2) !== sessionId) {
                         console.warn("User " + username + " who is not owner of this session tried to clear annotations!")
                         return;
                     }
@@ -287,35 +287,51 @@ SocketManager = class {
                 }
             });
 
-            /**
-             * This is called when the client disconnects from the socket
-             */
-            socket.on('disconnect', function() {
-                console.log(logDelimiter + "\nUser " + username + " disconnected.");
+            let stopSharing = function () {
+                // If there is no session related data bound to this user stop here
+                if (sessionId == null) {
+                    return;
+                }
 
                 let clientId = socket.id.substring(2);
 
+                // Leave the session room
+                socket.leave(sessionId);
+
                 // On disconnect clear all annotation data
-                if (sessionId !== undefined) {
-                    console.log("Removing " + username + " annotations.");
-                    // Remove own annotations
-                    self.SessionManager.rmSessionAnnotation(sessionId, socket.id.substring(2));
-                    socket.broadcast.to(sessionId).emit('sessionAnnotations', {type: "rm", userId: socket.id.substring(2)});
+                console.log("Removing " + username + " annotations.");
+                // Remove own annotations
+                self.SessionManager.rmSessionAnnotation(sessionId, socket.id.substring(2));
+                socket.broadcast.to(sessionId).emit('sessionAnnotations', {type: "rm", userId: socket.id.substring(2)});
 
-                    // Remove own cameras
-                    self.SessionManager.rmCameraFromSession(sessionId, socket.id.substring(2));
-                    socket.broadcast.to(sessionId).emit('sessionCameras', {type: "rm", userId: socket.id.substring(2)});
-                }
+                // Remove own cameras
+                self.SessionManager.rmCameraFromSession(sessionId, socket.id.substring(2));
+                socket.broadcast.to(sessionId).emit('sessionCameras', {type: "rm", userId: socket.id.substring(2)});
 
+                // If session owner terminate the session
                 if (self.SessionManager.fetchSession(clientId)) {
                     console.log("Closing the session owned by " + username + ".");
                     // Clear all annotations
-                    socket.broadcast.to(clientId).emit('sessionAnnotations', {type: "clear"});
+                    //socket.broadcast.to(clientId).emit('sessionAnnotations', {type: "clear"});
                     // Notify session terminated
                     socket.broadcast.to(clientId).emit('sessionTerminated');
                     // Delete session
                     self.SessionManager.deleteSession(clientId);
                 }
+            };
+
+            socket.on('terminate', function () {
+                console.log(logDelimiter + "\nUser " + username + " called terminate.");
+                stopSharing();
+            });
+
+            /**
+             * This is called when the client disconnects from the socket
+             */
+            socket.on('disconnect', function() {
+                console.log(logDelimiter + "\nUser " + username + " disconnected.");
+                stopSharing();
+
             });
         });
     }
