@@ -145,6 +145,51 @@ SessionManager = class {
         }
     }
 
+    // DRAWN ANNOTATIONS
+    addDrawnAnnotationsToSession(sessionID, userID, username, annotations) {
+        let session = this._sessions[sessionID];
+
+        if (session) {
+            session.addDrawnAnnotations(userID, username, annotations)
+        }
+    }
+
+    // If index not specified.. Remove all
+    rmSessionDrawnAnnotation(sessionID, userID, uuid) {
+        let session = this._sessions[sessionID];
+
+        if (session) {
+            session.rmDrawnAnnotation(userID, uuid)
+        }
+    }
+
+    fetchSessionDrawnAnnotations(sessionID, userID) {
+        let session = this._sessions[sessionID];
+
+        if (session) {
+            return session.fetchDrawnAnnotations(userID)
+        }
+
+        return null;
+    }
+
+    clearSessionDrawnAnnotations(sessionID) {
+        let session = this._sessions[sessionID];
+
+        if (session) {
+            session.clearDrawnAnnotations();
+        }
+    }
+
+    updateSessionDrawnAnnotation(sessionID, userID, updates) {
+        let session = this._sessions[sessionID];
+
+        if (session) {
+            session.updateDrawnAnnotations(userID, updates);
+        }
+    }
+
+
     deleteSession(host) {
         delete this._sessions[host];
     }

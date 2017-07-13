@@ -652,6 +652,25 @@ body {
     background-color: #3b9191;
 }
 
+.med3d-annotation-list-other-user {
+    height: 100%;
+    width: 40px;
+    float: right;
+    background-color: #49b2b2;
+    border-radius: 0 5px 5px 0;
+    text-align: center;
+}
+
+.med3d-annotation-list-other-user img {
+    height: 20px;
+    width: auto;
+    margin-top: 10px;
+}
+
+.med3d-annotation-list-other-user:hover {
+    background-color: #3b9191;
+}
+
 .med3d-layer-list-item .tooltip {
     max-width: 150px !important;
 }

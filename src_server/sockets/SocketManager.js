@@ -1,7 +1,7 @@
 /**
  * Created by Primoz Lavric on 20-May-17.
  */
-
+const util = require('util')
 let logDelimiter = "//////////////////////////////////////////////////////";
 
 SocketManager = class {
@@ -286,6 +286,98 @@ SocketManager = class {
                     callback();
                 }
             });
+
+
+            /**
+             * Session drawn annotations handler. This can be called by any user participating in some session to manage the
+             * owned drawn annotations.
+             */
+            socket.on('sessionDrawnAnnotations', function (request, callback) {
+                /**
+                 * ADD REQUEST:
+                 * {
+                 *      type: "add",
+                 *      annotations: {uuid -> annotation}
+                 * }
+                 */
+                if (request.type === "add") {
+                    console.log(logDelimiter + "\nUser " + username + " added new drawn annotations.");
+
+                    // Add the new annotations
+                    self.SessionManager.addDrawnAnnotationsToSession(sessionId, socket.id.substring(2), username, request.annotations);
+
+                    // Forward the new annotations request to other session members
+                    let data = {};
+                    data[socket.id.substring(2)] = {ownerUsername: username, annotations: request.annotations};
+                    let forward = {type: request.type, data: data};
+                    socket.broadcast.to(sessionId).emit('sessionDrawnAnnotations', forward);
+                }
+
+                /**
+                 * REMOVE REQUEST:
+                 * {
+                 *      type: "rm",
+                 *      index: int // If no index is given all the annotations belonging to this user will be removed
+                 * }
+                 */
+                else if (request.type === "rm") {
+                    console.log(logDelimiter + "\nUser " + username + " removed drawn annotation/s.");
+                    self.SessionManager.rmSessionDrawnAnnotation(sessionId, socket.id.substring(2), request.uuid);
+
+                    // Forward the remove request to other session members
+                    let forward = {type: request.type, userId: socket.id.substring(2), uuid: request.uuid};
+                    socket.broadcast.to(sessionId).emit('sessionDrawnAnnotations', forward);
+                }
+
+                /**
+                 * FETCH REQUEST:
+                 * {
+                 *      type: "fetch",
+                 * }
+                 */
+                else if (request.type === "fetch") {
+                    console.log(logDelimiter + "\nUser " + username + " fetched annotations.");
+
+                    // Fetch the annotations of this session and return them via callback
+                    let annotations = self.SessionManager.fetchSessionDrawnAnnotations(sessionId, socket.id.substring(2));
+                    callback((annotations === null) ? {} : annotations);
+                }
+
+
+                /**
+                 * CLEAR REQUEST:
+                 * {
+                 *      type: "clear",
+                 * }
+                 */
+                else if (request.type === "clear") {
+                    // The clear request should only come from the session owner
+                    if (socket.id.substring(2) !== sessionId) {
+                        console.warn("User " + username + " who is not owner of this session tried to clear drawn annotations!")
+                        return;
+                    }
+
+                    console.log(logDelimiter + "\nUser " + username + " cleared the drawn annotations.");
+
+                    // Clear the session annotations
+                    self.SessionManager.clearSessionDrawnAnnotations(sessionId);
+
+                    // Forward the clear request to other session members
+                    let forward = {type: request.type};
+                    socket.broadcast.to(sessionId).emit('sessionDrawnAnnotations', forward);
+                }
+
+                /**
+                 * UPDATE REQUEST
+                 */
+                else if (request.type === "update") {
+                    self.SessionManager.updateSessionDrawnAnnotation(sessionId, socket.id.substring(2), request.updates);
+
+                    let forward = {type: request.type, userId: socket.id.substring(2), username: username, updates: request.updates};
+                    socket.broadcast.to(sessionId).emit('sessionDrawnAnnotations', forward);
+                }
+            });
+
 
             let stopSharing = function () {
                 // If there is no session related data bound to this user stop here

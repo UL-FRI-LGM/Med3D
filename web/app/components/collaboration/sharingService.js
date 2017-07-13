@@ -31,6 +31,8 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.sceneHost = null;
     this.sceneSubscriber = null;
 
+    this.drawnAnnotationSharing = new DrawnAnnotationSharing(Annotations);
+
     // region HOST FUNCTIONS
     this.startHostingSession = function (username, callback) {
 
@@ -61,6 +63,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             // Check if annotation collaboration is active
             self._setupHostAnnotationsSharing();
 
+            self.drawnAnnotationSharing.startSharing(true);
 
             callback({status: 0, msg: "Successfully started hosting session."});
         });
@@ -78,6 +81,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
             });
 
             Annotations.rmListener("SharingService");
+            this.drawnAnnotationSharing.stopSharing();
             self.sceneHost.stopPublishing();
 
             self.socketManager.emit("terminate", "Client termination.");
@@ -113,6 +117,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
 
                 self._setupCameraSharing(false);
                 self._setupClientAnnotationSharing();
+                self.drawnAnnotationSharing.startSharing(false);
             }
 
             callbackRef({status: status});
@@ -152,6 +157,7 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.leaveSession = function (callback) {
         self.sceneSubscriber.unsubscribe();
         Annotations.rmListener("SharingService");
+        this.drawnAnnotationSharing.stopSharing();
 
         self.socketManager.emit("terminate", "Client termination.");
 
@@ -380,9 +386,11 @@ app.service("SharingService", function ($rootScope, PublicRenderData, Annotation
     this.update = function () {
         if (self.state.hostingInProgress && self.sceneHost !== null) {
             self.sceneHost.update();
+            self.drawnAnnotationSharing.update();
         }
         else if (self.state.listeningInProgress && self.sceneSubscriber !== null) {
             self.sceneSubscriber.update();
+            self.drawnAnnotationSharing.update();
         }
     };
 

@@ -86,27 +86,18 @@ app.directive("drawnAnnotationsSidebar", function () {
             scope.addAnnotation = function () {
                 let activeCamera = scope.publicRenderData.cameraManager.activeCamera;
                 let newAnnotation = new DrawnAnnotation("Untitled annotation", activeCamera.position.clone(), activeCamera.rotation.toVector3().clone());
+                newAnnotation.addLayer();
 
                 newAnnotation.__editingTitle = true;
-                scope.annotations.drawnAnnotationsList.push(newAnnotation);
-                scope.annotations.selectedDrawnAnnotation = newAnnotation;
+                scope.annotations.addDrawnAnnotation(newAnnotation);
             };
 
             scope.rmAnnotation = function (index) {
-                if (scope.annotations.drawnAnnotationsList[index] === scope.annotations.selectedDrawnAnnotation) {
-                    scope.annotations.selectedDrawnAnnotation = undefined;
-                }
-
-                scope.annotations.drawnAnnotationsList.splice(index, 1);
+                scope.annotations.rmDrawnAnnotation(index);
             };
 
-            scope.toggleAnnotationActive = function (index) {
-                if (scope.annotations.selectedDrawnAnnotation === scope.annotations.drawnAnnotationsList[index]) {
-                    scope.annotations.selectedDrawnAnnotation = undefined;
-                }
-                else {
-                    scope.annotations.selectedDrawnAnnotation = scope.annotations.drawnAnnotationsList[index];
-                }
+            scope.toggleAnnotationActive = function (annotation) {
+               scope.annotations.toggleDrawnAnnotationActive(annotation);
             };
 
             scope.toggleLayerDisplayed = function (ann, layer) {
@@ -148,8 +139,12 @@ app.directive("drawnAnnotationsSidebar", function () {
             };
 
             scope.removeDrawingLayer = function (event, ann, layer) {
-                ann.removeLayer(layer);
+                scope.annotations.removeDrawingLayer(ann, layer);
                 event.stopPropagation();
+            };
+
+            scope.addDrawingLayer = function(annotation) {
+                scope.annotations.addDrawingLayer(annotation);
             };
 
             scope.stopEditingTitle = function (layer) {

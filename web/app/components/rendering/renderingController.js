@@ -355,24 +355,32 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
             // Fetch mouse input data
             let mouseInput = InputService.getInputData().mouse;
 
-            // Check if the left button was pressed in the previous pass
-            $scope.$apply(function () {
-                // Normalize mouse position for storage
-                additionalData.mouseTexNorm.copy(additionalData.mouseCurrTex);
-                additionalData.mouseTexNorm.x = (additionalData.mouseTexNorm.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+            if (mouseInput.buttons.left) {
+                // Check if the left button was pressed in the previous pass
+                $scope.$apply(function () {
 
-                if (additionalData.prevMouseState) {
-                    additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
-                    additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
+                    if (additionalData.prevMouseState) {
+                        additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
+                        additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
 
-                    selectedAnnotation.drawLayer.addLinePoint(additionalData.mouseTexNorm);
-                }
-                else {
-                    additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
-                    additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
-                    selectedAnnotation.drawLayer.createNewLineEntry(additionalData.mouseTexNorm, PublicRenderData.lineThickness, PublicRenderData.lineHardness, PublicRenderData.lineColor);
-                }
-            });
+                        // Normalize mouse position for storage
+                        additionalData.mouseTexNorm.copy(additionalData.mouseCurrTex);
+                        additionalData.mouseTexNorm.x = (additionalData.mouseTexNorm.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+
+                        selectedAnnotation.drawLayer.addLinePoint(additionalData.mouseTexNorm);
+                    }
+                    else {
+                        additionalData.mouseCurrTex.set((mouseInput.position.x + 1) / 2, (mouseInput.position.y + 1) / 2);
+                        additionalData.mousePrevTex.copy(additionalData.mouseCurrTex);
+
+                        // Normalize mouse position for storage
+                        additionalData.mouseTexNorm.copy(additionalData.mouseCurrTex);
+                        additionalData.mouseTexNorm.x = (additionalData.mouseTexNorm.x - 0.5) / passSelf.viewport.height * passSelf.viewport.width;
+
+                        selectedAnnotation.drawLayer.createNewLineEntry(additionalData.mouseTexNorm, PublicRenderData.lineThickness, PublicRenderData.lineHardness, PublicRenderData.lineColor);
+                    }
+                });
+            }
 
             // Update prev mouse state for the next pass
             additionalData.prevMouseState = mouseInput.buttons.left;

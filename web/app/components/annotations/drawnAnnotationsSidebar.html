@@ -7,9 +7,10 @@
 
         <div class="list-group mCustomScrollbar" data-mcs-axis="y" style="-webkit-box-shadow: none; -moz-box-shadow: none; box-shadow: none; height: calc(100vh - 425px);">
 
+            <!-- OWN ANNOTATIONS -->
             <div ng-repeat="ann in annotations.drawnAnnotationsList" class="animate-drawn-ann" style="overflow: hidden">
 
-                <div class="med3d-annotation-list-item" ng-click="toggleAnnotationActive($index)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
+                <div class="med3d-annotation-list-item" ng-click="toggleAnnotationActive(ann)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
 
                     <a class="med3d-annotation-sidebar-title" ng-show="!ann.__editingTitle" on-long-press="ann.__editingTitle = true" prevent-click="true">
                         {{ann.title}}
@@ -80,6 +81,96 @@
             <div class="input-group" style="margin-left: 10px; padding-bottom: 10px;">
                 <button id="newDrawnAnnotationButton" type="button" class="btn med3d-btn-primary" style="margin-left: 7px; border-radius: 5px 5px 5px 5px" ng-disabled="!publicRenderData.renderingInProgress" ng-click="addAnnotation()">New</button>
             </div>
+
+            <!-- SHARED ANNOTATIONS -->
+            <span ng-show="getKeys(annotations.sharedDrawnAnnotations).length > 0">
+                <hr class="med3d-sidebar-hr">
+
+                <div class="sidebar-content-title">
+                    Shared
+                </div>
+
+                <div ng-repeat="(id, data) in annotations.sharedDrawnAnnotations" ng-style="$index > 0 && {'margin-top':'10px'}">
+
+                    <div class="sidebar-sub-content-title" style="font-size: small; font-weight: 600">
+                        User: {{data.ownerUsername}}
+                    </div>
+
+                    <div ng-repeat="ann in data.annotations" class="animate-drawn-ann" style="overflow: hidden">
+
+                        <!-- ANNOTATIONS -->
+                        <div class="med3d-annotation-list-item" ng-click="toggleAnnotationActive(ann)" ng-style="ann !== annotations.selectedDrawnAnnotation && {'background-color': '#888888'}">
+
+                            <a class="med3d-annotation-sidebar-title" prevent-click="true">
+                                {{ann.title}}
+                            </a>
+                        </div>
+
+                        <!-- LAYERS -->
+                        <div class="animate-drawn-ann-sub" ng-show="ann == annotations.selectedDrawnAnnotation" style="overflow: hidden">
+
+                            <div class="animate-layer-list" ng-repeat="layer in ann.layers" style="height: 40px;">
+
+                                <svg width="45" height="40">
+                                    <line stroke-linecap="round" x1="25" y1="0" x2="25" y2="40" stroke="gray" stroke-width="3"></line>
+                                    <line stroke-linecap="round" x1="27" y1="20" x2="40" y2="20" stroke="gray" stroke-width="3"></line>
+                                </svg>
+
+                                <div class="med3d-layer-list-item" style="display: inline-block; width: calc(100% - 70px);" ng-click="toggleLayerDisplayed(ann, layer)" ng-style="!layer.isDisplayed && {'background-color': '#888888'}">
+
+                                    <a class="med3d-layer-sidebar-title" ng-show="!layer.__editingTitle" on-long-press="layer.owner == null && layer.__editingTitle = true" prevent-click="true">
+                                    {{layer.title}}
+                                    </a>
+
+                                    <input maxlength="15" focus-me="layer.__editingTitle" class="med3d-layer-sidebar-edit-title" ng-show="layer.__editingTitle" ng-model="layer.title" ng-keyup="$event.keyCode == 13 && stopEditingTitle(layer)" ng-click="$event.stopPropagation()" ng-blur="stopEditingTitle(layer)"/>
+
+                                    <a ng-show="layer.owner == null" class="med3d-layer-list-remove-item" ng-click="removeDrawingLayer($event, ann, layer)">
+                                          <img src="assets/img/bin.png">
+                                    </a>
+
+                                    <a class="med3d-layer-list-draw-on" ng-click="toggleDrawingLayer($event, ann, layer)" ng-show="layer.isDisplayed && layer.owner == null">
+                                          <img ng-src="{{ann.drawLayer === layer && 'assets/img/pen_selected.png' || 'assets/img/pen_unselected.png'}}">
+                                    </a>
+
+                                    <span href="" ng-show="layer.owner != null" class="med3d-layer-list-other-user tooltip-wrapper" data-toggle="tooltip" ng-init="initTooltip(layer.owner)" ng-click="userDisplayClicked()" ng-blur="test()">
+                                        <img ng-src="assets/img/user.png"/>
+                                    </span>
+
+                                </div>
+
+                                <svg class="up-down-layer-arrows" height="30px" width="12px" style="margin-left: 3px; margin-bottom: 5px;">
+                                    <polygon points="6,2 11,12 1,12 6,2" ng-click="moveLayer(ann, layer, true)"></polygon>
+                                    <polygon points="1,18 11,18 6,28 1,18" ng-click="moveLayer(ann, layer, false)"></polygon>
+                                </svg>
+
+                            </div>
+
+
+                            <div >
+                                <svg width="45" height="40" style="float: left">
+                                    <line stroke-linecap="round" x1="25" y1="0" x2="25" y2="19" stroke="gray" stroke-width="3"></line>
+                                    <line stroke-linecap="round" x1="25" y1="20" x2="40" y2="20" stroke="gray" stroke-width="3"></line>
+                                </svg>
+
+                                <div class="input-group" style="overflow: hidden; padding-bottom: 10px; padding-left: 5px; padding-top: 5px;">
+                                    <button id="newSharedLayerButton" type="button" class="btn med3d-btn-primary" style="font-size: 12px; line-height: 30px; padding: 0 9px; height: 30px; border-radius: 5px 5px 5px 5px" ng-click="addDrawingLayer(ann)" on-long-press="ann.emulateOwner()" prevent-click="true">New</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="list-group-item med3d-annotation-list-item" ng-repeat="ann in data.list" ng-click="toggleActiveShared(id, $index)" ng-style="!ann.active && {'background-color': '#888888'}">
+                        <a class="med3d-annotation-sidebar-title">
+                            {{ann.title}}
+                        </a>
+                    </div>
+
+
+                </div>
+            </span>
 
 
         </div>

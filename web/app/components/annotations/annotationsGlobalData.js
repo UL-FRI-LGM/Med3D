@@ -2,7 +2,7 @@
  * Created by Primoz on 16. 01. 2017.
  */
 
-app.factory('Annotations', function(){
+app.factory('Annotations', function($rootScope){
 
     /*
      {
@@ -192,10 +192,238 @@ app.factory('Annotations', function(){
         /**
          * DRAWN ANNOTATIONS
          */
+        this._drawnAnnOnChangeListeners = {};
+
+        /**
+         * Add drawn annotation subscriber (notifies the subscriber about new/removed annotations).
+         * @param id Subscriber ID.
+         * @param onAdd Function called when a new drawn annotation is added.
+         * @param onRemove Function called when a drawn annotation is removed.
+         * @param onClear Function called when all drawn annotations are cleared.
+         */
+        this.addListenerDrawnAnn = function(id, onAdd, onRemove, onClear, onToggle) {
+            this._drawnAnnOnChangeListeners[id] = {add: onAdd, rm: onRemove, clear: onClear, toggle: onToggle};
+        };
+
+        /**
+         * Removes the drawn annotation subscriber with the given ID.
+         * @param id subscriber ID.
+         */
+        this.rmListenerDrawnAnn = function (id) {
+            delete this._drawnAnnOnChangeListeners[id];
+        };
+
         // List of annotations drawn by users
         this.drawnAnnotationsList = [];
+        this.sharedDrawnAnnotations = {};
 
         // Contains index of currently selected annotation
         this.selectedDrawnAnnotation = undefined;
+
+        this.changeRecording = false;
+
+        /**
+         * Adds a new drawn annotation
+         * @param annotation
+         */
+        this.addDrawnAnnotation = function (annotation) {
+            this.drawnAnnotationsList.push(annotation);
+            this.selectedDrawnAnnotation = annotation;
+
+            if (this.changeRecording) {
+                annotation.createChangeRecorder();
+            }
+
+            // Notify subscribers
+            for (let listener in self._drawnAnnOnChangeListeners) {
+                if (self._drawnAnnOnChangeListeners.hasOwnProperty(listener)) {
+                    self._drawnAnnOnChangeListeners[listener].add(annotation)
+                }
+            }
+        };
+
+        /**
+         * Removes drawn annotation with the given index
+         * @param index
+         */
+        this.rmDrawnAnnotation = function(index) {
+            if (this.drawnAnnotationsList[index] === this.selectedDrawnAnnotation) {
+                this.selectedDrawnAnnotation = undefined;
+            }
+
+            let annotation = this.drawnAnnotationsList[index];
+            annotation.removeChangeRecorder();
+            this.drawnAnnotationsList.splice(index, 1);
+
+            // Notify subscribers
+            for (let listener in self._drawnAnnOnChangeListeners) {
+                if (self._drawnAnnOnChangeListeners.hasOwnProperty(listener)) {
+                    self._drawnAnnOnChangeListeners[listener].rm(annotation)
+                }
+            }
+        };
+
+        /**
+         * Selects/deselects the annotation
+         */
+        this.toggleDrawnAnnotationActive = function(annotation) {
+            let isToggled = this.selectedDrawnAnnotation === annotation;
+
+            if (isToggled) {
+                this.selectedDrawnAnnotation = undefined;
+            }
+            else {
+                this.selectedDrawnAnnotation = annotation;
+            }
+
+            // Notify subscribers
+            for (let listener in self._drawnAnnOnChangeListeners) {
+                if (self._drawnAnnOnChangeListeners.hasOwnProperty(listener)) {
+                    self._drawnAnnOnChangeListeners[listener].toggle((isToggled) ? null : annotation._uuid);
+                }
+            }
+        };
+
+
+        /**
+         * LAYERS
+         */
+        this.removeDrawingLayer = function(ann, layer) {
+            ann.removeLayer(layer);
+        };
+
+        this.addDrawingLayer = function(ann) {
+            ann.addLayer();
+        };
+
+
+
+        this.addChangeRecordersDA = function () {
+            this.changeRecording = true;
+
+            // Add change recorders
+            for (let i = 0; i < this.drawnAnnotationsList.length; i++) {
+                this.drawnAnnotationsList[i].createChangeRecorder();
+            }
+        };
+
+        this.rmChangeRecordersDA = function () {
+            this.changeRecording = false;
+
+            // Remove change recorders
+            for (let i = 0; i < this.drawnAnnotationsList.length; i++) {
+                this.drawnAnnotationsList[i].removeChangeRecorder();
+            }
+        };
+
+        this.disownSharedLayers = function () {
+            for (let i = 0; i < this.drawnAnnotationsList; i++) {
+                this.drawnAnnotationsList[i].disownLayers();
+            }
+        };
+
+        /**
+         * Exports drawn annotations to json
+         */
+        this.drawnAnnotationsToJson = function () {
+
+            let annotationsJson = {
+            };
+
+            // Export annotations in json format
+            for (let i = 0; i < this.drawnAnnotationsList.length; i++) {
+                annotationsJson[this.drawnAnnotationsList[i]._uuid] = this.drawnAnnotationsList[i].toJson();
+            }
+
+            return annotationsJson;
+        }
+
+        /**
+         * Drawn annotation socket handlers
+         */
+        this.addSharedDrawnAnnotations = function (data) {
+            let self = this;
+
+            for (let userId in data) {
+                let owner = data[userId].ownerUsername;
+                let annotationsJsonArr = data[userId].annotations;
+
+                let annotationsArr = [];
+
+                // Reconstruct annotations
+                for (let annUuid in annotationsJsonArr) {
+                    // TODO Add to object that allows fast referencing
+                    annotationsArr.push(DrawnAnnotation.fromJson(annotationsJsonArr[annUuid], annUuid, owner));
+                }
+
+                $rootScope.$apply(function() {
+                    if (self.sharedDrawnAnnotations.hasOwnProperty(userId)) {
+                        Array.prototype.push.apply(self.sharedDrawnAnnotations[userId].annotations, annotationsArr);
+                    }
+                    else {
+                        self.sharedDrawnAnnotations[userId] = {ownerUsername: owner, annotations: annotationsArr};
+                    }
+                });
+            }
+        };
+
+        this.rmSharedDrawnAnnotation = function (userId, annotationUuid) {
+            let self = this;
+
+            if (this.sharedDrawnAnnotations.hasOwnProperty(userId)) {
+                if (annotationUuid == null) {
+                    // Delete all user entries
+                    $rootScope.$apply(function() {
+                        delete self.sharedDrawnAnnotations[userId];
+                    });
+                }
+                else {
+                    let annotations = this.sharedDrawnAnnotations[userId].annotations;
+
+                    // Find and remove the annotation
+                    for (let i = 0; i < annotations.length; i++) {
+                        if (this.sharedDrawnAnnotations[userId].annotations[i]._uuid === annotationUuid) {
+                            $rootScope.$apply(function() {
+                                self.sharedDrawnAnnotations[userId].annotations.splice(i, 1);
+                                if (self.sharedDrawnAnnotations[userId].annotations.length <= 0) {
+                                    delete self.sharedDrawnAnnotations[userId];
+                                }
+                            });
+                            return;
+                        }
+                    }
+                }
+            }
+
+        };
+
+        this.clearSharedDrawnAnnotations = function () {
+            let self = this;
+
+            $rootScope.$apply(function() {
+                self.sharedDrawnAnnotations = {};
+            });
+        };
+
+        this.updateSharedDrawnAnnotations = function (userId, owner, updates) {
+            if (!this.sharedDrawnAnnotations.hasOwnProperty(userId)) {
+                return;
+            }
+
+            let userAnnotations = this.sharedDrawnAnnotations[userId].annotations;
+
+            $rootScope.$apply(function() {
+                for (let annUuid in updates) {
+                    for (let i = 0; i < userAnnotations.length; i++) {
+                        if (userAnnotations[i]._uuid === annUuid) {
+                            // Update annotation
+                            userAnnotations[i].update(updates[annUuid], owner);
+                            break;
+                        }
+                    }
+                }
+            });
+        };
+
     })(this);
 });
