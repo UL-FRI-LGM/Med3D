@@ -4,7 +4,9 @@
 
 let assert = require('assert');
 let mongodb = require('mongodb');
+let path = require('path');
 let fs = require('fs');
+let mkdirp = require('mkdirp');
 
 DatabaseManager = class {
 
@@ -19,7 +21,7 @@ DatabaseManager = class {
         this._db = null;
 
         // Paths to resource files
-        this._objPath = "./database_init_resources/objects/";
+        this._objPath = "./database_init_resources/obj/";
         this._volPath = "./database_init_resources/mhd/";
 
         // Initialize filename filters
@@ -118,6 +120,9 @@ DatabaseManager = class {
     _loadObjFiles(overwrite) {
         let self = this;
 
+        // Create empty resource directories if they do not exist.
+        mkdirp.sync(this._objPath);
+
         fs.readdir(self._objPath, function (error, objFiles) {
             assert.ifError(error);
 
@@ -147,6 +152,9 @@ DatabaseManager = class {
 
     _loadMhdFiles (overwrite) {
         let self = this;
+
+        // Create empty resource directories if they do not exist.
+        mkdirp.sync(this._volPath);
 
         fs.readdir(self._volPath, function (error, files) {
             assert.ifError(error);

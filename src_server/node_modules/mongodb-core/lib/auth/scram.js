@@ -2,9 +2,12 @@
 
 var f = require('util').format
   , crypto = require('crypto')
+  , retrieveBSON = require('../connection/utils').retrieveBSON
   , Query = require('../connection/commands').Query
-  , Binary = require('bson').Binary
   , MongoError = require('../error');
+
+var BSON = retrieveBSON(),
+  Binary = BSON.Binary;
 
 var AuthSession = function(db, username, password) {
   this.db = db;
@@ -64,34 +67,39 @@ var xor = function(a, b) {
       res.push(a[i] ^ b[i])
     }
   } else {
-    for (var i = 0; i < a.length; i++) {
+    for (i = 0; i < a.length; i++) {
       res.push(a[i] ^ b[i])
     }
   }
   return new Buffer(res);
 }
 
-// Create a final digest
+var _hiCache = {};
+var _hiCacheCount = 0;
+var _hiCachePurge = function() {
+  _hiCache = {};
+  _hiCacheCount = 0;
+};
+
 var hi = function(data, salt, iterations) {
-  // Create digest
-  var digest = function(msg) {
-    var hmac = crypto.createHmac('sha1', data);
-    hmac.update(msg);
-    return new Buffer(hmac.digest('base64'), 'base64');
+  // omit the work if already generated
+  var key = [data, salt.toString('base64'), iterations].join('_');
+  if (_hiCache[key] !== undefined) {
+    return _hiCache[key];
   }
 
-  // Create variables
-  salt = Buffer.concat([salt, new Buffer('\x00\x00\x00\x01')])
-  var ui = digest(salt);
-  var u1 = ui;
+  // generate the salt
+  var saltedData = crypto.pbkdf2Sync(data, salt, iterations, 20, "sha1");
 
-  for(var i = 0; i < iterations - 1; i++) {
-    u1 = digest(u1);
-    ui = xor(ui, u1);
+  // cache a copy to speed up the next lookup, but prevent unbounded cache growth
+  if (_hiCacheCount >= 200) {
+    _hiCachePurge();
   }
 
-  return ui;
-}
+  _hiCache[key] = saltedData;
+  _hiCacheCount += 1;
+  return saltedData;
+};
 
 /**
  * Authenticate
@@ -112,7 +120,6 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
 
   // Valid connections
   var numberOfValidConnections = 0;
-  var credentialsValid = false;
   var errorObject = null;
 
   // Execute MongoCR
@@ -143,7 +150,6 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
       } else if(r.result['errmsg']) {
         errorObject = r.result; return false;
       } else {
-        credentialsValid = true;
         numberOfValidConnections = numberOfValidConnections + 1;
       }
 
@@ -175,7 +181,7 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
     // Write the commmand on the connection
     server(connection, new Query(self.bson, f("%s.$cmd", db), cmd, {
       numberToSkip: 0, numberToReturn: 1
-    }).toBin(), function(err, r) {
+    }), function(err, r) {
       // Do we have an error, handle it
       if(handleError(err, r) == false) {
         count = count - 1;
@@ -222,7 +228,7 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
       var authMsg = [firstBare, r.result.payload.value().toString('base64'), withoutProof].join(',');
 
       // Create client signature
-      var hmac = crypto.createHmac('sha1', storedKey);
+      hmac = crypto.createHmac('sha1', storedKey);
       hmac.update(new Buffer(authMsg));
       var clientSig = new Buffer(hmac.digest('base64'), 'base64');
 
@@ -231,16 +237,6 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
 
       // Create client final
       var clientFinal = [withoutProof, clientProof].join(',');
-
-      // Generate server key
-      var hmac = crypto.createHmac('sha1', saltedPassword);
-      hmac.update(new Buffer('Server Key'))
-      var serverKey = new Buffer(hmac.digest('base64'), 'base64');
-
-      // Generate server signature
-      var hmac = crypto.createHmac('sha1', serverKey);
-      hmac.update(new Buffer(authMsg))
-      var serverSig = new Buffer(hmac.digest('base64'), 'base64');
 
       //
       // Create continue message
@@ -255,7 +251,7 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
       // Write the commmand on the connection
       server(connection, new Query(self.bson, f("%s.$cmd", db), cmd, {
         numberToSkip: 0, numberToReturn: 1
-      }).toBin(), function(err, r) {
+      }), function(err, r) {
         if(r && r.result.done == false) {
           var cmd = {
               saslContinue: 1
@@ -266,7 +262,7 @@ ScramSHA1.prototype.auth = function(server, connections, db, username, password,
           // Write the commmand on the connection
           server(connection, new Query(self.bson, f("%s.$cmd", db), cmd, {
             numberToSkip: 0, numberToReturn: 1
-          }).toBin(), function(err, r) {
+          }), function(err, r) {
             handleEnd(err, r);
           });
         } else {
@@ -325,13 +321,11 @@ ScramSHA1.prototype.logout = function(dbName) {
 ScramSHA1.prototype.reauthenticate = function(server, connections, callback) {
   var authStore = this.authStore.slice(0);
   var count = authStore.length;
-  var err = null;
   // No connections
   if(count == 0) return callback(null, null);
   // Iterate over all the auth details stored
   for(var i = 0; i < authStore.length; i++) {
-    this.auth(server, connections, authStore[i].db, authStore[i].username, authStore[i].password, function(err, r) {
-      if(err) err = err;
+    this.auth(server, connections, authStore[i].db, authStore[i].username, authStore[i].password, function(err) {
       count = count - 1;
       // Done re-authenticating
       if(count == 0) {
