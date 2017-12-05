@@ -10,7 +10,7 @@ let bodyParser = require('body-parser');
 let express = require('express');
 let app = express();
 // Init express path
-app.use(express.static(path.resolve(__dirname + "\\..\\")));
+app.use(express.static(path.resolve(__dirname + "/../")));
 app.use(bodyParser.json());
 
 // Create server and link it to express
