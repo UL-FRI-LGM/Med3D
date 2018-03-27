@@ -2,29 +2,41 @@
  * Created by Primoz on 30. 07. 2016.
  */
 
-var taskManagerController = function($scope, TaskManagerService) {
+let taskManagerController = function($scope, TaskManagerService) {
     $scope.tasks = TaskManagerService.tasks;
-    $scope.currentTask = undefined;
+    $scope.taskEventListeners = [];
 
-    var onNewTask = function (uuid) {
-        console.log("New task");
+    let taskFinishedDelay;
+    let startTimestamp;
+
+    let onTaskExecution = function (uuid) {
+        clearTimeout(taskFinishedDelay);
+        startTimestamp = performance.now();
+        $scope.currentTask = TaskManagerService.tasks[uuid];
+
+        for (let i = 0; i < $scope.taskEventListeners.length; i++) {
+            $scope.taskEventListeners[i].onTaskExecution();
+        }
     };
 
-    var onTaskExecution = function (uuid) {
-        $scope.$apply(function() {
-            $scope.currentTask = TaskManagerService.tasks[uuid];
-        });
-
+    let onTaskFinished = function (uuid, hasMore) {
+        let finishedTimestamp = performance.now();
+        // Wait at least 2 seconds before hiding.
+        if (!hasMore && (finishedTimestamp - startTimestamp) < 2000) {
+            taskFinishedDelay = setTimeout(function() {
+                for (let i = 0; i < $scope.taskEventListeners.length; i++) {
+                    $scope.taskEventListeners[i].onTaskFinished();
+                }
+            }, 1000 - (finishedTimestamp - startTimestamp));
+        }
+        else {
+            for (let i = 0; i < $scope.taskEventListeners.length; i++) {
+                $scope.taskEventListeners[i].onTaskFinished();
+            }
+        }
     };
 
-    var onTaskFinished = function (uuid, hasMore) {
-        $scope.$apply(function() {
-            $scope.currentTask = undefined;
-        });
-    };
-
-    TaskManagerService.addTasksChangeCallback(onNewTask, onTaskExecution, onTaskFinished);
-
+    TaskManagerService.addTasksChangeCallback(function (uuid) {}, onTaskExecution, onTaskFinished);
 };
 
 app.controller('TaskManagerController', taskManagerController);

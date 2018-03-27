@@ -1,10 +1,10 @@
 $(document).ready(function() {
-    var wrapper = $("#wrapper");
+    let wrapper = $("#wrapper");
 
         $('.sidebar-nav a').click(function(e) {
         e.preventDefault();
 
-        var thisElement = $(this);
+        let thisElement = $(this);
 
         // When the side bar is opened and to be closed
         if (wrapper.hasClass("toggled")) {

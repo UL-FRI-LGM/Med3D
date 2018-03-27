@@ -18,7 +18,7 @@ TASK:
                 - Error message
     - Cancel task callback
 
- var task = {
+ let task = {
     uuid: "ExampleUniqueIdentificator"
     meta: {
         name: "ExampleName"
@@ -34,7 +34,7 @@ TASK:
 
 
 app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
-    var self = this;
+    let self = this;
 
     // Contains meta data for each task that was passed to the task manager until it is cleared
     this.tasks = {};
@@ -43,19 +43,19 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     this.synchronizedTasks = [];
     this.currentlyExecuting = false;
 
-    var executeNextTask = function () {
+    let executeNextTask = function () {
         setTimeout(function () {
             if (self.synchronizedTasks.length > 0) {
                 // Fetch the next task in the queue
-                var task = self.synchronizedTasks.shift();
-                var taskMeta = self.tasks[task.uuid];
+                let task = self.synchronizedTasks.shift();
+                let taskMeta = self.tasks[task.uuid];
                 // Get result subscribers array
-                var resultCallbacks = self.resultCallbacks[task.target];
+                let resultCallbacks = self.resultCallbacks[task.target];
 
                 // Listens for updates on task progress
-                var onProgress = function(progress) {
+                let onProgress = function(progress) {
                     if (taskMeta) {
-                        var roundedProgress = Math.round(progress);
+                        let roundedProgress = Math.round(progress);
 
                         if (roundedProgress !== taskMeta.progress) {
                             $rootScope.$apply(function () {
@@ -66,7 +66,7 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
                 };
 
                 // Listens for the errors in the task execution
-                var onError = function(event) {
+                let onError = function(event) {
                     if (taskMeta) {
                         taskMeta.finished = true;
                         taskMeta.errorCode = event.code;
@@ -79,13 +79,13 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
                 };
 
                 // Listens for the finish event
-                var onLoad = function (...result) {
+                let onLoad = function (...result) {
                     taskMeta.finished = true;
                     self.notifyTaskFinished(task.uuid);
 
                     // Forward the results to the result subscribers
                     if (resultCallbacks && resultCallbacks instanceof Array) {
-                        for (var i = 0; i < resultCallbacks.length; i++) {
+                        for (let i = 0; i < resultCallbacks.length; i++) {
                             resultCallbacks[i](...result);
                         }
                     }
@@ -140,19 +140,19 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
         }
         else {
             setTimeout(function () {
-                var taskMeta = self.tasks[task.uuid];
+                let taskMeta = self.tasks[task.uuid];
                 // Get result subscribers array
-                var resultCallbacks = self.resultCallbacks[task.target];
+                let resultCallbacks = self.resultCallbacks[task.target];
 
                 // Listens for updates on task progress
-                var onProgress = function(progress) {
+                let onProgress = function(progress) {
                     if (taskMeta) {
                         taskMeta.progress = progress;
                     }
                 };
 
                 // Listens for the errors in the task execution
-                var onError = function(event) {
+                let onError = function(event) {
                     if (taskMeta) {
                         taskMeta.finished = true;
                         taskMeta.errorCode = event.code;
@@ -163,13 +163,13 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
                 };
 
                 // Listens for the finish event
-                var onLoad = function (...result) {
+                let onLoad = function (...result) {
                     taskMeta.finished = true;
                     self.notifyTaskFinished(task.uuid);
 
                     // Forward the results to the result subscribers
                     if (resultCallbacks && resultCallbacks instanceof Array) {
-                        for (var i = 0; i < resultCallbacks.length; i++) {
+                        for (let i = 0; i < resultCallbacks.length; i++) {
                             resultCallbacks[i](...result);
                         }
                     }
@@ -199,11 +199,11 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     };
 
     this.rmResultCallback = function (target, callback) {
-        var targetGroup = self.resultCallbacks[target];
+        let targetGroup = self.resultCallbacks[target];
 
         if (targetGroup !== undefined) {
-            var i = targetGroup.indexOf(callback);
-            if(i != -1) {
+            let i = targetGroup.indexOf(callback);
+            if(i !== -1) {
                 targetGroup.splice(i, 1);
             }
         }
@@ -214,7 +214,7 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     };
 
     this.notifyNewTask = function (uuid) {
-        for (var i = 0; i < self.taskChangeCallbacks.length; i++) {
+        for (let i = 0; i < self.taskChangeCallbacks.length; i++) {
             if (self.taskChangeCallbacks[i].onNewTask !== undefined) {
                 self.taskChangeCallbacks[i].onNewTask(uuid);
             }
@@ -222,7 +222,7 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     };
 
     this.notifyTaskExecuton = function (uuid) {
-        for (var i = 0; i < self.taskChangeCallbacks.length; i++) {
+        for (let i = 0; i < self.taskChangeCallbacks.length; i++) {
             if (self.taskChangeCallbacks[i].onTaskExecution !== undefined) {
                 self.taskChangeCallbacks[i].onTaskExecution(uuid);
             }
@@ -230,7 +230,7 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     };
 
     this.notifyTaskFinished = function (uuid) {
-        for (var i = 0; i < self.taskChangeCallbacks.length; i++) {
+        for (let i = 0; i < self.taskChangeCallbacks.length; i++) {
             if (self.taskChangeCallbacks[i].onTaskFinished !== undefined) {
                 self.taskChangeCallbacks[i].onTaskFinished(uuid);
             }
@@ -238,8 +238,8 @@ app.service("TaskManagerService", ['$rootScope', function ($rootScope) {
     };
 
     this.rmTaskSubscriber = function (callback) {
-        var i = self.taskChangeCallbacks.indexOf(callback);
-        if(i != -1) {
+        let i = self.taskChangeCallbacks.indexOf(callback);
+        if(i !== -1) {
             self.taskChangeCallbacks.splice(i, 1);
         }
     };

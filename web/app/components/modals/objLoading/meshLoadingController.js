@@ -4,7 +4,56 @@
 
 let meshLoadingController = function($scope, TaskManagerService) {
 
+    $scope.serverFiles = [];
+
     TaskManagerService.addResultCallback("");
+
+    $scope.formatBytes = function(bytes, decimals) {
+        if(bytes === 0) return '0 B';
+        let k = 1024;
+        let sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+    };
+
+    $scope.matchesAnyServerFile = function(substring) {
+        return $scope.serverFiles.some(file => file.filename.toLowerCase().includes(substring.toLowerCase()));
+    };
+
+    $scope.requestFileListFromServer = function (onError) {
+        $scope.serverFiles = [];
+
+        $.ajax ({
+            type: "POST",
+            url: '/api/file-management',
+            data: JSON.stringify({reqType: "objList"}),
+            contentType: "application/json",
+            success: function (jsonData) {
+                if (jsonData !== undefined && jsonData.status === 0) {
+                    $scope.$apply(function() {
+                        for (let i = 0; i < jsonData.data.length; i++) {
+                            let uploadDate = new Date(jsonData.data[i].uploadDate);
+                            let strUpload = uploadDate.getDate() + ". " + (uploadDate.getMonth() + 1) + ". " + uploadDate.getFullYear();
+                            let splitFilename = jsonData.data[i].name.split(".");
+
+                            $scope.serverFiles.push({
+                                filename: splitFilename[0],
+                                suffix: '.' + splitFilename[1],
+                                uploadDate: strUpload,
+                                size: $scope.formatBytes(jsonData.data[i].size, 0)
+                            });
+                        }
+                    });
+                }
+                else {
+                    onError('Received error ' + jsonData.status + ' from the server.\nError message: ' + jsonData.errMsg);
+                }
+            },
+            error: function() {
+                onError('Failed to fetch files from the server.');
+            }
+        });
+    };
 
     $scope.loadLocalObjFile = function (file) {
         // Create task
@@ -121,7 +170,7 @@ let meshLoadingController = function($scope, TaskManagerService) {
             });
         };
 
-        var task = {
+        let task = {
             uuid: THREE.Math.generateUUID(),
             meta: {
                 name: "Downloading OBJ",

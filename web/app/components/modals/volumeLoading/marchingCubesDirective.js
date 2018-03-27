@@ -106,7 +106,7 @@ app.directive("marchingCubesModal", function () {
                                     isNew = true;
                                     anchor = jQuery('<a/>', {
                                         href: '#',
-                                        class: 'list-group-item',
+                                        class: 'list-group-item row',
                                         style: 'height: 40px',
                                         'data-filename': jsonData.data[i].name
                                     });

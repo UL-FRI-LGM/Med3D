@@ -1,16 +1,17 @@
 
- body {
+body {
     overflow-x: hidden;
- }
+}
 
- a:hover, a:active, a:focus {
+a:hover, a:active, a:focus {
     outline: 0;
- }
+}
 
 /* Toggle Styles */
 
 #wrapper {
     padding-left: 0;
+    margin-top: 7px;
     -webkit-transition: all 0.5s ease;
     -moz-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
@@ -38,9 +39,9 @@
     border-bottom-width: 1px;
 }
 
- .toggled #sidebar-wrapper {
-     opacity: 1 !important;
- }
+.toggled #sidebar-wrapper {
+    opacity: 1 !important;
+}
 
 .sidebar-content-title {
     display: none;
@@ -51,19 +52,18 @@
     color: #fff;
 }
 
-
-.sidebar-content-title.title-active  {
+.sidebar-content-title.title-active {
     display: block;
 }
 
- .sidebar-sub-content-title {
-     display: block;
-     font-size: 16px;
-     font-weight: 500;
-     padding-left: 15px;
-     margin-top: 5px;
-     color: #fff;
- }
+.sidebar-sub-content-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    padding-left: 15px;
+    margin-top: 5px;
+    color: #fff;
+}
 
 .sidebar-content {
     width: 100%;
@@ -84,7 +84,6 @@
     margin-left: 0%;
 }
 
-
 #wrapper.toggled #sidebar-wrapper {
     margin-left: 0px;
 }
@@ -95,11 +94,9 @@
     padding: 15px;
 }
 
-
 /* Sidebar Styles */
 
 .sidebar-nav {
-
     width: 100%;
     top: 0;
     margin: 0;
@@ -108,14 +105,14 @@
 }
 
 #sidebar-nav-wrapper {
-  width: 50px;
-  height: auto;
-  display: block;
-  float: right;
-  -webkit-transition: all 0.5s ease;
-  -moz-transition: all 0.5s ease;
-  -o-transition: all 0.5s ease;
-  transition: all 0.5s ease;
+    width: 50px;
+    height: auto;
+    display: block;
+    float: right;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
 }
 
 .sidebar-nav li {
@@ -135,7 +132,6 @@
     border-radius: 5px 5px 5px 5px;
 }
 
-
 .sidebar-nav li a:active,
 .sidebar-nav li a:focus {
     text-decoration: none;
@@ -148,21 +144,21 @@
 
 /* When navigation bar opened */
 #wrapper.toggled .sidebar-nav li, #wrapper.transition .sidebar-nav li {
-    display:none;
+    display: none;
 }
 
 #wrapper.toggled .sidebar-nav li.active, #wrapper.transition .sidebar-nav li.active {
-    display:list-item;
+    display: list-item;
     -webkit-transition: all 0.5s ease;
     -moz-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
     transition: all 0.5s ease;
 }
 
-#wrapper.toggled .sidebar-nav li.active a:hover  {
+#wrapper.toggled .sidebar-nav li.active a:hover {
     background: #C7282B;
 }
 
-#wrapper.transition .sidebar-nav li.active a:hover  {
+#wrapper.transition .sidebar-nav li.active a:hover {
     background: #46474C;
 }

@@ -1,12 +1,21 @@
-<div id="taskProgressModal" class="modal fade floating-window" data-backdrop="false" >
+<div id="taskProgressModal" class="modal fade floating-window" role="dialog">
     <div class="modal-dialog modal-sm">
+        <!-- Modal content-->
         <div class="modal-content med3d-modal">
-            <div class="modal-header med3d-modal-header">
-                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
-                <button type="button" class="med3d-close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 id="taskTitle" class="modal-title">{{currentTask.name}}</h4>
 
+            <div class="modal-header med3d-modal-header">
+                <div class="modal-title">
+                    <div class="logo-wrapper">
+                        <img src="assets/img/med3D-icon.png">
+                    </div>
+
+                    <span>{{currentTask.name}}</span>
+                </div>
+                <button type="button" class="med3d-close" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+
             <div class="modal-body">
                 <p id="taskDescription">{{currentTask.description}}</p>
 
@@ -16,6 +25,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="modal-footer med3d-modal-footer">
                 <button type="button" class="btn med3d-btn-primary center-block" data-dismiss="modal">Cancel</button>
             </div>

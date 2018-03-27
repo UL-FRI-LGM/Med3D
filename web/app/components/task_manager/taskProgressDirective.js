@@ -7,7 +7,8 @@ app.directive("taskProgressDirective", function() {
         restrict: 'E',
         replace: true,
         scope: {
-            currentTask: "="
+            currentTask: "=",
+            taskEventListeners: "="
         },
         link: function (scope, element, attributes) {
 
@@ -17,15 +18,14 @@ app.directive("taskProgressDirective", function() {
             });
 
             // Task changes
-            scope.$watch("currentTask", function() {
-                if (scope.currentTask === undefined) {
+            scope.taskEventListeners.push({
+                onTaskExecution: function () {
+                    element.modal('show');
+                },
+                onTaskFinished: function () {
                     element.modal('hide');
                 }
-                else {
-                    element.modal('show');
-                }
             });
-
         },
         templateUrl: function(element, attributes) {
             return 'app/components/task_manager/taskProgressModal.html';

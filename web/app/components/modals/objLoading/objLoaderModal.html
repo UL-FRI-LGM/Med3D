@@ -4,26 +4,38 @@
         <div class="modal-content med3d-modal">
 
             <div class="modal-header med3d-modal-header">
-                <img class="navbar-image" src="assets/img/med3D-icon.png" width="24" height="24">
-                <button type="button" class="med3d-close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Wavefront (.obj)</h4>
+                <div class="modal-title">
+                    <div class="logo-wrapper">
+                        <img src="assets/img/med3D-icon.png">
+                    </div>
+
+                    <span>Wavefront (.obj)</span>
+                </div>
+                <button type="button" class="med3d-close" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
 
-            <div class="modal-body" style="padding: 5px;">
-                <div class="panel with-nav-tabs panel-default" style="margin-bottom: 5px;">
-                    <div class="panel-heading">
-                        <ul class="nav nav-tabs">
-                            <li class="active"><a href="#localObjTab" data-toggle="tab">Local</a></li>
-                            <li><a href="#serverObjTab" data-toggle="tab">Server</a></li>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-header">
+
+                        <ul class="nav nav-tabs card-header-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active show" href="#localObjTab" data-toggle="tab">Local</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#serverObjTab" data-toggle="tab">Server</a>
+                            </li>
                         </ul>
                     </div>
-                    <div class="panel-body">
+
+                    <div class="card-body">
                         <div class="tab-content">
                             <!-- LOCAL TAB -->
 
-                            <div class="tab-pane fade in active" id="localObjTab">
-                                <h4 style="padding-left: 0; font-weight: 500">Select .obj file from your computer</h4>
-                                <div class="input-group" style="width: 100%; margin-top: 5px;">
+                            <div role="tabpanel" class="tab-pane fade active show" id="localObjTab" aria-labelledby="localObjTab-tab">
+                                <div class="input-group">
                                     <label>Select .obj file:</label>
                                     <input id="objFileInput" type="file" accept=".obj" class="filestyle">
                                 </div>
@@ -32,19 +44,30 @@
 
 
                             <!-- SERVER TAB -->
+                            <div role="tabpanel" class="tab-pane fade" id="serverObjTab" aria-labelledby="serverObjTab-tab">
+                                <input type="text" ng-model="fileSearchString" ng-change="validateSelection(fileSearchString)" ng-init="fileSearchString = ''" style="margin-bottom: 5px;" class="form-control" placeholder="Search for file...">
+                                <div class="med3d-file-scrollbar" data-simplebar>
 
-                            <div class="tab-pane fade" id="serverObjTab">
-                                <h4 style="padding-left: 0; font-weight: 500">Select .obj file that you want to load from server.</h4>
+                                    <div id="objListGroup" class="list-group med3d-file-list-group d-flex flex-row flex-wrap">
+                                        <a ng-repeat="file in serverFiles" ng-if="file.filename.toLowerCase().includes(fileSearchString.toLowerCase())" ng-click="toggleServerFile($event)" data-filename="{{file.filename + file.suffix}}" ng-href="#" class="list-group-item list-group-item-action flex-column align-items-start med3d-file-list-item">
+                                            <img src="assets/img/model-placeholder.png"/>
 
-                                <div style="height: 15px; margin-top: 10px;">
-                                    <div class="col-sm-3">Name</div>
-                                    <div class="col-sm-6" style="padding-left: 40px" >Upload date</div>
-                                    <div class="col-sm-3" style="text-align: right; padding-right: 20px" >Size</div>
+                                            <div class="w-100 med3d-file-list-item-content">
+                                                <span class="mb-1 med3d-file-list-item-title">{{file.filename}}</span>
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <small>{{file.uploadDate}}</small>
+                                                    <small>{{file.size}}</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+
+                                    <div class="med3d-file-noresults" ng-show="!matchesAnyServerFile(fileSearchString)">
+                                        OH NO! NO RESULTS
+                                    </div>
+
+                                    <span id="objListErrorMsg"> </span>
                                 </div>
-                                <div id="objListGroup" class="list-group med3d-file-list-group" style="margin-bottom: 0; margin-top: 10px">
-
-                                </div>
-                                <span id="objListErrorMsg"> </span>
                             </div>
                         </div>
                     </div>

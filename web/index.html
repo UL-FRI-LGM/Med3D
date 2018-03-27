@@ -10,16 +10,18 @@
 
     <!-- Bootstrap -->
     <!-- build:css styles/main.css -->
-    <link href="assets/css/jquery-ui.min.css" rel="stylesheet">
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/css/bootstrap-theme.min.css" rel="stylesheet">
-    <link href="assets/css/font-awesome.min.css" rel="stylesheet">
-    <link href="assets/css/bootstrap-social.css" rel="stylesheet">
-    <link href="assets/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+    <link href="assets/css/external/jquery-ui.min.css" rel="stylesheet">
+    <link href="assets/css/external/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/external/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="assets/css/external/bootstrap-social.css" rel="stylesheet">
+    <link href="assets/css/external/bootstrap-colorpicker.min.css" rel="stylesheet">
+    <link href="assets/css/simplebar.css" rel="stylesheet">
     <link href="assets/css/mystyles.css" rel="stylesheet">
+    <link href="assets/css/head-navbar.css" rel="stylesheet">
+    <link href="assets/css/modal.css" rel="stylesheet">
     <link href="assets/css/sidebar.css" rel="stylesheet">
     <link href="assets/css/chat.css" rel="stylesheet">
-    <link href="assets/css/jquery.mCustomScrollbar.min.css" rel="stylesheet">
+    <link href="assets/css/external/jquery.mCustomScrollbar.min.css" rel="stylesheet">
 
     <!-- endbuild -->
 
@@ -27,14 +29,17 @@
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="assets/lib/jquery.min.js"></script>
     <script src="assets/lib/jquery-ui.min.js"></script>
+    <script src="assets/lib/popper.min.js"></script>
     <script src="assets/lib/bootstrap.min.js"></script>
     <script src="assets/lib/angular.min.js"></script>
     <script src="assets/lib/angular-animate.min.js"></script>
     <script src="assets/lib/angular-long-press.min.js"></script>
     <script src="assets/lib/bootstrap-filestyle.min.js"></script>
+    <script src="assets/lib/fontawesome-all.min.js"></script>
     <script src="assets/lib/clipboard.min.js"></script>
     <script src="assets/lib/sidebar.js"></script>
-    <script src="assets/lib/jquery.mCustomScrollbar.concat.min.js"></script>
+    <script src="assets/lib/simplebar.js"></script>
+    <script src="assets/lib/jquery.mCustomScrollbar.min.js"></script>
     <script src="assets/lib/bootstrap-colorpicker.min.js"></script>
     <!-- endbuild -->
 
@@ -254,7 +259,7 @@
     </div>
 
     <span ng-controller="TaskManagerController">
-        <task-progress-directive current-task="currentTask"></task-progress-directive>
+        <task-progress-directive current-task="currentTask" task-event-listeners="taskEventListeners"></task-progress-directive>
     </span>
 
     <div id="floatingWindow" class="modal fade floating-window">
