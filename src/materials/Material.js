@@ -18,7 +18,7 @@ M3D.Material = class {
         this._name = '';
 
         // Defines which of the face sides will be rendered - front, back or both
-        this._side = M3D.FRONT_SIDE;
+        this._side = M3D.FRONT_AND_BACK_SIDE;
 
         this._depthFunc = M3D.FUNC_LEQUAL;
         this._depthTest = true;

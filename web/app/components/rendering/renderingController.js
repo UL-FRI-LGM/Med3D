@@ -70,7 +70,7 @@ let renderingController = function($scope, SettingsService, InputService, TaskMa
         self.raycaster = new M3D.Raycaster();
 
         // Camera initialization
-        let camera = new M3D.PerspectiveCamera(60, PublicRenderData.canvasDimensions.width / PublicRenderData.canvasDimensions.height, 0.1, 2000);
+        let camera = new M3D.PerspectiveCamera(60, PublicRenderData.canvasDimensions.width / PublicRenderData.canvasDimensions.height, 1, 20000);
         camera.position = new THREE.Vector3(0, 0, 200);
 
         // Add camera to public render data
