@@ -72,6 +72,7 @@
     <script src="app/components/navbar/navbarController.js"></script>
     <script src="app/components/chat/chatController.js"></script>
     <script src="app/components/cameras/camerasSidebarController.js"></script>
+    <script src="app/components/scene_properties/scenePropertiesController.js"></script>
 
     <!-- Directives -->
     <script src="app/components/task_manager/taskProgressDirective.js"></script>
@@ -91,6 +92,7 @@
     <script src="app/components/navbar/navbarDirective.js"></script>
     <script src="app/components/chat/chatDirective.js"></script>
     <script src="app/components/cameras/camerasSidebarDirective.js"></script>
+    <script src="app/components/scene_properties/scenePropertiesDirective.js"></script>
     <!-- DEBUG INCLUDE -->
     <script src="../libraries/three-math.min.js"></script>
     <script src="../src/Med3D.js"></script>
@@ -216,6 +218,12 @@
                             <img class="sidebar-icon" src="assets/img/eye.png"/>
                         </a>
                     </li>
+
+                    <li>
+                        <a href="" data-target="#scenePropertiesSidebarContent">
+                            <img class="sidebar-icon" src="assets/img/3d-cube.png"/>
+                        </a>
+                    </li>
                 </ul>
             </div>
 
@@ -223,10 +231,9 @@
 
             <drawn-annotations-sidebar ng-controller="AnnotationsSidebarController" toggle-id="drawnAnnotationSidebarContent"></drawn-annotations-sidebar>
 
-
             <cameras-sidebar ng-controller="CamerasSidebarController" toggle-id="camerasSidebarContent"></cameras-sidebar>
 
-
+            <scene-properties-sidebar ng-controller="ScenePropertiesController" toggle-id="scenePropertiesSidebarContent"></scene-properties-sidebar>
         </div>
     </div>
 

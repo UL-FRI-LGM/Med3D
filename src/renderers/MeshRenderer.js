@@ -234,6 +234,15 @@ M3D.MeshRenderer = class extends M3D.Renderer {
                 uniformSetter["material.diffuse"].set(material.color.toArray());
             }
 
+            if (uniformSetter["material.opacity"] !== undefined) {
+                if (material.transparent) {
+                    uniformSetter["material.opacity"].set(material.opacity);
+                }
+                else {
+                    uniformSetter["material.opacity"].set(1.0);
+                }
+            }
+
             if (uniformSetter["material.specular"] !== undefined) {
                 uniformSetter["material.specular"].set(material.specular.toArray());
             }

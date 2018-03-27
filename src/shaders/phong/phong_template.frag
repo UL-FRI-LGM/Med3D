@@ -11,6 +11,7 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float shininess;
+    float opacity;
 
     #if (TEXTURE)
         #for I_TEX in 0 to NUM_TEX
@@ -95,7 +96,7 @@ void main() {
         #end
     #fi
 
-    color[0] = vec4(combined, 1.0);
+    color[0] = vec4(combined, material.opacity);
 
     #if (TEXTURE)
         // Apply all of the textures

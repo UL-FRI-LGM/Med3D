@@ -3,6 +3,7 @@ precision mediump float;
 
 struct Material {
     vec3 diffuse;
+    float opacity;
     #if (TEXTURE)
         #if (TEXTURE)
             #for I_TEX in 0 to NUM_TEX
@@ -56,7 +57,7 @@ out vec4 color;
 void main() {
 
     #if (LIGHTS && !NO_LIGHTS)
-        color = vec4(0.0, 0.0, 0.0, 1.0);
+        color = vec4(0.0, 0.0, 0.0, material.opacity);
 
         #for lightIdx in 0 to NUM_LIGHTS
             if (!lights[##lightIdx].directional) {
@@ -67,7 +68,7 @@ void main() {
             }
         #end
     #else
-        color = vec4(material.diffuse, 1.0);
+        color = vec4(material.diffuse, material.opacity);
     #fi
 
     #if (COLORS)
