@@ -1,4 +1,4 @@
-# Med3D
+# Med3D (discontinued)
 Med3D is a free open-source web-based 3D medical data visualisation application with support for displaying 3D mesh models (in form of OBJ files) as well as 3D volumetric data - such as CT and MRI scans (in form of MHR files).
 
 Application enables remote collaboration between users, who can share data, view, annotations and can also communicate via integrated chat.
